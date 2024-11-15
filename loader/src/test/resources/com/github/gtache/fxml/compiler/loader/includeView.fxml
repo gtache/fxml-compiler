@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?import javafx.geometry.Insets?>
+<?import javafx.geometry.Point3D?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.effect.Bloom?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.media.MediaView?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.web.HTMLEditor?>
+<?import javafx.scene.web.WebView?>
+<GridPane fx:id="gridPane" onInputMethodTextChanged="#inputMethodTextChanged" onKeyPressed="#keyPressed"
+          onKeyReleased="#keyReleased"
+          onKeyTyped="#keyTyped" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1"
+          fx:controller="com.github.gtache.fxml.compiler.loader.IncludeController">
+    <rowConstraints>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+        <RowConstraints/>
+    </rowConstraints>
+    <columnConstraints>
+        <ColumnConstraints/>
+        <ColumnConstraints/>
+        <ColumnConstraints minWidth="10.0" prefWidth="100.0"/>
+    </columnConstraints>
+    <children>
+        <Button fx:id="button" mnemonicParsing="false" text="Button"/>
+        <CheckBox fx:id="checkBox" indeterminate="true" mnemonicParsing="false" text="CheckBox"
+                  GridPane.columnIndex="1"/>
+        <ChoiceBox fx:id="choiceBox" cacheShape="false" centerShape="false" disable="true" focusTraversable="false"
+                   prefWidth="150.0"
+                   scaleShape="false" visible="false" GridPane.rowIndex="1"/>
+        <ColorPicker fx:id="colorPicker" nodeOrientation="LEFT_TO_RIGHT" opacity="0.5" GridPane.columnIndex="1"
+                     GridPane.rowIndex="1">
+            <value>
+                <Color fx:id="color" red="0.7894737124443054" green="0.08771929889917374" blue="0.08771929889917374"/>
+            </value>
+            <opaqueInsets>
+                <Insets bottom="3.0" left="2.0" right="4.0" top="5.0"/>
+            </opaqueInsets>
+        </ColorPicker>
+        <ComboBox fx:id="comboBox" editable="true" prefWidth="150.0" promptText="Text" visibleRowCount="5"
+                  GridPane.rowIndex="2">
+            <cursor>
+                <Cursor fx:constant="CLOSED_HAND"/>
+            </cursor>
+            <effect>
+                <Bloom/>
+            </effect>
+        </ComboBox>
+        <DatePicker fx:id="datePicker" showWeekNumbers="true" style="-fx-background-color: #ffffff;"
+                    GridPane.columnIndex="1"
+                    GridPane.rowIndex="2"/>
+        <HTMLEditor fx:id="htmlEditor"
+                    htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;"
+                    prefHeight="200.0" prefWidth="506.0" styleClass="clazz" stylesheets="@style.css"
+                    GridPane.rowIndex="3"/>
+        <Hyperlink fx:id="hyperlink" text="Hyperlink" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <ImageView fx:id="imageView" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true"
+                   GridPane.rowIndex="4"/>
+        <Label fx:id="label" accessibleHelp="TTTTT" accessibleText="TTT" blendMode="ADD" cache="true"
+               cacheHint="QUALITY"
+               depthTest="ENABLE" mnemonicParsing="true" mouseTransparent="true" text="%include.label"
+               GridPane.columnIndex="1"
+               GridPane.rowIndex="4"/>
+        <ListView fx:id="listView" fixedCellSize="20.0" nodeOrientation="RIGHT_TO_LEFT" orientation="HORIZONTAL"
+                  prefHeight="200.0"
+                  prefWidth="200.0" GridPane.rowIndex="5"/>
+        <MediaView fx:id="mediaView" fitHeight="200.0" fitWidth="200.0" GridPane.columnIndex="1" GridPane.columnSpan="2"
+                   GridPane.rowIndex="5" GridPane.rowSpan="2"/>
+        <MenuBar fx:id="menuBar" GridPane.halignment="RIGHT" GridPane.hgrow="ALWAYS" GridPane.rowIndex="7"
+                 GridPane.valignment="BASELINE" GridPane.vgrow="SOMETIMES">
+            <menus>
+                <Menu fx:id="menu1" mnemonicParsing="false" text="File">
+                    <items>
+                        <MenuItem fx:id="menuItem1" mnemonicParsing="false" text="Close"/>
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Edit">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Delete"/>
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="About"/>
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+        <MenuButton fx:id="menuButton" mnemonicParsing="false" text="MenuButton" GridPane.columnIndex="1"
+                    GridPane.rowIndex="7">
+            <items>
+                <MenuItem mnemonicParsing="false" text="Action 1"/>
+                <MenuItem mnemonicParsing="false" text="Action 2"/>
+            </items>
+            <GridPane.margin>
+                <Insets bottom="3.0" left="2.0" right="4.0" top="5.0"/>
+            </GridPane.margin>
+        </MenuButton>
+        <Pagination fx:id="pagination" prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="8">
+            <padding>
+                <Insets bottom="3.0" left="2.0" right="4.0" top="5.0"/>
+            </padding>
+        </Pagination>
+        <PasswordField fx:id="passwordField" maxHeight="6.0" maxWidth="5.0" minHeight="2.0" minWidth="1.0"
+                       prefColumnCount="7"
+                       prefHeight="4.0" prefWidth="3.0" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
+        <ProgressBar fx:id="progressBar" layoutX="10.0" layoutY="20.0" prefWidth="200.0" progress="0.0"
+                     GridPane.rowIndex="9"/>
+        <ProgressIndicator fx:id="progressIndicator" progress="0.0" rotate="2.0" GridPane.columnIndex="1"
+                           GridPane.rowIndex="9">
+            <rotationAxis>
+                <Point3D x="4.0" y="5.0" z="6.0"/>
+            </rotationAxis>
+        </ProgressIndicator>
+        <RadioButton fx:id="radioButton" mnemonicParsing="false" scaleX="7.0" scaleY="2.0" scaleZ="3.0"
+                     text="RadioButton" translateX="4.0"
+                     translateY="5.0" translateZ="6.0" GridPane.rowIndex="10"/>
+        <ScrollBar fx:id="scrollBarH" GridPane.columnIndex="1" GridPane.rowIndex="10"/>
+        <ScrollBar fx:id="scrollBarV" orientation="VERTICAL" GridPane.rowIndex="11"/>
+        <Separator fx:id="separatorH" onDragDetected="#dragDetected" onDragDone="#dragDone" onDragDropped="#dragDropped"
+                   onDragEntered="#dragEntered" onDragExited="#dragExited" onDragOver="#dragOver"
+                   onMouseDragEntered="#mouseDragEntered" onMouseDragExited="#mouseDragExited"
+                   onMouseDragOver="#mouseDragOver" onMouseDragReleased="#mouseDragReleased" prefWidth="200.0"
+                   GridPane.columnIndex="1" GridPane.rowIndex="11"/>
+        <Separator fx:id="separatorV" orientation="VERTICAL" prefHeight="200.0" GridPane.rowIndex="12"/>
+        <Slider fx:id="sliderH" onContextMenuRequested="#contextMenuRequested" onMouseClicked="#mouseClicked"
+                onMouseDragged="#mouseDragged" onMouseEntered="#mouseEntered" onMouseExited="#mouseExited"
+                onMouseMoved="#mouseMoved" onMousePressed="#mousePressed" onMouseReleased="#mouseReleased"
+                onScroll="#onScroll" onScrollFinished="#onScrollFinished" onScrollStarted="#onScrollStarted"
+                GridPane.columnIndex="1" GridPane.rowIndex="12"/>
+        <Slider fx:id="sliderV" onZoom="#onZoom" onZoomFinished="#onZoomFinished" onZoomStarted="#onZoomStarted"
+                orientation="VERTICAL"
+                GridPane.rowIndex="13"/>
+        <Spinner fx:id="spinner" GridPane.columnIndex="1" GridPane.rowIndex="13"/>
+        <SplitMenuButton fx:id="splitMenuButton" mnemonicParsing="false" text="SplitMenuButton" GridPane.rowIndex="14">
+            <items>
+                <MenuItem fx:id="item1" mnemonicParsing="false" text="Action 1"/>
+                <MenuItem fx:id="item2" mnemonicParsing="false" text="Action 2"/>
+            </items>
+        </SplitMenuButton>
+        <TableView fx:id="tableView" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1"
+                   GridPane.rowIndex="14">
+            <columns>
+                <TableColumn fx:id="tableColumn1" prefWidth="75.0" text="C1"/>
+                <TableColumn fx:id="tableColumn2" prefWidth="75.0" text="C2"/>
+            </columns>
+        </TableView>
+        <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="15"/>
+        <TextField fx:id="textField" GridPane.columnIndex="1" GridPane.rowIndex="15"/>
+        <ToggleButton mnemonicParsing="false" onAction="#onAction" onRotate="#onRotate"
+                      onRotationFinished="#onRotationFinished" onRotationStarted="#onRotationStarted"
+                      text="ToggleButton" GridPane.rowIndex="16"/>
+        <TreeTableView fx:id="treeTableView" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1"
+                       GridPane.rowIndex="16">
+            <columns>
+                <TreeTableColumn fx:id="treeTableColumn1" onEditCancel="#onEditCancel" onEditCommit="#onEditCommit"
+                                 onEditStart="#onEditStart"
+                                 prefWidth="75.0" text="C1"/>
+                <TreeTableColumn fx:id="treeTableColumn2" prefWidth="75.0" sortType="DESCENDING" text="C2"/>
+            </columns>
+        </TreeTableView>
+        <TreeView fx:id="treeView" onSwipeDown="#onSwipeDown" onSwipeLeft="#onSwipeLeft" onSwipeRight="#onSwipeRight"
+                  onSwipeUp="#onSwipeUp" prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="17"/>
+        <WebView fx:id="webView" onTouchMoved="#onTouchMoved" onTouchPressed="#onTouchPressed"
+                 onTouchReleased="#onTouchReleased"
+                 onTouchStationary="#onTouchStationary" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1"
+                 GridPane.rowIndex="17"/>
+    </children>
+</GridPane>
