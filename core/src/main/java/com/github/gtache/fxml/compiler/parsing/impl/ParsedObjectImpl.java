@@ -4,6 +4,7 @@ import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.SequencedCollection;
@@ -21,8 +22,8 @@ public record ParsedObjectImpl(Class<?> clazz, SequencedMap<String, ParsedProper
 
     public ParsedObjectImpl {
         Objects.requireNonNull(clazz);
-        properties = new LinkedHashMap<>(properties);
-        children = new LinkedHashMap<>(children);
+        properties = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(properties));
+        children = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(children));
     }
 
     /**

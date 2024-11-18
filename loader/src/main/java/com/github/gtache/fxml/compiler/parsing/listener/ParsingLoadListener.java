@@ -24,12 +24,12 @@ public class ParsingLoadListener implements LoadListener {
     private final Deque<ParsedObjectImpl.Builder> stack;
     private final Deque<ParsedProperty> propertyStack;
     private final Deque<List<ParsedObject>> currentObjectStack;
+    private final SequencedMap<String, ParsedProperty> currentIncludeProperties;
     private ParsedObjectImpl.Builder current;
     private ParsedProperty currentProperty;
     private List<ParsedObject> currentObjects;
     private Object previousEnd;
     private boolean isInclude;
-    private SequencedMap<String, ParsedProperty> currentIncludeProperties;
 
     /**
      * Instantiates the listener
@@ -115,12 +115,16 @@ public class ParsingLoadListener implements LoadListener {
     @Override
     public void beginPropertyElement(final String name, final Class<?> sourceType) {
         previousEnd = null;
-        if (currentProperty != null) {
-            propertyStack.push(currentProperty);
+        if (isInclude) {
+            throw new IllegalStateException("Reading complex property for include");
+        } else {
+            if (currentProperty != null) {
+                propertyStack.push(currentProperty);
+            }
+            currentProperty = new ParsedPropertyImpl(name, sourceType, null);
+            currentObjectStack.push(currentObjects);
+            currentObjects = new ArrayList<>();
         }
-        currentProperty = new ParsedPropertyImpl(name, sourceType, null);
-        currentObjectStack.push(currentObjects);
-        currentObjects = new ArrayList<>();
     }
 
     @Override
@@ -144,6 +148,8 @@ public class ParsingLoadListener implements LoadListener {
         final var property = new ParsedPropertyImpl(name, null, value);
         if (isInclude) {
             currentIncludeProperties.put(name, property);
+        } else if (current == null) {
+            throw new IllegalStateException("Current object is null (trying to add attribute " + name + " = " + value + ")");
         } else {
             current.addProperty(property);
         }
@@ -151,8 +157,14 @@ public class ParsingLoadListener implements LoadListener {
 
     @Override
     public void readPropertyAttribute(final String name, final Class<?> sourceType, final String value) {
-        previousEnd = null;
-        current.addProperty(new ParsedPropertyImpl(name, sourceType, value));
+        if (isInclude) {
+            throw new IllegalStateException("Reading complex property for include");
+        } else if (current == null) {
+            throw new IllegalStateException("Current object is null (trying to add property " + name + "/" + sourceType + " = " + value + ")");
+        } else {
+            previousEnd = null;
+            current.addProperty(new ParsedPropertyImpl(name, sourceType, value));
+        }
     }
 
     @Override
@@ -162,31 +174,49 @@ public class ParsingLoadListener implements LoadListener {
 
     @Override
     public void readEventHandlerAttribute(final String name, final String value) {
-        current.addProperty(new ParsedPropertyImpl(name, EventHandler.class, value));
+        if (isInclude) {
+            throw new IllegalStateException("Reading event handler for include");
+        } else if (current == null) {
+            throw new IllegalStateException("Current object is null (trying to add event handler" + name + " = " + value + ")");
+        } else {
+            current.addProperty(new ParsedPropertyImpl(name, EventHandler.class, value));
+        }
     }
 
     @Override
     public void endElement(final Object value) {
         if (isInclude) {
-            currentObjects.add(new ParsedIncludeImpl(currentIncludeProperties));
-            currentIncludeProperties.clear();
-            isInclude = false;
+            endInclude();
         } else if (previousEnd == value || value instanceof ObservableList<?>) {
-            //End of property
-            if (currentProperty == null) {
-                throw new IllegalStateException("Unexpected end element (property is null) : " + value);
-            } else {
-                currentObjects.forEach(go -> current.addChild(currentProperty, go));
-                currentObjects = currentObjectStack.isEmpty() ? new ArrayList<>() : currentObjectStack.pop();
-                currentProperty = propertyStack.isEmpty() ? null : propertyStack.pop();
-            }
+            endProperty(value);
         } else if (current != null) {
-            final var built = current.build();
-            currentObjects.add(built);
-            current = stack.isEmpty() ? null : stack.pop();
-            previousEnd = value;
+            endObject(value);
         } else {
             throw new IllegalStateException("Unexpected end element (current is null) : " + value);
         }
+    }
+
+    private void endInclude() {
+        currentObjects.add(new ParsedIncludeImpl(currentIncludeProperties));
+        currentIncludeProperties.clear();
+        isInclude = false;
+    }
+
+    private void endProperty(final Object value) {
+        //End of property
+        if (currentProperty == null) {
+            throw new IllegalStateException("Unexpected end element (property is null) : " + value);
+        } else {
+            currentObjects.forEach(go -> current.addChild(currentProperty, go));
+            currentObjects = currentObjectStack.isEmpty() ? new ArrayList<>() : currentObjectStack.pop();
+            currentProperty = propertyStack.isEmpty() ? null : propertyStack.pop();
+        }
+    }
+
+    private void endObject(final Object value) {
+        final var built = current.build();
+        currentObjects.add(built);
+        current = stack.isEmpty() ? null : stack.pop();
+        previousEnd = value;
     }
 }

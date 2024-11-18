@@ -195,7 +195,8 @@ public class GeneratorImpl implements Generator {
                         } catch (final NoSuchFieldException | IllegalAccessException e) {
                             throw new RuntimeException("Error using reflection on " + fieldName, e);
                         }
-                    }""");
+                    }
+                    """);
         }
         return sb.toString();
     }
@@ -408,7 +409,7 @@ public class GeneratorImpl implements Generator {
                 final var method = getStaticMethod(property.sourceType(), setMethod);
                 final var parameterType = method.getParameterTypes()[1];
                 final var arg = getArg(request, property.value(), parameterType);
-                sb.append("    ").append(property.sourceType().getName()).append(".").append(setMethod).append("(").append(parentVariable).append(", ").append(arg).append(");\n");
+                setLaterIfNeeded(request, property, parameterType, "    " + property.sourceType().getName() + "." + setMethod + "(" + parentVariable + ", " + arg + ");\n", sb);
             } else {
                 throw new IllegalStateException("Cannot set " + propertyName + " on " + property.sourceType().getCanonicalName());
             }
@@ -418,17 +419,26 @@ public class GeneratorImpl implements Generator {
                 final var method = getMethod(parent.clazz(), setMethod);
                 final var parameterType = method.getParameterTypes()[0];
                 final var arg = getArg(request, property.value(), parameterType);
-                sb.append("    ").append(parentVariable).append(".").append(setMethod).append("(").append(arg).append(");\n");
+                setLaterIfNeeded(request, property, parameterType, "    " + parentVariable + "." + setMethod + "(" + arg + ");\n", sb);
             } else if (hasMethod(parent.clazz(), getMethod)) {
                 final var method = getMethod(parent.clazz(), getMethod);
                 final var returnType = method.getReturnType();
                 if (hasMethod(returnType, "addAll")) {
                     final var arg = getArg(request, property.value(), String.class);
-                    sb.append("    ").append(parentVariable).append(".").append(getMethod).append("().addAll(").append(arg).append(");\n");
+                    setLaterIfNeeded(request, property, String.class, "    " + parentVariable + "." + getMethod + "().addAll(" + arg + ");\n", sb);
                 }
             } else {
                 throw new IllegalStateException("Cannot set " + propertyName + " on " + parent.clazz().getCanonicalName());
             }
+        }
+    }
+
+    private void setLaterIfNeeded(final GenerationRequest request, final ParsedProperty property, final Class<?> type, final String arg, final StringBuilder sb) {
+        if (type == String.class && property.value().startsWith("%") && request.parameters().resourceBundleInjection().injectionType() == ResourceBundleInjectionTypes.GETTER
+                && getControllerInjection(request).fieldInjectionType() == ControllerFieldInjectionTypes.FACTORY) {
+            controllerFactoryPostAction.add(arg);
+        } else {
+            sb.append(arg);
         }
     }
 
@@ -800,13 +810,7 @@ public class GeneratorImpl implements Generator {
         if (resourceBundleInjectionType instanceof final ResourceBundleInjectionTypes types) {
             return switch (types) {
                 case CONSTRUCTOR, GET_BUNDLE -> "bundle.getString(\"" + value + "\")";
-                case GETTER -> {
-                    if (getControllerInjection(request).fieldInjectionType() == ControllerFieldInjectionTypes.FACTORY) {
-                        throw new UnsupportedOperationException("Factory injection with bundle getter not supported yet");
-                    } else {
-                        yield "controller.resources().getString(\"" + value + "\")";
-                    }
-                }
+                case GETTER -> "controller.resources().getString(\"" + value + "\")";
             };
         } else {
             throw new IllegalArgumentException("Unknown resource bundle injection type : " + resourceBundleInjectionType);
