@@ -42,4 +42,21 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <!-- Enable filtering as workaround for symlink issue: https://issues.apache.org/jira/browse/MRESOURCES-237 -->
+                <filtering>true</filtering>
+                <includes>
+                    <include>com/github/gtache/fxml/compiler/impl/*.properties</include>
+                    <include>com/github/gtache/fxml/compiler/impl/*.fxml</include>
+                    <include>com/github/gtache/fxml/compiler/impl/*.css</include>
+                    <include>com/github/gtache/fxml/compiler/impl/*.txt</include>
+                    <include>com/github/gtache/fxml/compiler/parsing/listener/*</include>
+                </includes>
+            </testResource>
+        </testResources>
+    </build>
 </project>
