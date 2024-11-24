@@ -11,7 +11,7 @@ import java.util.Objects;
  * @param sourceType The property source type
  * @param value      The property value
  */
-public record ParsedPropertyImpl(String name, Class<?> sourceType, String value) implements ParsedProperty {
+public record ParsedPropertyImpl(String name, String sourceType, String value) implements ParsedProperty {
 
     public ParsedPropertyImpl {
         Objects.requireNonNull(name);

@@ -11,10 +11,12 @@ import java.util.SequencedMap;
 public interface ParsedInclude extends ParsedObject {
 
     /**
-     * @return The controller id if present
+     * Returns the subcontroller id (if present)
+     *
+     * @return The id
      */
     default String controllerId() {
-        final var property = properties().get("fx:id");
+        final var property = attributes().get("fx:id");
         if (property == null) {
             return null;
         } else {
@@ -23,10 +25,12 @@ public interface ParsedInclude extends ParsedObject {
     }
 
     /**
-     * @return The resources if present
+     * Returns the subview resources path if present
+     *
+     * @return The resources
      */
     default String resources() {
-        final var property = properties().get("resources");
+        final var property = attributes().get("resources");
         if (property == null) {
             return null;
         } else {
@@ -35,10 +39,12 @@ public interface ParsedInclude extends ParsedObject {
     }
 
     /**
+     * Returns the include source
+     *
      * @return The source
      */
     default String source() {
-        final var property = properties().get("source");
+        final var property = attributes().get("source");
         if (property == null) {
             throw new IllegalStateException("Missing source");
         } else {
@@ -47,12 +53,12 @@ public interface ParsedInclude extends ParsedObject {
     }
 
     @Override
-    default Class<?> clazz() {
-        return ParsedInclude.class;
+    default String className() {
+        return ParsedInclude.class.getName();
     }
 
     @Override
-    default SequencedMap<ParsedProperty, SequencedCollection<ParsedObject>> children() {
+    default SequencedMap<ParsedProperty, SequencedCollection<ParsedObject>> properties() {
         return new LinkedHashMap<>();
     }
 }

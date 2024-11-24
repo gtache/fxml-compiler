@@ -9,6 +9,8 @@ import java.util.Map;
 public interface ControllerInfo {
 
     /**
+     * Returns a mapping of event handler method name -> boolean
+     *
      * @return A mapping of method name to true if the method has an argument
      */
     Map<String, Boolean> handlerHasArgument();
@@ -24,12 +26,14 @@ public interface ControllerInfo {
     }
 
     /**
+     * Returns a mapping of property name -> generic types
+     *
      * @return A mapping of property name to generic types
      */
     Map<String, List<String>> propertyGenericTypes();
 
     /**
-     * Returns the generic types for the given property (null if not generic)
+     * Returns the generic types for the given property (null if not generic or raw)
      *
      * @param property The property
      * @return The generic types

@@ -26,22 +26,22 @@ class TestParsedIncludeImpl {
 
     @Test
     void testGetters() {
-        assertEquals(properties, include.properties());
-        assertEquals(ParsedInclude.class, include.clazz());
-        assertEquals(new LinkedHashMap<>(), include.children());
+        assertEquals(properties, include.attributes());
+        assertEquals(ParsedInclude.class.getName(), include.className());
+        assertEquals(new LinkedHashMap<>(), include.properties());
     }
 
     @Test
     void testCopyMap() {
-        final var originalProperties = include.properties();
+        final var originalProperties = include.attributes();
         properties.clear();
-        assertEquals(originalProperties, include.properties());
-        assertNotEquals(properties, include.properties());
+        assertEquals(originalProperties, include.attributes());
+        assertNotEquals(properties, include.attributes());
     }
 
     @Test
     void testUnmodifiable() {
-        final var objectProperties = include.properties();
+        final var objectProperties = include.attributes();
         assertThrows(UnsupportedOperationException.class, objectProperties::clear);
     }
 

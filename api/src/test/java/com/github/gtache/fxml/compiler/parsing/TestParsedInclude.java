@@ -7,9 +7,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.SequencedMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.spy;
@@ -18,13 +19,13 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TestParsedInclude {
 
-    private final SequencedMap<String, ParsedProperty> properties;
+    private final Map<String, ParsedProperty> attributes;
     private final ParsedProperty property;
     private final String string;
     private final ParsedInclude include;
 
     TestParsedInclude(@Mock final ParsedProperty property) {
-        this.properties = new LinkedHashMap<>();
+        this.attributes = new HashMap<>();
         this.property = Objects.requireNonNull(property);
         this.string = "str/ing";
         this.include = spy(ParsedInclude.class);
@@ -32,7 +33,7 @@ class TestParsedInclude {
 
     @BeforeEach
     void beforeEach() {
-        when(include.properties()).thenReturn(properties);
+        when(include.attributes()).thenReturn(attributes);
         when(property.value()).thenReturn(string);
     }
 
@@ -43,7 +44,7 @@ class TestParsedInclude {
 
     @Test
     void testControllerId() {
-        properties.put("fx:id", property);
+        attributes.put("fx:id", property);
         assertEquals(string + "Controller", include.controllerId());
     }
 
@@ -54,7 +55,7 @@ class TestParsedInclude {
 
     @Test
     void testResources() {
-        properties.put("resources", property);
+        attributes.put("resources", property);
         assertEquals(string.replace("/", "."), include.resources());
     }
 
@@ -65,17 +66,17 @@ class TestParsedInclude {
 
     @Test
     void testSource() {
-        properties.put("source", property);
+        attributes.put("source", property);
         assertEquals(string, include.source());
     }
 
     @Test
-    void testClazz() {
-        assertEquals(ParsedInclude.class, include.clazz());
+    void testClassName() {
+        assertEquals(ParsedInclude.class.getName(), include.className());
     }
 
     @Test
-    void testChildren() {
-        assertEquals(new LinkedHashMap<>(), include.children());
+    void testProperties() {
+        assertEquals(new LinkedHashMap<>(), include.properties());
     }
 }

@@ -1,0 +1,429 @@
+package com.github.gtache.fxml.compiler.parsing.xml;
+
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.HashMap;
+
+
+/**
+ * Generated code, not thread-safe
+ */
+public final class ControlsController {
+
+    private final Map<Class<?>, Object> controllersMap;
+    private final Map<Class<?>, ResourceBundle> resourceBundlesMap;
+    private boolean loaded;
+    private com.github.gtache.fxml.compiler.parsing.xml.ControlsController controller;
+
+    /**
+     * Instantiates a new ControlsController with no nested controllers and no resource bundle
+     * @param controller The controller
+     */
+    public ControlsController(final com.github.gtache.fxml.compiler.parsing.xml.ControlsController controller) {
+        this(Map.of(com.github.gtache.fxml.compiler.parsing.xml.ControlsController.class, controller), Map.of());
+    }
+
+    /**
+     * Instantiates a new ControlsController with no nested controllers
+     * @param controller The controller
+     * @param resourceBundle The resource bundle
+     */
+    public ControlsController(final com.github.gtache.fxml.compiler.parsing.xml.ControlsController controller, final ResourceBundle resourceBundle) {
+        this(Map.of(com.github.gtache.fxml.compiler.parsing.xml.ControlsController.class, controller), Map.of(com.github.gtache.fxml.compiler.parsing.xml.ControlsController.class, resourceBundle));
+    }
+
+    /**
+     * Instantiates a new ControlsController with nested controllers
+     * @param controllersMap The map of controller class to controller
+     * @param resourceBundlesMap The map of controller class to resource bundle
+     */
+    public ControlsController(final Map<Class<?>, Object> controllersMap, final Map<Class<?>, ResourceBundle> resourceBundlesMap) {
+        this.controllersMap = Map.copyOf(controllersMap);
+        this.resourceBundlesMap = Map.copyOf(resourceBundlesMap);
+    }
+
+    /**
+     * Loads the view. Can only be called once.
+     *
+     * @return The view parent
+     */
+    public <T> T load() {
+    if (loaded) {
+        throw new IllegalStateException("Already loaded");
+    }
+    controller = (com.github.gtache.fxml.compiler.parsing.xml.ControlsController) controllersMap.get(com.github.gtache.fxml.compiler.parsing.xml.ControlsController.class);
+    final var object0 = new javafx.scene.layout.GridPane();
+    controller.setGridPane(object0);
+    object0.setOnInputMethodTextChanged(controller::inputMethodTextChanged);
+    object0.setOnKeyPressed(e -> controller.keyPressed());
+    object0.setOnKeyReleased(controller::keyReleased);
+    object0.setOnKeyTyped(controller::keyTyped);
+    final var object1 = new javafx.scene.control.Button();
+    controller.setButton(object1);
+    object1.setMnemonicParsing(false);
+    object1.setText("Button");
+    final var object2 = new javafx.scene.control.CheckBox();
+    javafx.scene.layout.GridPane.setColumnIndex(object2, 1);
+    controller.setCheckBox(object2);
+    object2.setIndeterminate(true);
+    object2.setMnemonicParsing(false);
+    object2.setText("CheckBox");
+    final var object3 = new javafx.scene.control.ChoiceBox<String>();
+    object3.setCacheShape(false);
+    object3.setCenterShape(false);
+    object3.setDisable(true);
+    object3.setFocusTraversable(false);
+    controller.setChoiceBox(object3);
+    object3.setPrefWidth(150.0);
+    javafx.scene.layout.GridPane.setRowIndex(object3, 1);
+    object3.setScaleShape(false);
+    object3.setVisible(false);
+    final var object4 = new javafx.scene.control.ColorPicker();
+    javafx.scene.layout.GridPane.setColumnIndex(object4, 1);
+    controller.setColorPicker(object4);
+    object4.setNodeOrientation(javafx.geometry.NodeOrientation.LEFT_TO_RIGHT);
+    object4.setOpacity(0.5);
+    javafx.scene.layout.GridPane.setRowIndex(object4, 1);
+    final var object5 = new javafx.geometry.Insets(5.0, 4.0, 3.0, 2.0);
+    object4.setOpaqueInsets(object5);
+    final var object6 = new javafx.scene.paint.Color(0.7894737124443054, 0.08771929889917374, 0.08771929889917374, 1);
+    controller.setColor(object6);
+    object4.setValue(object6);
+    final var object7 = new javafx.scene.control.ComboBox();
+    object7.setEditable(true);
+    controller.setComboBox(object7);
+    object7.setPrefWidth(150.0);
+    object7.setPromptText("Text");
+    javafx.scene.layout.GridPane.setRowIndex(object7, 2);
+    object7.setVisibleRowCount(5);
+    final var object8 = javafx.scene.Cursor.CLOSED_HAND;
+    object7.setCursor(object8);
+    final var object9 = new javafx.scene.effect.Bloom();
+    object7.setEffect(object9);
+    final var object10 = new javafx.scene.control.DatePicker();
+    javafx.scene.layout.GridPane.setColumnIndex(object10, 1);
+    controller.setDatePicker(object10);
+    javafx.scene.layout.GridPane.setRowIndex(object10, 2);
+    object10.setShowWeekNumbers(true);
+    object10.setStyle("-fx-background-color: #ffffff;");
+    final var object11 = new javafx.scene.web.HTMLEditor();
+    controller.setHtmlEditor(object11);
+    object11.setHtmlText("<html><head></head><body contenteditable=\"true\"></body></html>");
+    object11.setPrefHeight(200.0);
+    object11.setPrefWidth(506.0);
+    javafx.scene.layout.GridPane.setRowIndex(object11, 3);
+    object11.getStyleClass().addAll("clazz");
+    object11.getStylesheets().addAll("@style.css");
+    final var object12 = new javafx.scene.control.Hyperlink();
+    javafx.scene.layout.GridPane.setColumnIndex(object12, 1);
+    controller.setHyperlink(object12);
+    javafx.scene.layout.GridPane.setRowIndex(object12, 3);
+    object12.setText("Hyperlink");
+    final var object13 = new javafx.scene.image.ImageView();
+    object13.setFitHeight(150.0);
+    object13.setFitWidth(200.0);
+    controller.setImageView(object13);
+    object13.setPickOnBounds(true);
+    object13.setPreserveRatio(true);
+    javafx.scene.layout.GridPane.setRowIndex(object13, 4);
+    final var object14 = new javafx.scene.control.Label();
+    object14.setAccessibleHelp("TTTTT");
+    object14.setAccessibleText("TTT");
+    object14.setBlendMode(javafx.scene.effect.BlendMode.ADD);
+    object14.setCache(true);
+    object14.setCacheHint(javafx.scene.CacheHint.QUALITY);
+    javafx.scene.layout.GridPane.setColumnIndex(object14, 1);
+    object14.setDepthTest(javafx.scene.DepthTest.ENABLE);
+    controller.setLabel(object14);
+    object14.setMnemonicParsing(true);
+    object14.setMouseTransparent(true);
+    javafx.scene.layout.GridPane.setRowIndex(object14, 4);
+    object14.setText(controller.resources().getString("include.label"));
+    final var object15 = new javafx.scene.control.ListView<javafx.scene.control.Label>();
+    object15.setFixedCellSize(20.0);
+    controller.setListView(object15);
+    object15.setNodeOrientation(javafx.geometry.NodeOrientation.RIGHT_TO_LEFT);
+    object15.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
+    object15.setPrefHeight(200.0);
+    object15.setPrefWidth(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object15, 5);
+    final var object16 = new javafx.scene.media.MediaView();
+    javafx.scene.layout.GridPane.setColumnIndex(object16, 1);
+    javafx.scene.layout.GridPane.setColumnSpan(object16, 2);
+    object16.setFitHeight(200.0);
+    object16.setFitWidth(200.0);
+    controller.setMediaView(object16);
+    javafx.scene.layout.GridPane.setRowIndex(object16, 5);
+    javafx.scene.layout.GridPane.setRowSpan(object16, 2);
+    final var object17 = new javafx.scene.control.MenuBar();
+    controller.setMenuBar(object17);
+    javafx.scene.layout.GridPane.setHalignment(object17, javafx.geometry.HPos.RIGHT);
+    javafx.scene.layout.GridPane.setHgrow(object17, javafx.scene.layout.Priority.ALWAYS);
+    javafx.scene.layout.GridPane.setRowIndex(object17, 7);
+    javafx.scene.layout.GridPane.setValignment(object17, javafx.geometry.VPos.BASELINE);
+    javafx.scene.layout.GridPane.setVgrow(object17, javafx.scene.layout.Priority.SOMETIMES);
+    final var object18 = new javafx.scene.control.Menu();
+    controller.setMenu1(object18);
+    object18.setMnemonicParsing(false);
+    object18.setText("File");
+    final var object19 = new javafx.scene.control.MenuItem();
+    controller.setMenuItem1(object19);
+    object19.setMnemonicParsing(false);
+    object19.setText("Close");
+    object18.getItems().addAll(object19);
+    final var object20 = new javafx.scene.control.Menu();
+    object20.setMnemonicParsing(false);
+    object20.setText("Edit");
+    final var object21 = new javafx.scene.control.MenuItem();
+    object21.setMnemonicParsing(false);
+    object21.setText("Delete");
+    object20.getItems().addAll(object21);
+    final var object22 = new javafx.scene.control.Menu();
+    object22.setMnemonicParsing(false);
+    object22.setText("Help");
+    final var object23 = new javafx.scene.control.MenuItem();
+    object23.setMnemonicParsing(false);
+    object23.setText("About");
+    object22.getItems().addAll(object23);
+    object17.getMenus().addAll(object18, object20, object22);
+    final var object24 = new javafx.scene.control.MenuButton();
+    javafx.scene.layout.GridPane.setColumnIndex(object24, 1);
+    controller.setMenuButton(object24);
+    object24.setMnemonicParsing(false);
+    javafx.scene.layout.GridPane.setRowIndex(object24, 7);
+    object24.setText("MenuButton");
+    final var object25 = new javafx.scene.control.MenuItem();
+    object25.setMnemonicParsing(false);
+    object25.setText("Action 1");
+    final var object26 = new javafx.scene.control.MenuItem();
+    object26.setMnemonicParsing(false);
+    object26.setText("Action 2");
+    object24.getItems().addAll(object25, object26);
+    final var object27 = new javafx.geometry.Insets(5.0, 4.0, 3.0, 2.0);
+    javafx.scene.layout.GridPane.setMargin(object24, object27);
+    final var object28 = new javafx.scene.control.Pagination();
+    controller.setPagination(object28);
+    object28.setPrefHeight(200.0);
+    object28.setPrefWidth(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object28, 8);
+    final var object29 = new javafx.geometry.Insets(5.0, 4.0, 3.0, 2.0);
+    object28.setPadding(object29);
+    final var object30 = new javafx.scene.control.PasswordField();
+    javafx.scene.layout.GridPane.setColumnIndex(object30, 1);
+    controller.setPasswordField(object30);
+    object30.setMaxHeight(Double.valueOf("Infinity"));
+    object30.setMaxWidth(5.0);
+    object30.setMinHeight(Double.valueOf("-Infinity"));
+    object30.setMinWidth(1.0);
+    object30.setPrefColumnCount(7);
+    object30.setPrefHeight(4.0);
+    object30.setPrefWidth(3.0);
+    javafx.scene.layout.GridPane.setRowIndex(object30, 8);
+    final var object31 = new javafx.scene.control.ProgressBar();
+    controller.setProgressBar(object31);
+    object31.setLayoutX(10.0);
+    object31.setLayoutY(20.0);
+    object31.setPrefWidth(200.0);
+    object31.setProgress(0.0);
+    javafx.scene.layout.GridPane.setRowIndex(object31, 9);
+    final var object32 = new javafx.scene.control.ProgressIndicator();
+    javafx.scene.layout.GridPane.setColumnIndex(object32, 1);
+    controller.setProgressIndicator(object32);
+    object32.setProgress(0.0);
+    object32.setRotate(2.0);
+    javafx.scene.layout.GridPane.setRowIndex(object32, 9);
+    final var object33 = new javafx.geometry.Point3D(4.0, 5.0, 6.0);
+    object32.setRotationAxis(object33);
+    final var object34 = new javafx.scene.control.RadioButton();
+    controller.setRadioButton(object34);
+    object34.setMnemonicParsing(false);
+    javafx.scene.layout.GridPane.setRowIndex(object34, 10);
+    object34.setScaleX(7.0);
+    object34.setScaleY(2.0);
+    object34.setScaleZ(3.0);
+    object34.setText("RadioButton");
+    object34.setTranslateX(4.0);
+    object34.setTranslateY(5.0);
+    object34.setTranslateZ(6.0);
+    final var object35 = new javafx.scene.control.ScrollBar();
+    javafx.scene.layout.GridPane.setColumnIndex(object35, 1);
+    controller.setScrollBarH(object35);
+    javafx.scene.layout.GridPane.setRowIndex(object35, 10);
+    final var object36 = new javafx.scene.control.ScrollBar();
+    controller.setScrollBarV(object36);
+    object36.setOrientation(javafx.geometry.Orientation.VERTICAL);
+    javafx.scene.layout.GridPane.setRowIndex(object36, 11);
+    final var object37 = new javafx.scene.control.Separator();
+    javafx.scene.layout.GridPane.setColumnIndex(object37, 1);
+    controller.setSeparatorH(object37);
+    object37.setOnDragDetected(controller::dragDetected);
+    object37.setOnDragDone(controller::dragDone);
+    object37.setOnDragDropped(controller::dragDropped);
+    object37.setOnDragEntered(controller::dragEntered);
+    object37.setOnDragExited(controller::dragExited);
+    object37.setOnDragOver(controller::dragOver);
+    object37.setOnMouseDragEntered(controller::mouseDragEntered);
+    object37.setOnMouseDragExited(controller::mouseDragExited);
+    object37.setOnMouseDragOver(controller::mouseDragOver);
+    object37.setOnMouseDragReleased(controller::mouseDragReleased);
+    object37.setPrefWidth(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object37, 11);
+    final var object38 = new javafx.scene.control.Separator();
+    controller.setSeparatorV(object38);
+    object38.setOrientation(javafx.geometry.Orientation.VERTICAL);
+    object38.setPrefHeight(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object38, 12);
+    final var object39 = new javafx.scene.control.Slider();
+    javafx.scene.layout.GridPane.setColumnIndex(object39, 1);
+    controller.setSliderH(object39);
+    object39.setOnContextMenuRequested(controller::contextMenuRequested);
+    object39.setOnMouseClicked(e -> controller.mouseClicked());
+    object39.setOnMouseDragged(controller::mouseDragged);
+    object39.setOnMouseEntered(controller::mouseEntered);
+    object39.setOnMouseExited(controller::mouseExited);
+    object39.setOnMouseMoved(controller::mouseMoved);
+    object39.setOnMousePressed(controller::mousePressed);
+    object39.setOnMouseReleased(controller::mouseReleased);
+    object39.setOnScroll(controller::onScroll);
+    object39.setOnScrollFinished(controller::onScrollFinished);
+    object39.setOnScrollStarted(controller::onScrollStarted);
+    javafx.scene.layout.GridPane.setRowIndex(object39, 12);
+    final var object40 = new javafx.scene.control.Slider();
+    controller.setSliderV(object40);
+    object40.setOnZoom(controller::onZoom);
+    object40.setOnZoomFinished(controller::onZoomFinished);
+    object40.setOnZoomStarted(controller::onZoomStarted);
+    object40.setOrientation(javafx.geometry.Orientation.VERTICAL);
+    javafx.scene.layout.GridPane.setRowIndex(object40, 13);
+    final var object41 = new javafx.scene.control.Spinner<Double>();
+    javafx.scene.layout.GridPane.setColumnIndex(object41, 1);
+    controller.setSpinner(object41);
+    javafx.scene.layout.GridPane.setRowIndex(object41, 13);
+    final var object42 = new javafx.scene.control.SplitMenuButton();
+    controller.setSplitMenuButton(object42);
+    object42.setMnemonicParsing(false);
+    javafx.scene.layout.GridPane.setRowIndex(object42, 14);
+    object42.setText("SplitMenuButton");
+    final var object43 = new javafx.scene.control.MenuItem();
+    controller.setItem1(object43);
+    object43.setMnemonicParsing(false);
+    object43.setText("Action 1");
+    final var object44 = new javafx.scene.control.MenuItem();
+    controller.setItem2(object44);
+    object44.setMnemonicParsing(false);
+    object44.setText("Action 2");
+    object42.getItems().addAll(object43, object44);
+    final var object45 = new javafx.scene.control.TableView<javafx.scene.control.TextArea>();
+    javafx.scene.layout.GridPane.setColumnIndex(object45, 1);
+    controller.setTableView(object45);
+    object45.setPrefHeight(200.0);
+    object45.setPrefWidth(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object45, 14);
+    final var object46 = new javafx.scene.control.TableColumn<javafx.scene.control.TextArea, Float>();
+    controller.setTableColumn1(object46);
+    object46.setPrefWidth(75.0);
+    object46.setText("C1");
+    final var object47 = new javafx.scene.control.TableColumn<javafx.scene.control.TextArea, String>();
+    controller.setTableColumn2(object47);
+    object47.setPrefWidth(75.0);
+    object47.setText("C2");
+    object45.getColumns().addAll(object46, object47);
+    final var object48 = new javafx.scene.control.TextArea();
+    controller.setTextArea(object48);
+    object48.setPrefHeight(200.0);
+    object48.setPrefWidth(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object48, 15);
+    final var object49 = new javafx.scene.control.TextField();
+    javafx.scene.layout.GridPane.setColumnIndex(object49, 1);
+    controller.setTextField(object49);
+    javafx.scene.layout.GridPane.setRowIndex(object49, 15);
+    final var object50 = new javafx.scene.control.ToggleButton();
+    object50.setMnemonicParsing(false);
+    object50.setOnAction(controller::onAction);
+    object50.setOnRotate(controller::onRotate);
+    object50.setOnRotationFinished(controller::onRotationFinished);
+    object50.setOnRotationStarted(controller::onRotationStarted);
+    javafx.scene.layout.GridPane.setRowIndex(object50, 16);
+    object50.setText("ToggleButton");
+    final var object51 = new javafx.scene.control.TreeTableView<javafx.scene.control.TreeItem<String>>();
+    javafx.scene.layout.GridPane.setColumnIndex(object51, 1);
+    controller.setTreeTableView(object51);
+    object51.setPrefHeight(200.0);
+    object51.setPrefWidth(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object51, 16);
+    final var object52 = new javafx.scene.control.TreeTableColumn<javafx.scene.control.TreeItem<String>, String>();
+    controller.setTreeTableColumn1(object52);
+    object52.setOnEditCancel(controller::onEditCancel);
+    object52.setOnEditCommit(controller::onEditCommit);
+    object52.setOnEditStart(controller::onEditStart);
+    object52.setPrefWidth(75.0);
+    object52.setText("C1");
+    final var object53 = new javafx.scene.control.TreeTableColumn<javafx.scene.control.TreeItem<String>, Integer>();
+    controller.setTreeTableColumn2(object53);
+    object53.setPrefWidth(75.0);
+    object53.setSortType(javafx.scene.control.TreeTableColumn.SortType.DESCENDING);
+    object53.setText("C2");
+    object51.getColumns().addAll(object52, object53);
+    final var object54 = new javafx.scene.control.TreeView<String>();
+    controller.setTreeView(object54);
+    object54.setOnSwipeDown(controller::onSwipeDown);
+    object54.setOnSwipeLeft(controller::onSwipeLeft);
+    object54.setOnSwipeRight(controller::onSwipeRight);
+    object54.setOnSwipeUp(controller::onSwipeUp);
+    object54.setPrefHeight(200.0);
+    object54.setPrefWidth(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object54, 17);
+    final var object55 = new javafx.scene.web.WebView();
+    javafx.scene.layout.GridPane.setColumnIndex(object55, 1);
+    controller.setWebView(object55);
+    object55.setOnTouchMoved(controller::onTouchMoved);
+    object55.setOnTouchPressed(controller::onTouchPressed);
+    object55.setOnTouchReleased(controller::onTouchReleased);
+    object55.setOnTouchStationary(controller::onTouchStationary);
+    object55.setPrefHeight(200.0);
+    object55.setPrefWidth(200.0);
+    javafx.scene.layout.GridPane.setRowIndex(object55, 17);
+    object0.getChildren().addAll(object1, object2, object3, object4, object7, object10, object11, object12, object13, object14, object15, object16, object17, object24, object28, object30, object31, object32, object34, object35, object36, object37, object38, object39, object40, object41, object42, object45, object48, object49, object50, object51, object54, object55);
+    final var object56 = new javafx.scene.layout.ColumnConstraints();
+    final var object57 = new javafx.scene.layout.ColumnConstraints();
+    final var object58 = new javafx.scene.layout.ColumnConstraints();
+    object58.setMinWidth(10.0);
+    object58.setPrefWidth(100.0);
+    object0.getColumnConstraints().addAll(object56, object57, object58);
+    final var object59 = new javafx.scene.layout.RowConstraints();
+    final var object60 = new javafx.scene.layout.RowConstraints();
+    final var object61 = new javafx.scene.layout.RowConstraints();
+    final var object62 = new javafx.scene.layout.RowConstraints();
+    final var object63 = new javafx.scene.layout.RowConstraints();
+    final var object64 = new javafx.scene.layout.RowConstraints();
+    final var object65 = new javafx.scene.layout.RowConstraints();
+    final var object66 = new javafx.scene.layout.RowConstraints();
+    final var object67 = new javafx.scene.layout.RowConstraints();
+    final var object68 = new javafx.scene.layout.RowConstraints();
+    final var object69 = new javafx.scene.layout.RowConstraints();
+    final var object70 = new javafx.scene.layout.RowConstraints();
+    final var object71 = new javafx.scene.layout.RowConstraints();
+    final var object72 = new javafx.scene.layout.RowConstraints();
+    final var object73 = new javafx.scene.layout.RowConstraints();
+    final var object74 = new javafx.scene.layout.RowConstraints();
+    final var object75 = new javafx.scene.layout.RowConstraints();
+    final var object76 = new javafx.scene.layout.RowConstraints();
+    object0.getRowConstraints().addAll(object59, object60, object61, object62, object63, object64, object65, object66, object67, object68, object69, object70, object71, object72, object73, object74, object75, object76);
+    controller.initialize();
+    loaded = true;
+    return object0;
+}
+
+    
+
+    /**
+     * @return The controller
+     */
+    public com.github.gtache.fxml.compiler.parsing.xml.ControlsController controller() {
+        if (loaded) {
+            return controller;
+        } else {
+            throw new IllegalStateException("Not loaded");
+        }
+    }
+}

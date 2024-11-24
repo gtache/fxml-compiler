@@ -18,13 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ExtendWith(MockitoExtension.class)
 class TestParsedObjectImpl {
 
-    private final Class<?> clazz;
+    private final String clazz;
     private final SequencedMap<String, ParsedProperty> properties;
     private final SequencedMap<ParsedProperty, SequencedCollection<ParsedObject>> children;
     private final ParsedObject parsedObject;
 
     TestParsedObjectImpl(@Mock final ParsedProperty property, @Mock final ParsedObject object) {
-        this.clazz = Object.class;
+        this.clazz = Object.class.getName();
         this.properties = new LinkedHashMap<>();
         this.properties.put("name", property);
         this.children = new LinkedHashMap<>();
@@ -34,25 +34,25 @@ class TestParsedObjectImpl {
 
     @Test
     void testGetters() {
-        assertEquals(clazz, parsedObject.clazz());
-        assertEquals(properties, parsedObject.properties());
-        assertEquals(children, parsedObject.children());
+        assertEquals(clazz, parsedObject.className());
+        assertEquals(properties, parsedObject.attributes());
+        assertEquals(children, parsedObject.properties());
     }
 
     @Test
     void testCopyMap() {
-        final var originalProperties = parsedObject.properties();
-        final var originalChildren = parsedObject.children();
+        final var originalProperties = parsedObject.attributes();
+        final var originalChildren = parsedObject.properties();
         properties.clear();
         children.clear();
-        assertEquals(originalProperties, parsedObject.properties());
-        assertEquals(originalChildren, parsedObject.children());
+        assertEquals(originalProperties, parsedObject.attributes());
+        assertEquals(originalChildren, parsedObject.properties());
     }
 
     @Test
     void testUnmodifiable() {
-        final var objectProperties = parsedObject.properties();
-        final var objectChildren = parsedObject.children();
+        final var objectProperties = parsedObject.attributes();
+        final var objectChildren = parsedObject.properties();
         assertThrows(UnsupportedOperationException.class, objectProperties::clear);
         assertThrows(UnsupportedOperationException.class, objectChildren::clear);
     }

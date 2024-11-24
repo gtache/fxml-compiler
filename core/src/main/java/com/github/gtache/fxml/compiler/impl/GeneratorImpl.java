@@ -1,42 +1,31 @@
 package com.github.gtache.fxml.compiler.impl;
 
 import com.github.gtache.fxml.compiler.ControllerInjection;
+import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.GenerationRequest;
 import com.github.gtache.fxml.compiler.Generator;
+import com.github.gtache.fxml.compiler.parsing.ParsedConstant;
 import com.github.gtache.fxml.compiler.parsing.ParsedInclude;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
-import javafx.beans.NamedArg;
 import javafx.event.EventHandler;
-import javafx.scene.Node;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SequencedMap;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
+import static com.github.gtache.fxml.compiler.impl.ReflectionHelper.*;
 
 /**
  * Implementation of {@link Generator}
  */
 public class GeneratorImpl implements Generator {
 
-    private static final Map<Class<?>, Boolean> HAS_VALUE_OF = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Boolean> IS_GENERIC = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Map<String, Method>> METHODS = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Map<String, Method>> STATIC_METHODS = new ConcurrentHashMap<>();
+    private static final Pattern INT_PATTERN = Pattern.compile("\\d+");
+    private static final Pattern DECIMAL_PATTERN = Pattern.compile("\\d+(?:\\.\\d+)?");
 
     private final Collection<String> controllerFactoryPostAction;
     private final Map<String, AtomicInteger> variableNameCounters;
@@ -50,7 +39,7 @@ public class GeneratorImpl implements Generator {
     }
 
     @Override
-    public String generate(final GenerationRequest request) {
+    public String generate(final GenerationRequest request) throws GenerationException {
         controllerFactoryPostAction.clear();
         variableNameCounters.clear();
         final var className = request.outputClassName();
@@ -119,6 +108,11 @@ public class GeneratorImpl implements Generator {
                         this.resourceBundlesMap = Map.copyOf(resourceBundlesMap);
                     }
                 
+                    /**
+                     * Loads the view. Can only be called once.
+                     *
+                     * @return The view parent
+                     */
                     %6$s
                 
                     %10$s
@@ -144,7 +138,7 @@ public class GeneratorImpl implements Generator {
      * @param request The generation request
      * @return The helper methods
      */
-    private static String getHelperMethods(final GenerationRequest request) {
+    private static String getHelperMethods(final GenerationRequest request) throws GenerationException {
         final var injection = getControllerInjection(request);
         final var methodInjectionType = injection.methodInjectionType();
         final var sb = new StringBuilder();
@@ -207,7 +201,7 @@ public class GeneratorImpl implements Generator {
      * @param request The generation request
      * @return The imports
      */
-    private static String getImports(final GenerationRequest request) {
+    private static String getImports(final GenerationRequest request) throws GenerationException {
         final var injection = getControllerInjection(request);
         final var fieldInjectionType = injection.fieldInjectionType();
         final var sb = new StringBuilder("import java.util.Map;\nimport java.util.ResourceBundle;\nimport java.util.HashMap;\n");
@@ -230,12 +224,12 @@ public class GeneratorImpl implements Generator {
      * @param request The generation request
      * @return The load method
      */
-    private String getLoadMethod(final GenerationRequest request) {
+    private String getLoadMethod(final GenerationRequest request) throws GenerationException {
         final var rootObject = request.rootObject();
         final var controllerInjection = getControllerInjection(request);
         final var controllerInjectionType = controllerInjection.fieldInjectionType();
         final var controllerClass = controllerInjection.injectionClass();
-        final var sb = new StringBuilder("public javafx.scene.Parent load() {\n");
+        final var sb = new StringBuilder("public <T> T load() {\n");
         sb.append("    if (loaded) {\n");
         sb.append("        throw new IllegalStateException(\"Already loaded\");\n");
         sb.append("    }\n");
@@ -283,44 +277,52 @@ public class GeneratorImpl implements Generator {
      * @param variableName The variable name for the object
      * @param sb           The string builder
      */
-    private void format(final GenerationRequest request, final ParsedObject parsedObject, final String variableName, final StringBuilder sb) {
-        if (parsedObject instanceof final ParsedInclude include) {
-            formatInclude(request, include, variableName, sb);
-        } else {
-            final var clazz = parsedObject.clazz();
-            final var constructors = clazz.getConstructors();
-            final var allPropertyNames = new HashSet<>(parsedObject.properties().keySet());
-            allPropertyNames.addAll(parsedObject.children().keySet().stream().map(ParsedProperty::name).collect(Collectors.toSet()));
-            final var constructorArgs = getMatchingConstructorArgs(constructors, allPropertyNames);
-            if (constructorArgs == null) {
-                if (allPropertyNames.size() == 1 && allPropertyNames.iterator().next().equals("fx:constant")) {
-                    final var property = parsedObject.properties().get("fx:constant");
-                    sb.append("    final var ").append(variableName).append(" = ").append(clazz.getCanonicalName()).append(".").append(property.value()).append(";\n");
+    private void format(final GenerationRequest request, final ParsedObject parsedObject, final String variableName, final StringBuilder sb) throws GenerationException {
+        switch (parsedObject) {
+            case final ParsedInclude include -> formatInclude(request, include, variableName, sb);
+            case final ParsedConstant constant -> formatConstant(constant, variableName, sb);
+            default -> {
+                final var clazz = getClass(parsedObject.className());
+                final var constructors = clazz.getConstructors();
+                final var allPropertyNames = new HashSet<>(parsedObject.attributes().keySet());
+                allPropertyNames.addAll(parsedObject.properties().keySet().stream().map(ParsedProperty::name).collect(Collectors.toSet()));
+                final var constructorArgs = getMatchingConstructorArgs(constructors, allPropertyNames);
+                if (constructorArgs == null) {
+                    if (allPropertyNames.size() == 1 && allPropertyNames.iterator().next().equals("fx:constant")) {
+                        final var property = parsedObject.attributes().get("fx:constant");
+                        sb.append("    final var ").append(variableName).append(" = ").append(clazz.getCanonicalName()).append(".").append(property.value()).append(";\n");
+                    } else {
+                        throw new GenerationException("Cannot find constructor for " + clazz.getCanonicalName());
+                    }
                 } else {
-                    throw new IllegalStateException("Cannot find constructor for " + clazz.getCanonicalName());
+                    final var args = getListConstructorArgs(constructorArgs, parsedObject);
+                    final var genericTypes = getGenericTypes(request, parsedObject);
+                    sb.append("    final var ").append(variableName).append(" = new ").append(clazz.getCanonicalName())
+                            .append(genericTypes).append("(").append(String.join(", ", args)).append(");\n");
+                    final var sortedAttributes = parsedObject.attributes().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList();
+                    for (final var e : sortedAttributes) {
+                        if (!constructorArgs.namedArgs().containsKey(e.getKey())) {
+                            final var p = e.getValue();
+                            formatProperty(request, p, parsedObject, variableName, sb);
+                        }
+                    }
+                    final var sortedProperties = parsedObject.properties().entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().name())).toList();
+                    for (final var e : sortedProperties) {
+                        if (!constructorArgs.namedArgs().containsKey(e.getKey().name())) {
+                            final var p = e.getKey();
+                            final var o = e.getValue();
+                            formatChild(request, parsedObject, p, o, variableName, sb);
+                        }
+                    }
                 }
-            } else {
-                final var args = getListConstructorArgs(constructorArgs, parsedObject);
-                final var genericTypes = getGenericTypes(request, parsedObject);
-                sb.append("    final var ").append(variableName).append(" = new ").append(clazz.getCanonicalName())
-                        .append(genericTypes).append("(").append(String.join(", ", args)).append(");\n");
-                parsedObject.properties().entrySet().stream().filter(e -> !constructorArgs.namedArgs().containsKey(e.getKey())).forEach(e -> {
-                    final var p = e.getValue();
-                    formatProperty(request, p, parsedObject, variableName, sb);
-                });
-                parsedObject.children().entrySet().stream().filter(e -> !constructorArgs.namedArgs().containsKey(e.getKey().name())).forEach(e -> {
-                    final var p = e.getKey();
-                    final var o = e.getValue();
-                    formatChild(request, parsedObject, p, o, variableName, sb);
-                });
             }
         }
     }
 
-    private static String getGenericTypes(final GenerationRequest request, final ParsedObject parsedObject) {
-        final var clazz = parsedObject.clazz();
+    private static String getGenericTypes(final GenerationRequest request, final ParsedObject parsedObject) throws GenerationException {
+        final var clazz = getClass(parsedObject.className());
         if (isGeneric(clazz)) {
-            final var idProperty = parsedObject.properties().get("fx:id");
+            final var idProperty = parsedObject.attributes().get("fx:id");
             if (idProperty == null) {
                 return "<>";
             } else {
@@ -336,16 +338,6 @@ public class GeneratorImpl implements Generator {
         return "";
     }
 
-    /**
-     * Checks if the given class is generic
-     * The result is cached
-     *
-     * @param clazz The class
-     * @return True if the class is generic
-     */
-    private static boolean isGeneric(final Class<?> clazz) {
-        return IS_GENERIC.computeIfAbsent(clazz, c -> c.getTypeParameters().length > 0);
-    }
 
     /**
      * Formats an include object
@@ -355,14 +347,14 @@ public class GeneratorImpl implements Generator {
      * @param subNodeName The sub node name
      * @param sb          The string builder
      */
-    private void formatInclude(final GenerationRequest request, final ParsedInclude include, final String subNodeName, final StringBuilder sb) {
+    private void formatInclude(final GenerationRequest request, final ParsedInclude include, final String subNodeName, final StringBuilder sb) throws GenerationException {
         final var subViewVariable = getNextVariableName("view");
         final var source = include.source();
         final var resources = include.resources();
         final var subControllerClass = request.parameters().sourceToControllerName().get(source);
         final var subClassName = request.parameters().sourceToGeneratedClassName().get(source);
         if (subClassName == null) {
-            throw new IllegalArgumentException("Unknown include source : " + source);
+            throw new GenerationException("Unknown include source : " + source);
         }
         if (resources == null) {
             sb.append("    final var ").append(subViewVariable).append(" = new ").append(subClassName).append("(controllersMap, resourceBundlesMap);\n");
@@ -384,6 +376,17 @@ public class GeneratorImpl implements Generator {
     }
 
     /**
+     * Formats a constant object
+     *
+     * @param constant     The constant
+     * @param variableName The variable name
+     * @param sb           The string builder
+     */
+    private static void formatConstant(final ParsedConstant constant, final String variableName, final StringBuilder sb) {
+        sb.append("    final var ").append(variableName).append(" = ").append(constant.className()).append(".").append(constant.constant()).append(";\n");
+    }
+
+    /**
      * Formats a property
      *
      * @param request        The generation request
@@ -392,7 +395,7 @@ public class GeneratorImpl implements Generator {
      * @param parentVariable The parent variable
      * @param sb             The string builder
      */
-    private void formatProperty(final GenerationRequest request, final ParsedProperty property, final ParsedObject parent, final String parentVariable, final StringBuilder sb) {
+    private void formatProperty(final GenerationRequest request, final ParsedProperty property, final ParsedObject parent, final String parentVariable, final StringBuilder sb) throws GenerationException {
         final var propertyName = property.name();
         final var setMethod = getSetMethod(propertyName);
         if (propertyName.equals("fx:id")) {
@@ -400,40 +403,42 @@ public class GeneratorImpl implements Generator {
             injectControllerField(request, id, parentVariable, sb);
         } else if (propertyName.equals("fx:controller")) {
             if (parent != request.rootObject()) {
-                throw new IllegalStateException("Invalid nested controller");
+                throw new GenerationException("Invalid nested controller");
             }
-        } else if (property.sourceType() == EventHandler.class) {
+        } else if (Objects.equals(property.sourceType(), EventHandler.class.getName())) {
             injectControllerMethod(request, property, parentVariable, sb);
         } else if (property.sourceType() != null) {
-            if (hasStaticMethod(property.sourceType(), setMethod)) {
-                final var method = getStaticMethod(property.sourceType(), setMethod);
+            final var propertySourceTypeClass = getClass(property.sourceType());
+            if (hasStaticMethod(propertySourceTypeClass, setMethod)) {
+                final var method = getStaticMethod(propertySourceTypeClass, setMethod);
                 final var parameterType = method.getParameterTypes()[1];
                 final var arg = getArg(request, property.value(), parameterType);
-                setLaterIfNeeded(request, property, parameterType, "    " + property.sourceType().getName() + "." + setMethod + "(" + parentVariable + ", " + arg + ");\n", sb);
+                setLaterIfNeeded(request, property, parameterType, "    " + property.sourceType() + "." + setMethod + "(" + parentVariable + ", " + arg + ");\n", sb);
             } else {
-                throw new IllegalStateException("Cannot set " + propertyName + " on " + property.sourceType().getCanonicalName());
+                throw new GenerationException("Cannot set " + propertyName + " on " + property.sourceType());
             }
         } else {
             final var getMethod = getGetMethod(propertyName);
-            if (hasMethod(parent.clazz(), setMethod)) {
-                final var method = getMethod(parent.clazz(), setMethod);
+            final var parentClass = getClass(parent.className());
+            if (hasMethod(parentClass, setMethod)) {
+                final var method = getMethod(parentClass, setMethod);
                 final var parameterType = method.getParameterTypes()[0];
                 final var arg = getArg(request, property.value(), parameterType);
                 setLaterIfNeeded(request, property, parameterType, "    " + parentVariable + "." + setMethod + "(" + arg + ");\n", sb);
-            } else if (hasMethod(parent.clazz(), getMethod)) {
-                final var method = getMethod(parent.clazz(), getMethod);
+            } else if (hasMethod(parentClass, getMethod)) {
+                final var method = getMethod(parentClass, getMethod);
                 final var returnType = method.getReturnType();
                 if (hasMethod(returnType, "addAll")) {
                     final var arg = getArg(request, property.value(), String.class);
                     setLaterIfNeeded(request, property, String.class, "    " + parentVariable + "." + getMethod + "().addAll(" + arg + ");\n", sb);
                 }
             } else {
-                throw new IllegalStateException("Cannot set " + propertyName + " on " + parent.clazz().getCanonicalName());
+                throw new GenerationException("Cannot set " + propertyName + " on " + parent.className());
             }
         }
     }
 
-    private void setLaterIfNeeded(final GenerationRequest request, final ParsedProperty property, final Class<?> type, final String arg, final StringBuilder sb) {
+    private void setLaterIfNeeded(final GenerationRequest request, final ParsedProperty property, final Class<?> type, final String arg, final StringBuilder sb) throws GenerationException {
         if (type == String.class && property.value().startsWith("%") && request.parameters().resourceBundleInjection().injectionType() == ResourceBundleInjectionTypes.GETTER
                 && getControllerInjection(request).fieldInjectionType() == ControllerFieldInjectionTypes.FACTORY) {
             controllerFactoryPostAction.add(arg);
@@ -450,7 +455,7 @@ public class GeneratorImpl implements Generator {
      * @param parentVariable The parent variable
      * @param sb             The string builder
      */
-    private void injectControllerMethod(final GenerationRequest request, final ParsedProperty property, final String parentVariable, final StringBuilder sb) {
+    private void injectControllerMethod(final GenerationRequest request, final ParsedProperty property, final String parentVariable, final StringBuilder sb) throws GenerationException {
         final var injection = getControllerInjection(request);
         final var methodInjection = getMethodInjection(request, property, parentVariable, sb);
         if (injection.fieldInjectionType() instanceof final ControllerFieldInjectionTypes fieldTypes) {
@@ -459,7 +464,7 @@ public class GeneratorImpl implements Generator {
                 case ASSIGN, SETTERS, REFLECTION -> sb.append(methodInjection);
             }
         } else {
-            throw new IllegalArgumentException("Unknown injection type : " + injection.fieldInjectionType());
+            throw new GenerationException("Unknown injection type : " + injection.fieldInjectionType());
         }
     }
 
@@ -472,7 +477,7 @@ public class GeneratorImpl implements Generator {
      * @param sb             The string builder
      * @return The method injection
      */
-    private static String getMethodInjection(final GenerationRequest request, final ParsedProperty property, final String parentVariable, final StringBuilder sb) {
+    private static String getMethodInjection(final GenerationRequest request, final ParsedProperty property, final String parentVariable, final StringBuilder sb) throws GenerationException {
         final var setMethod = getSetMethod(property.name());
         final var injection = getControllerInjection(request);
         final var controllerMethod = property.value().replace("#", "");
@@ -490,7 +495,7 @@ public class GeneratorImpl implements Generator {
                         "    " + parentVariable + "." + setMethod + "(e -> callMethod(\"" + controllerMethod + "\", e));\n";
             };
         } else {
-            throw new IllegalArgumentException("Unknown injection type : " + injection.methodInjectionType());
+            throw new GenerationException("Unknown injection type : " + injection.methodInjectionType());
         }
     }
 
@@ -502,7 +507,7 @@ public class GeneratorImpl implements Generator {
      * @param parameterType The parameter type
      * @return The formatted value
      */
-    private static String getArg(final GenerationRequest request, final String value, final Class<?> parameterType) {
+    private static String getArg(final GenerationRequest request, final String value, final Class<?> parameterType) throws GenerationException {
         if (parameterType == String.class && value.startsWith("%")) {
             return getBundleValue(request, value.substring(1));
         } else {
@@ -518,7 +523,7 @@ public class GeneratorImpl implements Generator {
      * @param variable The object variable
      * @param sb       The string builder
      */
-    private static void injectControllerField(final GenerationRequest request, final String id, final String variable, final StringBuilder sb) {
+    private static void injectControllerField(final GenerationRequest request, final String id, final String variable, final StringBuilder sb) throws GenerationException {
         final var controllerInjection = getControllerInjection(request);
         final var controllerInjectionType = controllerInjection.fieldInjectionType();
         if (controllerInjectionType instanceof final ControllerFieldInjectionTypes types) {
@@ -530,12 +535,11 @@ public class GeneratorImpl implements Generator {
                     final var setMethod = getSetMethod(id);
                     sb.append("    controller.").append(setMethod).append("(").append(variable).append(");\n");
                 }
-                case REFLECTION -> {
-                    sb.append("    injectField(\"").append(id).append("\", ").append(variable).append(");\n");
-                }
+                case REFLECTION ->
+                        sb.append("    injectField(\"").append(id).append("\", ").append(variable).append(");\n");
             }
         } else {
-            throw new IllegalArgumentException("Unknown controller injection type : " + controllerInjectionType);
+            throw new GenerationException("Unknown controller injection type : " + controllerInjectionType);
         }
     }
 
@@ -545,10 +549,10 @@ public class GeneratorImpl implements Generator {
      * @param request The generation request
      * @return The controller injection
      */
-    private static ControllerInjection getControllerInjection(final GenerationRequest request) {
-        final var property = request.rootObject().properties().get("fx:controller");
+    private static ControllerInjection getControllerInjection(final GenerationRequest request) throws GenerationException {
+        final var property = request.rootObject().attributes().get("fx:controller");
         if (property == null) {
-            throw new IllegalArgumentException("Root object must have a controller property");
+            throw new GenerationException("Root object must have a controller property");
         } else {
             final var id = property.value();
             return request.parameters().controllerInjections().get(id);
@@ -566,13 +570,14 @@ public class GeneratorImpl implements Generator {
      * @param sb             The string builder
      */
     private void formatChild(final GenerationRequest request, final ParsedObject parent, final ParsedProperty property,
-                             final Collection<? extends ParsedObject> objects, final String parentVariable, final StringBuilder sb) {
+                             final Collection<? extends ParsedObject> objects, final String parentVariable, final StringBuilder sb) throws GenerationException {
         final var propertyName = property.name();
-        final var variables = objects.stream().map(go -> {
+        final var variables = new ArrayList<String>();
+        for (final var object : objects) {
             final var vn = getNextVariableName("object");
-            format(request, go, vn, sb);
-            return vn;
-        }).toList();
+            format(request, object, vn, sb);
+            variables.add(vn);
+        }
         if (variables.size() > 1) {
             formatMultipleChildren(variables, propertyName, parent, parentVariable, sb);
         } else if (variables.size() == 1) {
@@ -591,10 +596,12 @@ public class GeneratorImpl implements Generator {
      * @param sb             The string builder
      */
     private static void formatMultipleChildren(final Iterable<String> variables, final String propertyName, final ParsedObject parent,
-                                               final String parentVariable, final StringBuilder sb) {
+                                               final String parentVariable, final StringBuilder sb) throws GenerationException {
         final var getMethod = getGetMethod(propertyName);
-        if (hasMethod(parent.clazz(), getMethod)) {
+        if (hasMethod(getClass(parent.className()), getMethod)) {
             sb.append("    ").append(parentVariable).append(".").append(getMethod).append("().addAll(").append(String.join(", ", variables)).append(");\n");
+        } else {
+            throw new GenerationException("Cannot set " + propertyName + " on " + parent.className());
         }
     }
 
@@ -608,7 +615,7 @@ public class GeneratorImpl implements Generator {
      * @param sb             The string builder
      */
     private static void formatSingleChild(final String variableName, final ParsedProperty property, final ParsedObject parent,
-                                          final String parentVariable, final StringBuilder sb) {
+                                          final String parentVariable, final StringBuilder sb) throws GenerationException {
         if (property.sourceType() == null) {
             formatSingleChildInstance(variableName, property, parent, parentVariable, sb);
         } else {
@@ -626,16 +633,17 @@ public class GeneratorImpl implements Generator {
      * @param sb             The string builder
      */
     private static void formatSingleChildInstance(final String variableName, final ParsedProperty property, final ParsedObject parent,
-                                                  final String parentVariable, final StringBuilder sb) {
+                                                  final String parentVariable, final StringBuilder sb) throws GenerationException {
         final var setMethod = getSetMethod(property);
         final var getMethod = getGetMethod(property);
-        if (hasMethod(parent.clazz(), setMethod)) {
+        final var parentClass = getClass(parent.className());
+        if (hasMethod(parentClass, setMethod)) {
             sb.append("    ").append(parentVariable).append(".").append(setMethod).append("(").append(variableName).append(");\n");
-        } else if (hasMethod(parent.clazz(), getMethod)) {
+        } else if (hasMethod(parentClass, getMethod)) {
             //Probably a list method that has only one element
             sb.append("    ").append(parentVariable).append(".").append(getMethod).append("().addAll(").append(variableName).append(");\n");
         } else {
-            throw new IllegalStateException("Cannot set " + property.name() + " on " + parent.clazz().getCanonicalName());
+            throw new GenerationException("Cannot set " + property.name() + " on " + parent.className());
         }
     }
 
@@ -647,12 +655,12 @@ public class GeneratorImpl implements Generator {
      * @param parentVariable The parent variable
      * @param sb             The string builder
      */
-    private static void formatSingleChildStatic(final String variableName, final ParsedProperty property, final String parentVariable, final StringBuilder sb) {
+    private static void formatSingleChildStatic(final String variableName, final ParsedProperty property, final String parentVariable, final StringBuilder sb) throws GenerationException {
         final var setMethod = getSetMethod(property);
-        if (hasStaticMethod(property.sourceType(), setMethod)) {
-            sb.append("    ").append(property.sourceType().getName()).append(".").append(setMethod).append("(").append(parentVariable).append(", ").append(variableName).append(");\n");
+        if (hasStaticMethod(getClass(property.sourceType()), setMethod)) {
+            sb.append("    ").append(property.sourceType()).append(".").append(setMethod).append("(").append(parentVariable).append(", ").append(variableName).append(");\n");
         } else {
-            throw new IllegalStateException("Cannot set " + property.name() + " on " + property.sourceType().getCanonicalName());
+            throw new GenerationException("Cannot set " + property.name() + " on " + property.sourceType());
         }
     }
 
@@ -696,116 +704,8 @@ public class GeneratorImpl implements Generator {
         return "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
     }
 
-    /**
-     * Checks if the given class has a method with the given name
-     * The result is cached
-     *
-     * @param clazz      The class
-     * @param methodName The method name
-     * @return True if the class has a method with the given name
-     */
-    private static boolean hasMethod(final Class<?> clazz, final String methodName) {
-        final var methodMap = METHODS.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
-        final var method = methodMap.computeIfAbsent(methodName, m -> computeMethod(clazz, m));
-        return method != null;
-    }
 
-    /**
-     * Gets the method corresponding to the given class and name
-     * The result is cached
-     *
-     * @param clazz      The class
-     * @param methodName The method name
-     * @return The method
-     */
-    private static Method getMethod(final Class<?> clazz, final String methodName) {
-        final var methodMap = METHODS.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
-        return methodMap.computeIfAbsent(methodName, m -> computeMethod(clazz, m));
-    }
-
-    /**
-     * Checks if the given class has a method with the given name
-     *
-     * @param clazz      The class
-     * @param methodName The method name
-     * @return True if the class has a method with the given name
-     */
-    private static Method computeMethod(final Class<?> clazz, final String methodName) {
-        final var matching = Arrays.stream(clazz.getMethods()).filter(m -> {
-            if (m.getName().equals(methodName) && !Modifier.isStatic(m.getModifiers())) {
-                final var parameterTypes = m.getParameterTypes();
-                return methodName.startsWith("get") ? parameterTypes.length == 0 : parameterTypes.length >= 1; //TODO not very clean
-            } else {
-                return false;
-            }
-        }).toList();
-        if (matching.size() > 1) {
-            final var varargsFilter = matching.stream().filter(Method::isVarArgs).toList();
-            if (varargsFilter.size() == 1) {
-                return varargsFilter.getFirst();
-            } else {
-                throw new UnsupportedOperationException("Multiple matching methods not supported yet : " + clazz + " - " + methodName);
-            }
-        } else if (matching.size() == 1) {
-            return matching.getFirst();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Checks if the given class has a static method with the given name
-     * The result is cached
-     *
-     * @param clazz      The class
-     * @param methodName The method name
-     * @return True if the class has a static method with the given name
-     */
-    private static boolean hasStaticMethod(final Class<?> clazz, final String methodName) {
-        final var methodMap = STATIC_METHODS.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
-        final var method = methodMap.computeIfAbsent(methodName, m -> computeStaticMethod(clazz, m));
-        return method != null;
-    }
-
-    /**
-     * Gets the static method corresponding to the given class and name
-     * The result is cached
-     *
-     * @param clazz      The class
-     * @param methodName The method name
-     * @return The method
-     */
-    private static Method getStaticMethod(final Class<?> clazz, final String methodName) {
-        final var methodMap = STATIC_METHODS.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
-        return methodMap.computeIfAbsent(methodName, m -> computeStaticMethod(clazz, m));
-    }
-
-    /**
-     * Gets the static method corresponding to the given class and name
-     *
-     * @param clazz      The class name
-     * @param methodName The method name
-     * @return The method, or null if not found
-     */
-    private static Method computeStaticMethod(final Class<?> clazz, final String methodName) {
-        final var matching = Arrays.stream(clazz.getMethods()).filter(m -> {
-            if (m.getName().equals(methodName) && Modifier.isStatic(m.getModifiers())) {
-                final var parameterTypes = m.getParameterTypes();
-                return parameterTypes.length > 1 && parameterTypes[0] == Node.class;
-            } else {
-                return false;
-            }
-        }).toList();
-        if (matching.size() > 1) {
-            throw new UnsupportedOperationException("Multiple matching methods not supported yet : " + clazz + " - " + methodName);
-        } else if (matching.size() == 1) {
-            return matching.getFirst();
-        } else {
-            return null;
-        }
-    }
-
-    private static String getBundleValue(final GenerationRequest request, final String value) {
+    private static String getBundleValue(final GenerationRequest request, final String value) throws GenerationException {
         final var resourceBundleInjectionType = request.parameters().resourceBundleInjection().injectionType();
         if (resourceBundleInjectionType instanceof final ResourceBundleInjectionTypes types) {
             return switch (types) {
@@ -813,7 +713,7 @@ public class GeneratorImpl implements Generator {
                 case GETTER -> "controller.resources().getString(\"" + value + "\")";
             };
         } else {
-            throw new IllegalArgumentException("Unknown resource bundle injection type : " + resourceBundleInjectionType);
+            throw new GenerationException("Unknown resource bundle injection type : " + resourceBundleInjectionType);
         }
     }
 
@@ -824,18 +724,18 @@ public class GeneratorImpl implements Generator {
      * @param parsedObject    The parsed object
      * @return The list of constructor arguments
      */
-    private static List<String> getListConstructorArgs(final ConstructorArgs constructorArgs, final ParsedObject parsedObject) {
+    private static List<String> getListConstructorArgs(final ConstructorArgs constructorArgs, final ParsedObject parsedObject) throws GenerationException {
         final var args = new ArrayList<String>(constructorArgs.namedArgs().size());
         for (final var entry : constructorArgs.namedArgs().entrySet()) {
             final var type = entry.getValue().type();
-            final var p = parsedObject.properties().get(entry.getKey());
+            final var p = parsedObject.attributes().get(entry.getKey());
             if (p == null) {
-                final var c = parsedObject.children().entrySet().stream().filter(e ->
+                final var c = parsedObject.properties().entrySet().stream().filter(e ->
                         e.getKey().name().equals(entry.getKey())).findFirst().orElse(null);
                 if (c == null) {
                     args.add(toString(entry.getValue().defaultValue(), type));
                 } else {
-                    throw new UnsupportedOperationException("Constructor using complex property not supported yet");
+                    throw new GenerationException("Constructor using complex property not supported yet");
                 }
             } else {
                 args.add(toString(p.value(), type));
@@ -878,47 +778,6 @@ public class GeneratorImpl implements Generator {
         return constructorArgs.namedArgs().keySet().stream().filter(allPropertyNames::contains).count();
     }
 
-    /**
-     * Computes the constructor arguments for the given constructor
-     *
-     * @param constructor The constructor
-     * @return The constructor arguments
-     */
-    private static ConstructorArgs getConstructorArgs(final Constructor<?> constructor) {
-        final var namedArgs = new LinkedHashMap<String, Parameter>();
-        final var annotationsArray = constructor.getParameterAnnotations();
-        for (var i = 0; i < annotationsArray.length; i++) {
-            final var annotations = annotationsArray[i];
-            final var getNamedArg = Arrays.stream(annotations).filter(NamedArg.class::isInstance).findFirst().orElse(null);
-            if (getNamedArg != null) {
-                final var namedArg = (NamedArg) getNamedArg;
-                final var name = namedArg.value();
-                final var clazz = constructor.getParameterTypes()[i];
-                namedArgs.put(name, new Parameter(name, constructor.getParameterTypes()[i], namedArg.defaultValue().isEmpty() ?
-                        getDefaultValue(clazz) : namedArg.defaultValue()));
-            }
-        }
-        return new ConstructorArgs(constructor, namedArgs);
-    }
-
-    /**
-     * Computes the default value for the given class
-     *
-     * @param clazz The class
-     * @return The value
-     */
-    private static String getDefaultValue(final Class<?> clazz) {
-        final var primitiveWrappers = Set.of(Integer.class, Byte.class, Short.class, Long.class, Float.class, Double.class);
-        if (clazz == char.class || clazz == Character.class) {
-            return "\u0000";
-        } else if (clazz == boolean.class || clazz == Boolean.class) {
-            return "false";
-        } else if (clazz.isPrimitive() || primitiveWrappers.contains(clazz)) {
-            return "0";
-        } else {
-            return "null";
-        }
-    }
 
     /**
      * Computes the string value to use in the generated code
@@ -928,13 +787,25 @@ public class GeneratorImpl implements Generator {
      * @return The computed string value
      */
     private static String toString(final String value, final Class<?> clazz) {
-        final var primitiveWrappers = Set.of(Integer.class, Byte.class, Short.class, Long.class, Float.class, Double.class, Boolean.class);
         if (clazz == String.class) {
             return "\"" + value.replace("\"", "\\\"") + "\"";
         } else if (clazz == char.class || clazz == Character.class) {
             return "'" + value + "'";
-        } else if (clazz.isPrimitive() || primitiveWrappers.contains(clazz)) {
+        } else if (clazz == boolean.class || clazz == Boolean.class) {
             return value;
+        } else if (clazz == byte.class || clazz == Byte.class || clazz == short.class || clazz == Short.class ||
+                clazz == int.class || clazz == Integer.class || clazz == long.class || clazz == Long.class) {
+            if (INT_PATTERN.matcher(value).matches()) {
+                return value;
+            } else {
+                return getWrapperClass(clazz) + ".valueOf(\"" + value + "\")";
+            }
+        } else if (clazz == float.class || clazz == Float.class || clazz == double.class || clazz == Double.class) {
+            if (DECIMAL_PATTERN.matcher(value).matches()) {
+                return value;
+            } else {
+                return getWrapperClass(clazz) + ".valueOf(\"" + value + "\")";
+            }
         } else if (hasValueOf(clazz)) {
             if (clazz.isEnum()) {
                 return clazz.getCanonicalName() + "." + value;
@@ -946,29 +817,12 @@ public class GeneratorImpl implements Generator {
         }
     }
 
-    /**
-     * Checks if the given class has a valueOf(String) method
-     * The result is cached
-     *
-     * @param clazz The class
-     * @return True if the class has a valueOf(String)
-     */
-    private static boolean hasValueOf(final Class<?> clazz) {
-        return HAS_VALUE_OF.computeIfAbsent(clazz, GeneratorImpl::computeHasValueOf);
-    }
-
-    /**
-     * Computes if the given class has a valueOf(String) method
-     *
-     * @param clazz The class
-     * @return True if the class has a valueOf(String)
-     */
-    private static boolean computeHasValueOf(final Class<?> clazz) {
-        try {
-            clazz.getMethod("valueOf", String.class);
-            return true;
-        } catch (final NoSuchMethodException ignored) {
-            return false;
+    private static String getWrapperClass(final Class<?> clazz) {
+        final var name = clazz.getName();
+        if (name.contains(".") || Character.isUpperCase(name.charAt(0))) {
+            return name;
+        } else {
+            return name.substring(0, 1).toUpperCase() + name.substring(1);
         }
     }
 
@@ -983,20 +837,11 @@ public class GeneratorImpl implements Generator {
         return prefix + counter.getAndIncrement();
     }
 
-    private record ConstructorArgs(Constructor<?> constructor,
-                                   SequencedMap<String, GeneratorImpl.Parameter> namedArgs) {
-        private ConstructorArgs {
-            requireNonNull(constructor);
-            namedArgs = new LinkedHashMap<>(namedArgs);
-        }
-    }
-
-    private record Parameter(String name, Class<?> type, String defaultValue) {
-
-        private Parameter {
-            requireNonNull(name);
-            requireNonNull(type);
-            requireNonNull(defaultValue);
+    private static Class<?> getClass(final String className) throws GenerationException {
+        try {
+            return Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+        } catch (final ClassNotFoundException e) {
+            throw new GenerationException("Cannot find class " + className + " ; Is a dependency missing for the plugin?", e);
         }
     }
 }

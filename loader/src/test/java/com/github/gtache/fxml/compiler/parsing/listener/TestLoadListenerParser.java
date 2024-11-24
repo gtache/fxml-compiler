@@ -24,12 +24,12 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TestParsingLoadListener {
+class TestLoadListenerParser {
 
-    private final ParsingLoadListener listener;
+    private final LoadListenerParser listener;
 
-    TestParsingLoadListener() {
-        this.listener = new ParsingLoadListener();
+    TestLoadListenerParser() {
+        this.listener = new LoadListenerParser();
     }
 
     @BeforeAll
@@ -45,32 +45,32 @@ class TestParsingLoadListener {
 
     @Test
     void testRealCase() {
-        final var expected = new ParsedObjectImpl(BorderPane.class,
+        final var expected = new ParsedObjectImpl(BorderPane.class.getName(),
                 newLinkedHashMap("fx:controller", new ParsedPropertyImpl("fx:controller", null, "com.github.gtache.fxml.compiler.parsing.listener.LoadController")),
                 newLinkedHashMap(new ParsedPropertyImpl("bottom", null, null),
-                        List.of(new ParsedObjectImpl(VBox.class,
-                                newLinkedHashMap("alignment", new ParsedPropertyImpl("alignment", BorderPane.class, "CENTER")),
+                        List.of(new ParsedObjectImpl(VBox.class.getName(),
+                                newLinkedHashMap("alignment", new ParsedPropertyImpl("alignment", BorderPane.class.getName(), "CENTER")),
                                 newLinkedHashMap(new ParsedPropertyImpl("children", null, null), List.of(
-                                        new ParsedObjectImpl(Slider.class,
-                                                newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "playSlider"), "hgrow", new ParsedPropertyImpl("hgrow", HBox.class, "ALWAYS")),
+                                        new ParsedObjectImpl(Slider.class.getName(),
+                                                newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "playSlider"), "hgrow", new ParsedPropertyImpl("hgrow", HBox.class.getName(), "ALWAYS")),
                                                 newLinkedHashMap(new ParsedPropertyImpl("padding", null, null),
-                                                        List.of(new ParsedObjectImpl(Insets.class,
+                                                        List.of(new ParsedObjectImpl(Insets.class.getName(),
                                                                 newLinkedHashMap("left", new ParsedPropertyImpl("left", null, "10.0")),
                                                                 newLinkedHashMap())))),
-                                        new ParsedObjectImpl(Label.class,
-                                                newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "playLabel"), "text", new ParsedPropertyImpl("text", null, "Label"), "onMouseClicked", new ParsedPropertyImpl("onMouseClicked", EventHandler.class, "#mouseClicked")),
+                                        new ParsedObjectImpl(Label.class.getName(),
+                                                newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "playLabel"), "text", new ParsedPropertyImpl("text", null, "Label"), "onMouseClicked", new ParsedPropertyImpl("onMouseClicked", EventHandler.class.getName(), "#mouseClicked")),
                                                 newLinkedHashMap(new ParsedPropertyImpl("padding", null, null),
-                                                        List.of(new ParsedObjectImpl(Insets.class,
+                                                        List.of(new ParsedObjectImpl(Insets.class.getName(),
                                                                 newLinkedHashMap("right", new ParsedPropertyImpl("right", null, "10.0")),
                                                                 newLinkedHashMap())))),
                                         new ParsedIncludeImpl(
                                                 newLinkedHashMap("source", new ParsedPropertyImpl("source", null, "includedView.fxml"), "resources", new ParsedPropertyImpl("resources", null, "com/github/gtache/fxml/compiler/parsing/listener/IncludedBundle"), "fx:id", new ParsedPropertyImpl("fx:id", null, "id")))
                                 )))),
                         new ParsedPropertyImpl("center", null, null),
-                        List.of(new ParsedObjectImpl(VBox.class, newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "vbox")), newLinkedHashMap()))
+                        List.of(new ParsedObjectImpl(VBox.class.getName(), newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "vbox")), newLinkedHashMap()))
                 ));
         final var actual = CompletableFuture.supplyAsync(() -> {
-            final var loader = new FXMLLoader(TestParsingLoadListener.class.getResource("loadView.fxml"));
+            final var loader = new FXMLLoader(TestLoadListenerParser.class.getResource("loadView.fxml"));
             loader.setLoadListener(listener);
             try {
                 loader.load();
@@ -116,7 +116,7 @@ class TestParsingLoadListener {
     void testRootOneObject() {
         listener.beginInstanceDeclarationElement(String.class);
         listener.endElement("");
-        final var expected = new ParsedObjectImpl(String.class, new LinkedHashMap<>(), new LinkedHashMap<>());
+        final var expected = new ParsedObjectImpl(String.class.getName(), new LinkedHashMap<>(), new LinkedHashMap<>());
         assertEquals(expected, listener.root());
     }
 

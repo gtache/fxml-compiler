@@ -8,22 +8,31 @@ import java.util.Map;
 public interface GenerationParameters {
 
     /**
-     * @return The mapping of controller class name to controller injection
+     * Returns the mapping of controller class name to controller injection
+     *
+     * @return The mapping
      */
     Map<String, ControllerInjection> controllerInjections();
 
     /**
-     * @return The mapping of fx:include source to generated class name
+     * Returns the mapping of fx:include source to generated class name
+     *
+     * @return The mapping
      */
     Map<String, String> sourceToGeneratedClassName();
 
+
     /**
-     * @return The mapping of fx:include source to controller class name
+     * Returns the mapping of fx:include source to controller class name
+     *
+     * @return The mapping
      */
     Map<String, String> sourceToControllerName();
 
     /**
-     * @return The resource bundle injection to use
+     * Returns the resource bundle injection to use
+     *
+     * @return The injection
      */
     ResourceBundleInjection resourceBundleInjection();
 }

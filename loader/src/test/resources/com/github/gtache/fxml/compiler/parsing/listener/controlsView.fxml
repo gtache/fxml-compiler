@@ -121,7 +121,7 @@
                 <Insets bottom="3.0" left="2.0" right="4.0" top="5.0"/>
             </padding>
         </Pagination>
-        <PasswordField fx:id="passwordField" maxHeight="6.0" maxWidth="5.0" minHeight="2.0" minWidth="1.0"
+        <PasswordField fx:id="passwordField" maxHeight="Infinity" maxWidth="5.0" minHeight="-Infinity" minWidth="1.0"
                        prefColumnCount="7"
                        prefHeight="4.0" prefWidth="3.0" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
         <ProgressBar fx:id="progressBar" layoutX="10.0" layoutY="20.0" prefWidth="200.0" progress="0.0"

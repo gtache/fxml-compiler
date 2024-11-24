@@ -42,7 +42,12 @@ public final class IncludesController {
         this.resourceBundlesMap = Map.copyOf(resourceBundlesMap);
     }
 
-    public javafx.scene.Parent load() {
+    /**
+     * Loads the view. Can only be called once.
+     *
+     * @return The view parent
+     */
+    public <T> T load() {
     if (loaded) {
         throw new IllegalStateException("Already loaded");
     }
@@ -123,30 +128,30 @@ public final class IncludesController {
     injectField("group", object28);
     final var object29 = new javafx.scene.layout.GridPane();
     injectField("gridPane", object29);
-    final var object30 = new javafx.scene.layout.ColumnConstraints();
-    injectField("columnConstraints", object30);
-    object30.setHgrow(javafx.scene.layout.Priority.SOMETIMES);
-    object30.setMinWidth(10.0);
-    object29.getColumnConstraints().addAll(object30);
-    final var object31 = new javafx.scene.layout.RowConstraints();
-    object31.setMinHeight(10.0);
-    object31.setVgrow(javafx.scene.layout.Priority.SOMETIMES);
-    object29.getRowConstraints().addAll(object31);
-    final var object32 = new javafx.scene.layout.FlowPane();
-    injectField("flowPane", object32);
-    final var object33 = new javafx.scene.control.DialogPane();
-    injectField("dialogPane", object33);
-    final var object34 = new javafx.scene.control.ButtonBar();
-    injectField("buttonBar", object34);
-    final var object35 = new javafx.scene.layout.AnchorPane();
-    injectField("anchorPane", object35);
-    final var object36 = new javafx.scene.control.Label();
-    object36.setManaged(false);
-    object35.getChildren().addAll(object36);
-    object34.getButtons().addAll(object35);
-    object33.setContent(object34);
-    object32.getChildren().addAll(object33);
-    object29.getChildren().addAll(object32);
+    final var object30 = new javafx.scene.layout.FlowPane();
+    injectField("flowPane", object30);
+    final var object31 = new javafx.scene.control.DialogPane();
+    injectField("dialogPane", object31);
+    final var object32 = new javafx.scene.control.ButtonBar();
+    injectField("buttonBar", object32);
+    final var object33 = new javafx.scene.layout.AnchorPane();
+    injectField("anchorPane", object33);
+    final var object34 = new javafx.scene.control.Label();
+    object34.setManaged(false);
+    object33.getChildren().addAll(object34);
+    object32.getButtons().addAll(object33);
+    object31.setContent(object32);
+    object30.getChildren().addAll(object31);
+    object29.getChildren().addAll(object30);
+    final var object35 = new javafx.scene.layout.ColumnConstraints();
+    injectField("columnConstraints", object35);
+    object35.setHgrow(javafx.scene.layout.Priority.SOMETIMES);
+    object35.setMinWidth(10.0);
+    object29.getColumnConstraints().addAll(object35);
+    final var object36 = new javafx.scene.layout.RowConstraints();
+    object36.setMinHeight(10.0);
+    object36.setVgrow(javafx.scene.layout.Priority.SOMETIMES);
+    object29.getRowConstraints().addAll(object36);
     object28.getChildren().addAll(object29);
     object27.getChildren().addAll(object28);
     object26.getChildren().addAll(object27);

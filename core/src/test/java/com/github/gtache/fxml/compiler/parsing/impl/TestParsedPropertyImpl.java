@@ -8,13 +8,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class TestParsedPropertyImpl {
 
     private final String name;
-    private final Class<?> sourceType;
+    private final String sourceType;
     private final String value;
     private final ParsedProperty property;
 
     TestParsedPropertyImpl() {
         this.name = "name";
-        this.sourceType = Object.class;
+        this.sourceType = Object.class.getName();
         this.value = "value";
         this.property = new ParsedPropertyImpl(name, sourceType, value);
     }

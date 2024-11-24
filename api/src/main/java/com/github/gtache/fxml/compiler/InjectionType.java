@@ -7,7 +7,9 @@ package com.github.gtache.fxml.compiler;
 public interface InjectionType {
 
     /**
-     * @return The name of the type
+     * Returns the name of the type
+     *
+     * @return The name
      */
     String name();
 }

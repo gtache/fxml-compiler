@@ -6,17 +6,23 @@ package com.github.gtache.fxml.compiler.parsing;
 public interface ParsedProperty {
 
     /**
-     * @return The property name
+     * Returns the name of the property
+     *
+     * @return The name
      */
     String name();
 
     /**
-     * @return The property source type (in case of static property)
+     * Returns the source type (owner class) of the property (in case of static property)
+     *
+     * @return The source type name
      */
-    Class<?> sourceType();
+    String sourceType();
 
     /**
-     * @return The property value
+     * Returns the value of the property
+     *
+     * @return The value
      */
     String value();
 }

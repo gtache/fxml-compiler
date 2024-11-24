@@ -1,5 +1,6 @@
 package com.github.gtache.fxml.compiler.parsing.listener;
 
+import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.GenerationRequest;
 import com.github.gtache.fxml.compiler.Generator;
 import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
@@ -69,41 +70,42 @@ class TestGeneratorImpl {
 
     @ParameterizedTest
     @MethodSource("providesGenerationTestCases")
-    public void testGenerate(final String file, final ControllerFieldInjectionTypes field, final ControllerMethodsInjectionType method, final ResourceBundleInjectionTypes bundle) {
+    void testGenerate(final String file, final ControllerFieldInjectionTypes field, final ControllerMethodsInjectionType method, final ResourceBundleInjectionTypes bundle) {
         final var request = getRequest(file, field, method, bundle);
         final var path = Paths.get(getPath(file, field, method, bundle));
         try (final var in = getClass().getResourceAsStream("/com/github/gtache/fxml/compiler/parsing/listener/" + path)) {
             final var expected = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             final var actual = generator.generate(request);
             assertEquals(expected, actual);
-        } catch (final IOException e) {
+        } catch (final IOException | GenerationException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static void main(final String[] args) {
+        Platform.startup(() -> {
+
+        });
         //Generates the test cases
         try {
-            Platform.startup(() -> {
-                final var generator = new GeneratorImpl();
-                final var files = List.of("Controls", "Includes");
-                for (final var file : files) {
-                    for (final var field : ControllerFieldInjectionTypes.values()) {
-                        for (final var method : ControllerMethodsInjectionType.values()) {
-                            for (final var bundle : ResourceBundleInjectionTypes.values()) {
-                                final var request = getRequest(file, field, method, bundle);
+            final var generator = new GeneratorImpl();
+            final var files = List.of("Controls", "Includes");
+            for (final var file : files) {
+                for (final var field : ControllerFieldInjectionTypes.values()) {
+                    for (final var method : ControllerMethodsInjectionType.values()) {
+                        for (final var bundle : ResourceBundleInjectionTypes.values()) {
+                            final var request = getRequest(file, field, method, bundle);
+                            try {
                                 final var content = generator.generate(request);
                                 final var path = Paths.get(getPath(file, field, method, bundle));
-                                try {
-                                    Files.writeString(path, content);
-                                } catch (final IOException e) {
-                                    throw new RuntimeException(e);
-                                }
+                                Files.writeString(path, content);
+                            } catch (final IOException | GenerationException e) {
+                                throw new RuntimeException(e);
                             }
                         }
                     }
                 }
-            });
+            }
         } finally {
             Platform.exit();
         }
@@ -121,7 +123,7 @@ class TestGeneratorImpl {
             final var controllerInfo = file.equals("Controls") ? controlsControllerInfo : includesControllerInfo;
             final var resourceBundlePath = "com.github.gtache.fxml.compiler.parsing.listener." + file + "Bundle";
             final var viewPath = "/com/github/gtache/fxml/compiler/parsing/listener/" + file + "View.fxml";
-            final var listener = new ParsingLoadListener();
+            final var listener = new LoadListenerParser();
             final var loader = new FXMLLoader(TestGeneratorImpl.class.getResource(viewPath));
             loader.setLoadListener(listener);
             loader.setResources(ResourceBundle.getBundle(resourceBundlePath));

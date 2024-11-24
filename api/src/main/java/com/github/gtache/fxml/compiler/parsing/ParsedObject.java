@@ -1,5 +1,6 @@
 package com.github.gtache.fxml.compiler.parsing;
 
+import java.util.Map;
 import java.util.SequencedCollection;
 import java.util.SequencedMap;
 
@@ -9,17 +10,23 @@ import java.util.SequencedMap;
 public interface ParsedObject {
 
     /**
-     * @return The object class
+     * The type of the object
+     *
+     * @return The class name
      */
-    Class<?> clazz();
+    String className();
 
     /**
-     * @return The object properties
+     * Returns the object's attributes (simple properties)
+     *
+     * @return The attributes
      */
-    SequencedMap<String, ParsedProperty> properties();
+    Map<String, ParsedProperty> attributes();
 
     /**
-     * @return The object children (complex properties)
+     * Returns the object's complex properties
+     *
+     * @return The properties
      */
-    SequencedMap<ParsedProperty, SequencedCollection<ParsedObject>> children();
+    SequencedMap<ParsedProperty, SequencedCollection<ParsedObject>> properties();
 }

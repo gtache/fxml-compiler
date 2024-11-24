@@ -3,18 +3,16 @@ package com.github.gtache.fxml.compiler.parsing.impl;
 import com.github.gtache.fxml.compiler.parsing.ParsedInclude;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.SequencedMap;
+import java.util.Map;
 
 /**
  * Implementation of {@link ParsedInclude}
  *
- * @param properties The object properties
+ * @param attributes The object properties
  */
-public record ParsedIncludeImpl(SequencedMap<String, ParsedProperty> properties) implements ParsedInclude {
+public record ParsedIncludeImpl(Map<String, ParsedProperty> attributes) implements ParsedInclude {
 
     public ParsedIncludeImpl {
-        properties = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(properties));
+        attributes = Map.copyOf(attributes);
     }
 }

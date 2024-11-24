@@ -8,22 +8,30 @@ import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 public interface GenerationRequest {
 
     /**
-     * @return The main controller info
+     * Returns the info about the main controller for code generation
+     *
+     * @return The info
      */
     ControllerInfo controllerInfo();
 
     /**
-     * @return The request parameters
+     * Returns the generation parameters
+     *
+     * @return The parameters
      */
     GenerationParameters parameters();
 
     /**
-     * @return The object to generate code for
+     * Returns the object to generate code for
+     *
+     * @return The object
      */
     ParsedObject rootObject();
 
     /**
-     * @return The output class name
+     * Returns the output class name
+     *
+     * @return The class name
      */
     String outputClassName();
 }

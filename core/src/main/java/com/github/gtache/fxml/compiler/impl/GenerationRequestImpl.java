@@ -11,6 +11,7 @@ import java.util.Objects;
  * Implementation of {@link GenerationRequest}
  *
  * @param parameters      The generation parameters
+ * @param controllerInfo  The controller info
  * @param rootObject      The root object
  * @param outputClassName The output class name
  */

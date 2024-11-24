@@ -7,6 +7,7 @@ import java.util.Map;
  *
  * @param <T> The type of the controller
  */
+@FunctionalInterface
 public interface ControllerFactory<T> {
 
     /**

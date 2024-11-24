@@ -6,12 +6,16 @@ package com.github.gtache.fxml.compiler;
 public interface ResourceBundleInjection {
 
     /**
+     * Returns the injection type for the resource bundle
+     *
      * @return The injection type
      */
     InjectionType injectionType();
 
     /**
-     * @return The resource bundle path
+     * Returns the resource bundle name
+     *
+     * @return The path
      */
     String bundleName();
 }

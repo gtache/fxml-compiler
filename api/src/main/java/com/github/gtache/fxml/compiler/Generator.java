@@ -10,6 +10,7 @@ public interface Generator {
      *
      * @param request The request
      * @return The java code
+     * @throws GenerationException if an error occurs
      */
-    String generate(GenerationRequest request);
+    String generate(GenerationRequest request) throws GenerationException;
 }

@@ -44,9 +44,18 @@
     <dependencies>
         <dependency>
             <groupId>com.github.gtache</groupId>
-            <artifactId>fxml-compiler-loader</artifactId>
+            <artifactId>fxml-compiler-xml</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-to-slf4j</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
