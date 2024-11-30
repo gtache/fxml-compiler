@@ -5,6 +5,8 @@ import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import static com.github.gtache.fxml.compiler.impl.internal.ControllerInjector.i
  */
 public final class GenerationHelper {
 
+    private static final Logger logger = LogManager.getLogger(GenerationHelper.class);
     static final String FX_ID = "fx:id";
     static final String FX_VALUE = "fx:value";
     static final String VALUE = "value";
@@ -107,8 +110,11 @@ public final class GenerationHelper {
         if (id != null) {
             progress.idToVariableName().put(id.value(), variableName);
             progress.idToObject().put(id.value(), parsedObject);
-            //TODO Don't inject if variable doesn't exist
-            injectControllerField(progress, id.value(), variableName);
+            if (progress.request().controllerInfo().fieldInfo(id.value()) == null) {
+                logger.debug("Not injecting {} because it is not found in controller", id.value());
+            } else {
+                injectControllerField(progress, id.value(), variableName);
+            }
         }
     }
 

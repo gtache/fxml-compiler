@@ -4,6 +4,8 @@ import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.parsing.*;
 import com.github.gtache.fxml.compiler.parsing.impl.ParsedPropertyImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,6 +33,8 @@ import static com.github.gtache.fxml.compiler.impl.internal.WebViewBuilder.forma
  */
 public final class ObjectFormatter {
 
+    private static final Logger logger = LogManager.getLogger(ObjectFormatter.class);
+    
     private static final String NEW_ASSIGN = " = new ";
 
     private static final Set<String> BUILDER_CLASSES = Set.of(
@@ -304,8 +308,11 @@ public final class ObjectFormatter {
             progress.stringBuilder().append(START_VAR).append(subControllerVariable).append(" = ").append(subViewVariable).append(".controller();\n");
             progress.idToVariableName().put(id, subControllerVariable);
             progress.idToObject().put(id, include);
-            //TODO Don't inject if variable doesn't exist
-            injectControllerField(progress, id, subControllerVariable);
+            if (progress.request().controllerInfo().fieldInfo(id) == null) {
+                logger.debug("Not injecting {} because it is not found in controller", id);
+            } else {
+                injectControllerField(progress, id, subControllerVariable);
+            }
         }
     }
 

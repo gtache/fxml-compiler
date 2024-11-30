@@ -5,6 +5,8 @@ import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import javafx.beans.DefaultProperty;
 import javafx.beans.NamedArg;
 import javafx.scene.Node;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -21,6 +23,7 @@ import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.FX_
  * Helper methods for reflection
  */
 final class ReflectionHelper {
+    private static final Logger logger = LogManager.getLogger(ReflectionHelper.class);
     private static final Map<Class<?>, Boolean> HAS_VALUE_OF = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Boolean> IS_GENERIC = new ConcurrentHashMap<>();
     private static final Map<String, String> DEFAULT_PROPERTY = new ConcurrentHashMap<>();
@@ -300,14 +303,16 @@ final class ReflectionHelper {
         if (isGeneric(clazz)) {
             final var idProperty = parsedObject.attributes().get(FX_ID);
             if (idProperty == null) {
-                return "<>";
+                logger.warn("No id found for generic class {} ; Using raw", clazz.getName());
+                return "";
             } else {
                 final var id = idProperty.value();
-                final var genericTypes = progress.request().controllerInfo().propertyGenericTypes(id);
-                if (genericTypes == null) { //Raw
+                final var fieldInfo = progress.request().controllerInfo().fieldInfo(id);
+                if (fieldInfo == null) { //Not found
+                    logger.warn("No field found for generic class {} (id={}) ; Using raw", clazz.getName(), id);
                     return "";
-                } else {
-                    return "<" + String.join(", ", genericTypes) + ">";
+                } else if (fieldInfo.isGeneric()) {
+                    return "<" + String.join(", ", fieldInfo.genericTypes()) + ">";
                 }
             }
         }

@@ -1,7 +1,9 @@
 package com.github.gtache.fxml.compiler.maven;
 
+import com.github.gtache.fxml.compiler.ControllerFieldInfo;
 import com.github.gtache.fxml.compiler.ControllerInfo;
 import com.github.gtache.fxml.compiler.impl.ClassesFinder;
+import com.github.gtache.fxml.compiler.impl.ControllerFieldInfoImpl;
 import com.github.gtache.fxml.compiler.impl.ControllerInfoImpl;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -51,21 +53,21 @@ class ControllerInfoProvider {
         try {
             final var content = Files.readString(info.controllerFile());
             final var imports = getImports(content);
-            final var propertyGenericTypes = new HashMap<String, List<String>>();
+            final var propertyGenericTypes = new HashMap<String, ControllerFieldInfo>();
             for (final var fieldInfo : info.injectedFields()) {
                 final var name = fieldInfo.name();
                 final var type = fieldInfo.type();
-                if (fillGenericTypes(type, name, content, imports, propertyGenericTypes)) {
+                if (fillFieldInfo(type, name, content, imports, propertyGenericTypes)) {
                     logger.debug("Found injected field " + name + " of type " + type + " with generic types "
                             + propertyGenericTypes.get(name) + " in controller " + info.controllerFile());
                 } else if (type.contains(".")) {
                     final var simpleName = type.substring(type.lastIndexOf('.') + 1);
-                    if (fillGenericTypes(simpleName, name, content, imports, propertyGenericTypes)) {
+                    if (fillFieldInfo(simpleName, name, content, imports, propertyGenericTypes)) {
                         logger.debug("Found injected field " + name + " of type " + simpleName + " with generic types "
                                 + propertyGenericTypes.get(name) + " in controller " + info.controllerFile());
                     }
                 } else {
-                    throw new MojoExecutionException("Cannot find field " + name + "(" + type + ")" + " in controller " + info.controllerFile());
+                    logger.info("Field " + name + "(" + type + ")" + " not found in controller " + info.controllerFile());
                 }
             }
             final var handlerHasArgument = new HashMap<String, Boolean>();
@@ -112,33 +114,31 @@ class ControllerInfoProvider {
         return new Imports(resolved, unresolved);
     }
 
-    private static boolean fillGenericTypes(final String type, final String name, final CharSequence content, final Imports imports, final Map<? super String, ? super List<String>> propertyGenericTypes) throws MojoExecutionException {
+    private static boolean fillFieldInfo(final String type, final String name, final CharSequence content, final Imports imports, final Map<? super String, ? super ControllerFieldInfo> fieldInfos) throws MojoExecutionException {
         final var pattern = Pattern.compile(Pattern.quote(type) + "(?<type><[^>]+>)?\\s+" + Pattern.quote(name) + "\\s*;");
         final var matcher = pattern.matcher(content);
         if (matcher.find()) {
             final var genericTypes = matcher.group("type");
             if (genericTypes != null && !genericTypes.isBlank()) {
-                if (genericTypes.equals("<>")) {
-                    propertyGenericTypes.put(name, List.of());
-                } else {
-                    final var split = genericTypes.replace("<", "").replace(">", "").split(",");
-                    final var resolved = new ArrayList<String>();
-                    for (final var s : split) {
-                        final var trimmed = s.trim();
-                        if (trimmed.contains(".") || JAVA_LANG_CLASSES.contains(trimmed)) {
-                            resolved.add(trimmed);
+                final var split = genericTypes.replace("<", "").replace(">", "").split(",");
+                final var resolved = new ArrayList<String>();
+                for (final var s : split) {
+                    final var trimmed = s.trim();
+                    if (trimmed.contains(".") || JAVA_LANG_CLASSES.contains(trimmed)) {
+                        resolved.add(trimmed);
+                    } else {
+                        final var imported = imports.imports().get(trimmed);
+                        if (imported == null) {
+                            throw new MojoExecutionException("Cannot find class " + trimmed + " probably in one of " + imports.packages() + " ; " +
+                                    "Use non-wildcard imports, use fully qualified name or put the classes in a dependency.");
                         } else {
-                            final var imported = imports.imports().get(trimmed);
-                            if (imported == null) {
-                                throw new MojoExecutionException("Cannot find class " + trimmed + " probably in one of " + imports.packages() + " ; " +
-                                        "Use non-wildcard imports, use fully qualified name or put the classes in a dependency.");
-                            } else {
-                                resolved.add(imported);
-                            }
+                            resolved.add(imported);
                         }
                     }
-                    propertyGenericTypes.put(name, resolved);
                 }
+                fieldInfos.put(name, new ControllerFieldInfoImpl(name, resolved));
+            } else {
+                fieldInfos.put(name, new ControllerFieldInfoImpl(name, List.of()));
             }
             return true;
         } else {

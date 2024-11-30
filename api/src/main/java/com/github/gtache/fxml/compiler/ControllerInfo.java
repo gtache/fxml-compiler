@@ -1,6 +1,5 @@
 package com.github.gtache.fxml.compiler;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,19 +25,19 @@ public interface ControllerInfo {
     }
 
     /**
-     * Returns a mapping of property name -> generic types
+     * Returns a mapping of property name -> field info
      *
-     * @return A mapping of property name to generic types
+     * @return the mapping
      */
-    Map<String, List<String>> propertyGenericTypes();
+    Map<String, ControllerFieldInfo> fieldInfo();
 
     /**
-     * Returns the generic types for the given property (null if not generic or raw)
+     * Returns the field information for the given property
      *
      * @param property The property
-     * @return The generic types
+     * @return The info, or null if not found
      */
-    default List<String> propertyGenericTypes(final String property) {
-        return propertyGenericTypes().get(property);
+    default ControllerFieldInfo fieldInfo(final String property) {
+        return fieldInfo().get(property);
     }
 }

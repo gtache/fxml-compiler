@@ -1,17 +1,10 @@
 package com.github.gtache.fxml.compiler.parsing.xml;
 
+import com.github.gtache.fxml.compiler.ControllerFieldInfo;
 import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.GenerationRequest;
 import com.github.gtache.fxml.compiler.Generator;
-import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
-import com.github.gtache.fxml.compiler.impl.ControllerInfoImpl;
-import com.github.gtache.fxml.compiler.impl.ControllerInjectionImpl;
-import com.github.gtache.fxml.compiler.impl.ControllerMethodsInjectionType;
-import com.github.gtache.fxml.compiler.impl.GenerationParametersImpl;
-import com.github.gtache.fxml.compiler.impl.GenerationRequestImpl;
-import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
-import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionImpl;
-import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionTypes;
+import com.github.gtache.fxml.compiler.impl.*;
 import com.github.gtache.fxml.compiler.parsing.ParseException;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -32,20 +25,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class TestGeneratorImpl {
 
-    private static final Map<String, List<String>> GENERIC_TYPES;
+    private static final Map<String, ControllerFieldInfo> FIELD_INFO_MAP;
 
     static {
-        GENERIC_TYPES = new HashMap<>();
-        GENERIC_TYPES.put("choiceBox", List.of("String"));
-        GENERIC_TYPES.put("listView", List.of("javafx.scene.control.Label"));
-        GENERIC_TYPES.put("spinner", List.of("Double"));
-        GENERIC_TYPES.put("tableView", List.of("javafx.scene.control.TextArea"));
-        GENERIC_TYPES.put("treeView", List.of("String"));
-        GENERIC_TYPES.put("treeTableView", List.of("javafx.scene.control.TreeItem<String>"));
-        GENERIC_TYPES.put("treeTableColumn1", List.of("javafx.scene.control.TreeItem<String>", "String"));
-        GENERIC_TYPES.put("treeTableColumn2", List.of("javafx.scene.control.TreeItem<String>", "Integer"));
-        GENERIC_TYPES.put("tableColumn1", List.of("javafx.scene.control.TextArea", "Float"));
-        GENERIC_TYPES.put("tableColumn2", List.of("javafx.scene.control.TextArea", "String"));
+        FIELD_INFO_MAP = new HashMap<>();
+        FIELD_INFO_MAP.put("button", new ControllerFieldInfoImpl("button", List.of()));
+        FIELD_INFO_MAP.put("checkBox", new ControllerFieldInfoImpl("checkBox", List.of()));
+        FIELD_INFO_MAP.put("colorPicker", new ControllerFieldInfoImpl("colorPicker", List.of()));
+        FIELD_INFO_MAP.put("color", new ControllerFieldInfoImpl("color", List.of()));
+        FIELD_INFO_MAP.put("comboBox", new ControllerFieldInfoImpl("comboBox", List.of()));
+        FIELD_INFO_MAP.put("listView", new ControllerFieldInfoImpl("listView", List.of("javafx.scene.control.Label")));
+        FIELD_INFO_MAP.put("spinner", new ControllerFieldInfoImpl("spinner", List.of("Double")));
+        FIELD_INFO_MAP.put("tableView", new ControllerFieldInfoImpl("tableView", List.of("javafx.scene.control.TextArea")));
+        FIELD_INFO_MAP.put("treeView", new ControllerFieldInfoImpl("treeView", List.of("String")));
+        FIELD_INFO_MAP.put("treeTableView", new ControllerFieldInfoImpl("treeTableView", List.of("javafx.scene.control.TreeItem<String>")));
+        FIELD_INFO_MAP.put("treeTableColumn1", new ControllerFieldInfoImpl("treeTableColumn1", List.of("javafx.scene.control.TreeItem<String>", "String")));
+        FIELD_INFO_MAP.put("treeTableColumn2", new ControllerFieldInfoImpl("treeTableColumn2", List.of("javafx.scene.control.TreeItem<String>", "Integer")));
+        FIELD_INFO_MAP.put("tableColumn1", new ControllerFieldInfoImpl("tableColumn1", List.of("javafx.scene.control.TextArea", "Float")));
+        FIELD_INFO_MAP.put("tableColumn2", new ControllerFieldInfoImpl("tableColumn2", List.of("javafx.scene.control.TextArea", "String")));
     }
 
     private final Generator generator;
@@ -69,7 +66,7 @@ class TestGeneratorImpl {
         }
     }
 
-    static void main(final String[] args) throws GenerationException, IOException, ParseException {
+    public static void main(final String[] args) throws GenerationException, IOException, ParseException {
         final var generator = new GeneratorImpl();
         final var files = List.of("Controls", "Includes");
         for (final var file : files) {
@@ -92,7 +89,7 @@ class TestGeneratorImpl {
 
     private static GenerationRequest getRequest(final String file, final ControllerFieldInjectionTypes field, final ControllerMethodsInjectionType method, final ResourceBundleInjectionTypes bundle) throws IOException, ParseException {
         final var controlsControllerInfo = new ControllerInfoImpl(Map.of("keyPressed", false, "mouseClicked", false),
-                GENERIC_TYPES);
+                FIELD_INFO_MAP);
         final var includesControllerInfo = new ControllerInfoImpl(Map.of(), Map.of());
         final var controllerInfo = file.equals("Controls") ? controlsControllerInfo : includesControllerInfo;
         final var resourceBundlePath = "com.github.gtache.fxml.compiler.parsing.xml." + file + "Bundle";
