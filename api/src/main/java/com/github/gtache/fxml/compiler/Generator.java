@@ -3,6 +3,7 @@ package com.github.gtache.fxml.compiler;
 /**
  * Generates compiled FXML code
  */
+@FunctionalInterface
 public interface Generator {
 
     /**

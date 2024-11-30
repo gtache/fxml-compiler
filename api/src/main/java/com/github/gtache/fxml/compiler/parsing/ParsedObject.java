@@ -29,4 +29,11 @@ public interface ParsedObject {
      * @return The properties
      */
     SequencedMap<ParsedProperty, SequencedCollection<ParsedObject>> properties();
+
+    /**
+     * Returns the children (fx:define, fx:copy, etc.) contained in this object
+     *
+     * @return The children
+     */
+    SequencedCollection<ParsedObject> children();
 }

@@ -1,5 +1,6 @@
 package com.github.gtache.fxml.compiler.maven;
 
+import javafx.event.EventHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -126,10 +127,18 @@ class CompilationInfoProvider {
                 final var item = map.item(i);
                 final var name = item.getNodeName();
                 final var value = item.getNodeValue();
-                if (name.startsWith("on") && value.startsWith("#")) {
-                    final var methodName = value.replace("#", "");
-                    logger.debug("Found injected method " + methodName);
-                    builder.addInjectedMethod(methodName);
+                if (name.startsWith("on")) {
+                    if (value.startsWith("#")) {
+                        final var methodName = value.replace("#", "");
+                        logger.debug("Found injected method " + methodName);
+                        builder.addInjectedMethod(methodName);
+                    } else if (value.startsWith("$controller.")) {
+                        final var fieldName = value.replace("$controller.", "");
+                        logger.debug("Found injected field " + fieldName);
+                        builder.addInjectedField(fieldName, EventHandler.class.getName());
+                    } else {
+                        throw new MojoExecutionException("Unexpected attribute " + name + " with value " + value);
+                    }
                 } else if (name.equals("fx:controller")) {
                     handleController(value, builder);
                 } else if (name.equals("fx:id")) {

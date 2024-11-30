@@ -6,12 +6,15 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.Cursor?>
 <?import javafx.scene.effect.Bloom?>
+<?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.media.MediaView?>
 <?import javafx.scene.paint.Color?>
+<?import javafx.scene.text.Font?>
 <?import javafx.scene.web.HTMLEditor?>
 <?import javafx.scene.web.WebView?>
+<?import java.lang.String?>
 <GridPane fx:id="gridPane" onInputMethodTextChanged="#inputMethodTextChanged" onKeyPressed="#keyPressed"
           onKeyReleased="#keyReleased"
           onKeyTyped="#keyTyped" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1"
@@ -42,12 +45,22 @@
         <ColumnConstraints minWidth="10.0" prefWidth="100.0"/>
     </columnConstraints>
     <children>
-        <Button fx:id="button" mnemonicParsing="false" text="Button"/>
-        <CheckBox fx:id="checkBox" indeterminate="true" mnemonicParsing="false" text="CheckBox"
-                  GridPane.columnIndex="1"/>
+        <fx:define>
+            <String fx:id="str">text</String>
+        </fx:define>
+        <Button fx:id="button">
+            <mnemonicParsing>false</mnemonicParsing>
+            Button
+        </Button>
+        <CheckBox fx:id="checkBox">
+            <indeterminate>true</indeterminate>
+            <mnemonicParsing>false</mnemonicParsing>
+            CheckBox
+            <GridPane.columnIndex>1</GridPane.columnIndex>
+        </CheckBox>
         <ChoiceBox fx:id="choiceBox" cacheShape="false" centerShape="false" disable="true" focusTraversable="false"
                    prefWidth="150.0"
-                   scaleShape="false" visible="false" GridPane.rowIndex="1"/>
+                   scaleShape="false" visible="false" GridPane.rowIndex="1" accessibleText="$str"/>
         <ColorPicker fx:id="colorPicker" nodeOrientation="LEFT_TO_RIGHT" opacity="0.5" GridPane.columnIndex="1"
                      GridPane.rowIndex="1">
             <value>
@@ -75,12 +88,33 @@
                     GridPane.rowIndex="3"/>
         <Hyperlink fx:id="hyperlink" text="Hyperlink" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
         <ImageView fx:id="imageView" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true"
-                   GridPane.rowIndex="4"/>
-        <Label fx:id="label" accessibleHelp="TTTTT" accessibleText="TTT" blendMode="ADD" cache="true"
+                   GridPane.rowIndex="4">
+            <Image url="https://github.com/gtache" backgroundLoading="true" fx:id="image" preserveRatio="true"
+                   requestedWidth="200">
+                <smooth>true</smooth>
+                <requestedHeight>100</requestedHeight>
+            </Image>
+        </ImageView>
+        <ImageView>
+            <image>
+                <Image url="@image.png"/>
+            </image>
+        </ImageView>
+        <fx:define>
+            <Image fx:id="definedImage" url="/url"/>
+        </fx:define>
+        <ImageView>
+            <fx:reference source="definedImage"/>
+        </ImageView>
+        <Label fx:id="label" accessibleHelp="TTTTT" blendMode="ADD" cache="true"
                cacheHint="QUALITY"
                depthTest="ENABLE" mnemonicParsing="true" mouseTransparent="true" text="%include.label"
                GridPane.columnIndex="1"
-               GridPane.rowIndex="4"/>
+               GridPane.rowIndex="4">
+            <accessibleText>
+                <fx:copy source="str"/>
+            </accessibleText>
+        </Label>
         <ListView fx:id="listView" fixedCellSize="20.0" nodeOrientation="RIGHT_TO_LEFT" orientation="HORIZONTAL"
                   prefHeight="200.0"
                   prefWidth="200.0" GridPane.rowIndex="5"/>
@@ -88,23 +122,21 @@
                    GridPane.rowIndex="5" GridPane.rowSpan="2"/>
         <MenuBar fx:id="menuBar" GridPane.halignment="RIGHT" GridPane.hgrow="ALWAYS" GridPane.rowIndex="7"
                  GridPane.valignment="BASELINE" GridPane.vgrow="SOMETIMES">
-            <menus>
-                <Menu fx:id="menu1" mnemonicParsing="false" text="File">
-                    <items>
-                        <MenuItem fx:id="menuItem1" mnemonicParsing="false" text="Close"/>
-                    </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Edit">
-                    <items>
-                        <MenuItem mnemonicParsing="false" text="Delete"/>
-                    </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Help">
-                    <items>
-                        <MenuItem mnemonicParsing="false" text="About"/>
-                    </items>
-                </Menu>
-            </menus>
+            <Menu fx:id="menu1" mnemonicParsing="false">
+                <text>File</text>
+                <MenuItem fx:id="menuItem1" mnemonicParsing="false" text="Close"/>
+                <MenuItem fx:id="menuItem2" mnemonicParsing="false" text="Open"/>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Edit">
+                <items>
+                    <MenuItem mnemonicParsing="false" text="Delete"/>
+                </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Help">
+                <items>
+                    <MenuItem mnemonicParsing="false" text="About"/>
+                </items>
+            </Menu>
         </MenuBar>
         <MenuButton fx:id="menuButton" mnemonicParsing="false" text="MenuButton" GridPane.columnIndex="1"
                     GridPane.rowIndex="7">
@@ -113,7 +145,9 @@
                 <MenuItem mnemonicParsing="false" text="Action 2"/>
             </items>
             <GridPane.margin>
-                <Insets bottom="3.0" left="2.0" right="4.0" top="5.0"/>
+                <Insets bottom="3.0" left="2.0" right="4.0">
+                    <top>5.0</top>
+                </Insets>
             </GridPane.margin>
         </MenuButton>
         <Pagination fx:id="pagination" prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="8">
@@ -165,7 +199,11 @@
                 <TableColumn fx:id="tableColumn2" prefWidth="75.0" text="C2"/>
             </columns>
         </TableView>
-        <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="15"/>
+        <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="15">
+            <font>
+                <Font fx:id="font" name="Arial" size="12.0"/>
+            </font>
+        </TextArea>
         <TextField fx:id="textField" GridPane.columnIndex="1" GridPane.rowIndex="15"/>
         <ToggleButton mnemonicParsing="false" onAction="#onAction" onRotate="#onRotate"
                       onRotationFinished="#onRotationFinished" onRotationStarted="#onRotationStarted"
@@ -184,6 +222,9 @@
         <WebView fx:id="webView" onTouchMoved="#onTouchMoved" onTouchPressed="#onTouchPressed"
                  onTouchReleased="#onTouchReleased"
                  onTouchStationary="#onTouchStationary" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1"
+                 location="https://github.com/gtache" confirmHandler="$controller.confirmHandler"
+                 createPopupHandler="#createPopupHandler"
+                 onAlert="$controller.onAlert" onResized="#onResized"
                  GridPane.rowIndex="17"/>
     </children>
 </GridPane>

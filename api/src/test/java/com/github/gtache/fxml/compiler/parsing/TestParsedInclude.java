@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -78,5 +79,10 @@ class TestParsedInclude {
     @Test
     void testProperties() {
         assertEquals(new LinkedHashMap<>(), include.properties());
+    }
+
+    @Test
+    void testChildren() {
+        assertEquals(List.of(), include.children());
     }
 }

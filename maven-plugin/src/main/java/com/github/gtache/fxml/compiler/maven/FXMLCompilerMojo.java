@@ -139,8 +139,8 @@ public class FXMLCompilerMojo extends AbstractMojo {
                 final var request = new GenerationRequestImpl(parameters, controllerInfo, root, info.outputClass());
                 getLog().info("Compiling " + inputPath);
                 final var content = generator.generate(request);
-                final var outputDirectory = output.getParent();
-                Files.createDirectories(outputDirectory);
+                final var outputDir = output.getParent();
+                Files.createDirectories(outputDir);
                 Files.writeString(output, content);
                 getLog().info("Compiled " + inputPath + " to " + output);
             }

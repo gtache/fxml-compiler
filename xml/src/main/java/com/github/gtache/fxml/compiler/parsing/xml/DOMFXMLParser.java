@@ -3,12 +3,10 @@ package com.github.gtache.fxml.compiler.parsing.xml;
 import com.github.gtache.fxml.compiler.impl.ClassesFinder;
 import com.github.gtache.fxml.compiler.parsing.FXMLParser;
 import com.github.gtache.fxml.compiler.parsing.ParseException;
+import com.github.gtache.fxml.compiler.parsing.ParsedDefine;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
-import com.github.gtache.fxml.compiler.parsing.impl.ParsedConstantImpl;
-import com.github.gtache.fxml.compiler.parsing.impl.ParsedIncludeImpl;
-import com.github.gtache.fxml.compiler.parsing.impl.ParsedObjectImpl;
-import com.github.gtache.fxml.compiler.parsing.impl.ParsedPropertyImpl;
+import com.github.gtache.fxml.compiler.parsing.impl.*;
 import javafx.event.EventHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,28 +87,101 @@ public class DOMFXMLParser implements FXMLParser {
         final var attributes = parseAttributes(node.getAttributes(), imports);
         final var name = node.getNodeName();
         logger.debug("Parsing {}", name);
-        if (name.equals("fx:include")) {
-            return new ParsedIncludeImpl(attributes);
-        } else if (attributes.containsKey("fx:constant")) {
-            return new ParsedConstantImpl(imports.search(name), attributes);
-        } else if (name.equals("fx:copy") || name.equals("fx:define") || name.equals("fx:root") || name.equals("fx:reference")) {
-            throw new ParseException("Unsupported node : " + name);
-        } else {
-            final var children = node.getChildNodes();
-            final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-            for (var i = 0; i < children.getLength(); i++) {
-                if (children.item(i).getNodeType() == Node.ELEMENT_NODE) {
-                    final var parsedProperty = parseProperty(children.item(i), imports);
-                    properties.put(parsedProperty.property(), parsedProperty.objects());
+        return switch (name) {
+            case "fx:include" -> new ParsedIncludeImpl(attributes);
+            case "fx:reference" -> new ParsedReferenceImpl(attributes);
+            case "fx:copy" -> new ParsedCopyImpl(attributes);
+            case "fx:define" -> parseDefine(node, imports);
+            case "fx:root", "fx:script" -> throw new ParseException("Unsupported node : " + name);
+            default -> {
+                if (attributes.containsKey("fx:constant")) {
+                    yield new ParsedConstantImpl(imports.search(name), attributes);
+                } else if (attributes.containsKey("fx:value")) {
+                    yield new ParsedValueImpl(imports.search(name), attributes);
+                } else if (attributes.containsKey("fx:factory")) {
+                    yield parseFactory(node, attributes, imports);
+                } else {
+                    yield parseObject(node, attributes, imports);
                 }
             }
-            return new ParsedObjectImpl(imports.search(name), attributes, properties);
+        };
+    }
+
+    private ParsedDefine parseDefine(final Node node, final Imports imports) throws ParseException {
+        final var children = node.getChildNodes();
+        ParsedObject parsed = null;
+        for (var i = 0; i < children.getLength(); i++) {
+            final var item = children.item(i);
+            if (item.getNodeType() == Node.ELEMENT_NODE) {
+                if (isObject(item)) {
+                    if (parsed == null) {
+                        parsed = parseObject(item, imports);
+                    } else {
+                        throw new ParseException("fx:define with multiple children");
+                    }
+                } else {
+                    throw new ParseException("fx:define with unexpected node : " + item.getNodeName());
+                }
+            }
         }
+        if (parsed == null) {
+            throw new ParseException("fx:define with no children");
+        } else {
+            return new ParsedDefineImpl(parsed);
+        }
+    }
+
+    private ParsedObject parseObject(final Node node, final Map<String, ParsedProperty> attributes, final Imports imports) throws ParseException {
+        final var name = node.getNodeName();
+        final var children = node.getChildNodes();
+        final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
+        final var objects = new ArrayList<ParsedObject>();
+        for (var i = 0; i < children.getLength(); i++) {
+            final var item = children.item(i);
+            if (item.getNodeType() == Node.ELEMENT_NODE) {
+                if (isObject(item)) {
+                    objects.add(parseObject(item, imports));
+                } else if (isSimpleProperty(item)) {
+                    final var sourceTypeName = getSourceTypeName(item, imports);
+                    final var property = new ParsedPropertyImpl(sourceTypeName.name(), sourceTypeName.sourceType(), item.getTextContent());
+                    attributes.put(property.name(), property);
+                } else {
+                    final var parsedProperty = parseProperty(item, imports);
+                    properties.put(parsedProperty.property(), parsedProperty.objects());
+                }
+            } else if (item.getNodeType() == Node.TEXT_NODE && !item.getNodeValue().isBlank()) {
+                objects.add(new ParsedTextImpl(item.getNodeValue().trim()));
+            }
+        }
+        return new ParsedObjectImpl(imports.search(name), attributes, properties, objects);
+    }
+
+    private ParsedObject parseFactory(final Node node, final Map<String, ParsedProperty> attributes, final Imports imports) throws ParseException {
+        final var name = node.getNodeName();
+        final var children = node.getChildNodes();
+        final var arguments = new ArrayList<ParsedObject>();
+        final var objects = new ArrayList<ParsedObject>();
+        for (var i = 0; i < children.getLength(); i++) {
+            final var item = children.item(i);
+            if (item.getNodeType() == Node.ELEMENT_NODE) {
+                if (isObject(item)) {
+                    final var parsed = parseObject(item, imports);
+                    if (parsed instanceof ParsedDefine) {
+                        objects.add(parsed);
+                    } else {
+                        arguments.add(parseObject(item, imports));
+                    }
+                } else {
+                    throw new ParseException("Unexpected node : " + item.getNodeName() + " in factory " + name);
+                }
+            }
+        }
+        return new ParsedFactoryImpl(imports.search(name), attributes, arguments, objects);
     }
 
     private static Map<String, ParsedProperty> parseAttributes(final NamedNodeMap attributes, final Imports imports) throws ParseException {
         if (attributes == null) {
-            return Map.of();
+            return new HashMap<>();
         } else {
             final var map = new HashMap<String, ParsedProperty>();
             for (var i = 0; i < attributes.getLength(); i++) {
@@ -120,7 +191,7 @@ public class DOMFXMLParser implements FXMLParser {
                 final var sourceType = sourceTypeName.sourceType();
                 final var name = sourceTypeName.name();
                 if (!name.startsWith("xmlns")) {
-                    if (name.startsWith("on") && value.startsWith("#")) {
+                    if (name.startsWith("on")) {
                         logger.debug("Found event handler {} -> {}", name, value);
                         map.put(name, new ParsedPropertyImpl(name, EventHandler.class.getName(), value));
                     } else {
@@ -175,6 +246,20 @@ public class DOMFXMLParser implements FXMLParser {
             imports.put(className, importValue);
         }
         return imports;
+    }
+
+    private static boolean isObject(final Node node) {
+        return !isProperty(node);
+    }
+
+    private static boolean isProperty(final Node node) {
+        final var name = node.getNodeName();
+        final var lastPart = name.substring(name.lastIndexOf('.') + 1);
+        return !name.startsWith("fx:") && Character.isLowerCase(lastPart.charAt(0));
+    }
+
+    private static boolean isSimpleProperty(final Node item) {
+        return isProperty(item) && item.getChildNodes().getLength() == 1 && item.getChildNodes().item(0).getNodeType() == Node.TEXT_NODE;
     }
 
     private record ComplexProperty(ParsedProperty property, SequencedCollection<ParsedObject> objects) {

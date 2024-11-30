@@ -11,7 +11,6 @@
     <modules>
         <module>api</module>
         <module>core</module>
-        <module>loader</module>
         <module>maven-plugin</module>
         <module>xml</module>
     </modules>
@@ -316,11 +315,6 @@
             <dependency>
                 <groupId>com.github.gtache</groupId>
                 <artifactId>fxml-compiler-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.gtache</groupId>
-                <artifactId>fxml-compiler-loader</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

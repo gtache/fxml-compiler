@@ -13,10 +13,14 @@ class TestClassesFinder {
     void testGetClassesCurrent() throws IOException {
         final var expected = Set.of(
                 "com.github.gtache.fxml.compiler.parsing.impl.TestParsedConstantImpl",
+                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedCopyImpl",
+                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedFactoryImpl",
                 "com.github.gtache.fxml.compiler.parsing.impl.TestParsedIncludeImpl",
                 "com.github.gtache.fxml.compiler.parsing.impl.TestParsedObjectImpl",
-                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedObjectImplBuilder",
-                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedPropertyImpl");
+                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedPropertyImpl",
+                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedReferenceImpl",
+                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedTextImpl",
+                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedValueImpl");
         final var actual = ClassesFinder.getClasses("com.github.gtache.fxml.compiler.parsing.impl");
         assertEquals(expected, actual);
     }

@@ -23,7 +23,7 @@ class TestDOMFXMLParser {
 
     private final DOMFXMLParser parser;
 
-    public TestDOMFXMLParser() {
+    TestDOMFXMLParser() {
         this.parser = new DOMFXMLParser();
     }
 
@@ -40,19 +40,19 @@ class TestDOMFXMLParser {
                                                 newLinkedHashMap(new ParsedPropertyImpl("padding", null, null),
                                                         List.of(new ParsedObjectImpl(Insets.class.getName(),
                                                                 newLinkedHashMap("left", new ParsedPropertyImpl("left", null, "10.0")),
-                                                                newLinkedHashMap())))),
+                                                                newLinkedHashMap(), List.of()))), List.of()),
                                         new ParsedObjectImpl(Label.class.getName(),
                                                 newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "playLabel"), "onMouseClicked", new ParsedPropertyImpl("onMouseClicked", EventHandler.class.getName(), "#mouseClicked"), "text", new ParsedPropertyImpl("text", null, "Label")),
                                                 newLinkedHashMap(new ParsedPropertyImpl("padding", null, null),
                                                         List.of(new ParsedObjectImpl(Insets.class.getName(),
                                                                 newLinkedHashMap("right", new ParsedPropertyImpl("right", null, "10.0")),
-                                                                newLinkedHashMap())))),
+                                                                newLinkedHashMap(), List.of()))), List.of()),
                                         new ParsedIncludeImpl(
                                                 newLinkedHashMap("source", new ParsedPropertyImpl("source", null, "includedView.fxml"), "resources", new ParsedPropertyImpl("resources", null, "com/github/gtache/fxml/compiler/parsing/xml/IncludedBundle"), "fx:id", new ParsedPropertyImpl("fx:id", null, "id")))
-                                )))),
+                                )), List.of())),
                         new ParsedPropertyImpl("center", null, null),
-                        List.of(new ParsedObjectImpl(VBox.class.getName(), newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "vbox")), newLinkedHashMap()))
-                ));
+                        List.of(new ParsedObjectImpl(VBox.class.getName(), newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "vbox")), newLinkedHashMap(), List.of()))
+                ), List.of());
         try (final var in = getClass().getResourceAsStream("loadView.fxml")) {
             final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             final var actual = parser.parse(content);

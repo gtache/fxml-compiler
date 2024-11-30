@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class TestGeneratorImpl {
 
@@ -55,10 +56,11 @@ class TestGeneratorImpl {
 
     @ParameterizedTest
     @MethodSource("providesGenerationTestCases")
-    void testGenerate(final String file, final ControllerFieldInjectionTypes field, final ControllerMethodsInjectionType method, final ResourceBundleInjectionTypes bundle) throws IOException, ParseException {
+    void testGenerate(final String file, final ControllerFieldInjectionTypes field, final ControllerMethodsInjectionType method, final ResourceBundleInjectionTypes bundle) throws Exception {
         final var request = getRequest(file, field, method, bundle);
         final var path = Paths.get(getPath(file, field, method, bundle));
         try (final var in = getClass().getResourceAsStream("/com/github/gtache/fxml/compiler/parsing/xml/" + path)) {
+            assertNotNull(in);
             final var expected = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             final var actual = generator.generate(request);
             assertEquals(expected, actual);
@@ -67,7 +69,7 @@ class TestGeneratorImpl {
         }
     }
 
-    public static void main(final String[] args) throws GenerationException, IOException, ParseException {
+    static void main(final String[] args) throws GenerationException, IOException, ParseException {
         final var generator = new GeneratorImpl();
         final var files = List.of("Controls", "Includes");
         for (final var file : files) {
@@ -97,6 +99,7 @@ class TestGeneratorImpl {
         final var viewPath = "/com/github/gtache/fxml/compiler/parsing/xml/" + file + "View.fxml";
         final var parser = new DOMFXMLParser();
         try (final var in = TestGeneratorImpl.class.getResourceAsStream(viewPath)) {
+            assertNotNull(in);
             final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             final var root = parser.parse(content);
             return new GenerationRequestImpl(
@@ -111,7 +114,7 @@ class TestGeneratorImpl {
                     ),
                     controllerInfo,
                     root,
-                    "com.github.gtache.fxml.compiler.parsing.xml." + file + "Controller"
+                    "com.github.gtache.fxml.compiler.parsing.xml." + file + "View"
             );
         }
     }
