@@ -1,30 +1,38 @@
 package com.github.gtache.fxml.compiler.impl;
 
-import com.github.gtache.fxml.compiler.ControllerInjection;
 import com.github.gtache.fxml.compiler.GenerationParameters;
-import com.github.gtache.fxml.compiler.ResourceBundleInjection;
+import com.github.gtache.fxml.compiler.InjectionType;
+import com.github.gtache.fxml.compiler.compatibility.GenerationCompatibility;
 
 import java.util.Map;
-import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 
 /**
  * Implementation of {@link GenerationParameters}
  *
- * @param controllerInjections       The mapping of controller class name to controller injection
- * @param sourceToGeneratedClassName The mapping of fx:include source to generated class name
- * @param sourceToControllerName     The mapping of fx:include source to controller class name
- * @param resourceBundleInjection    The resource bundle injection
+ * @param compatibility                  The compatibility info
+ * @param useImageInputStreamConstructor True if the InputStream constructor should be used
+ * @param bundleMap                      The mapping of controller class to resource bundle path
+ * @param controllerInjectionType        The controller injection type
+ * @param fieldInjectionType             The field injection type
+ * @param methodInjectionType            The method injection type
+ * @param resourceInjectionType          The resource injection type
  */
-public record GenerationParametersImpl(Map<String, ControllerInjection> controllerInjections,
-                                       Map<String, String> sourceToGeneratedClassName,
-                                       Map<String, String> sourceToControllerName,
-                                       ResourceBundleInjection resourceBundleInjection) implements GenerationParameters {
+public record GenerationParametersImpl(GenerationCompatibility compatibility, boolean useImageInputStreamConstructor,
+                                       Map<String, String> bundleMap,
+                                       InjectionType controllerInjectionType,
+                                       InjectionType fieldInjectionType,
+                                       InjectionType methodInjectionType,
+                                       InjectionType resourceInjectionType) implements GenerationParameters {
 
     public GenerationParametersImpl {
-        controllerInjections = Map.copyOf(controllerInjections);
-        sourceToGeneratedClassName = Map.copyOf(sourceToGeneratedClassName);
-        sourceToControllerName = Map.copyOf(sourceToControllerName);
-        Objects.requireNonNull(resourceBundleInjection);
+        requireNonNull(compatibility);
+        bundleMap = Map.copyOf(bundleMap);
+        requireNonNull(controllerInjectionType);
+        requireNonNull(fieldInjectionType);
+        requireNonNull(methodInjectionType);
+        requireNonNull(resourceInjectionType);
     }
 }

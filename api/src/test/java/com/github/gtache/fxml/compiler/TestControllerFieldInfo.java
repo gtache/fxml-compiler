@@ -6,8 +6,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class TestControllerFieldInfo {
 
@@ -25,7 +24,7 @@ class TestControllerFieldInfo {
 
     @Test
     void testIsGenericTrue() {
-        when(info.genericTypes()).thenReturn(List.of("A", "B", "C"));
+        when(info.genericTypes()).thenReturn(List.of(mock(GenericTypes.class)));
         assertTrue(info.isGeneric());
     }
 }

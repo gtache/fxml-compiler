@@ -12,7 +12,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.FX_ID;
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.getSortedAttributes;
 
 /**
  * Helper methods for {@link GeneratorImpl} to format fonts
@@ -21,6 +22,10 @@ final class FontFormatter {
 
     private FontFormatter() {
 
+    }
+
+    private static String getStartFont(final GenerationProgress progress) {
+        return GenerationCompatibilityHelper.getStartVar(progress, "javafx.scene.text.Font");
     }
 
     static void formatFont(final GenerationProgress progress, final ParsedObject parsedObject, final String variableName) throws GenerationException {
@@ -38,32 +43,31 @@ final class FontFormatter {
             } else {
                 formatStyle(progress, fw, fp, size, name, variableName);
             }
-            handleId(progress, parsedObject, variableName);
+            GenerationHelper.handleId(progress, parsedObject, variableName);
         } else {
             throw new GenerationException("Font cannot have children or properties : " + parsedObject);
         }
     }
 
     private static void formatURL(final GenerationProgress progress, final URL url, final double size, final String variableName) {
-        final var urlVariableName = URLBuilder.formatURL(progress, url.toString());
-        progress.stringBuilder().append("""
-                Font %1$s;
-                try (final var in = %2$s.openStream()) {
-                    %1$s = Font.loadFont(in, %3$s);
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
-                }
-                """.formatted(variableName, urlVariableName, size));
+        final var urlVariableName = URLFormatter.formatURL(progress, url.toString());
+        final var sb = progress.stringBuilder();
+        sb.append("        final javafx.scene.text.Font ").append(variableName).append(";\n");
+        sb.append("        try (").append(GenerationCompatibilityHelper.getStartVar(progress, "java.io.InputStream", 0)).append(" in = ").append(urlVariableName).append(".openStream()) {\n");
+        sb.append("            ").append(variableName).append(" = javafx.scene.text.Font.loadFont(in, ").append(size).append(");\n");
+        sb.append("        } catch (final java.io.IOException e) {\n");
+        sb.append("            throw new RuntimeException(e);\n");
+        sb.append("        }\n");
     }
 
     private static void formatNoStyle(final GenerationProgress progress, final String name, final double size, final String variableName) {
-        progress.stringBuilder().append(START_VAR).append(variableName).append(" = new javafx.scene.text.Font(\"").append(name).append("\", ").append(size).append(");\n");
+        progress.stringBuilder().append(getStartFont(progress)).append(variableName).append(" = new javafx.scene.text.Font(\"").append(name).append("\", ").append(size).append(");\n");
     }
 
     private static void formatStyle(final GenerationProgress progress, final FontWeight fw, final FontPosture fp, final double size, final String name, final String variableName) {
         final var finalFW = fw == null ? FontWeight.NORMAL : fw;
         final var finalFP = fp == null ? FontPosture.REGULAR : fp;
-        progress.stringBuilder().append(START_VAR).append(variableName).append(" = new javafx.scene.text.Font(\"").append(name)
+        progress.stringBuilder().append(getStartFont(progress)).append(variableName).append(" = new javafx.scene.text.Font(\"").append(name)
                 .append("\", javafx.scene.text.FontWeight.").append(finalFW.name()).append(", javafx.scene.text.FontPosture.")
                 .append(finalFP.name()).append(", ").append(size).append(");\n");
     }

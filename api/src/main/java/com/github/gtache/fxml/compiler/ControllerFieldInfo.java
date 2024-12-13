@@ -28,5 +28,5 @@ public interface ControllerFieldInfo {
      *
      * @return The generic types as a list, empty if not generic or raw
      */
-    List<String> genericTypes();
+    List<GenericTypes> genericTypes();
 }

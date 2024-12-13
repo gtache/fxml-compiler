@@ -29,7 +29,8 @@ public interface ParsedFactory extends ParsedObject {
     }
 
     /**
-     * Returns the arguments for the factory
+     * Returns the arguments for the factory.
+     * Different from {@link ParsedObject#children()} (in practice, children should only contain fx:define)
      *
      * @return The arguments
      */

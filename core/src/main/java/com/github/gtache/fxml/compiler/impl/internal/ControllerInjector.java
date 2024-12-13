@@ -7,15 +7,12 @@ import com.github.gtache.fxml.compiler.impl.ControllerMethodsInjectionType;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 
-import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.getControllerInjection;
-import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.getSetMethod;
-
 /**
  * Various methods to help {@link GeneratorImpl} for injecting controllers
  */
 final class ControllerInjector {
-    private ControllerInjector() {
 
+    private ControllerInjector() {
     }
 
     /**
@@ -27,23 +24,22 @@ final class ControllerInjector {
      * @throws GenerationException if an error occurs
      */
     static void injectControllerField(final GenerationProgress progress, final String id, final String variable) throws GenerationException {
-        final var controllerInjection = getControllerInjection(progress);
-        final var controllerInjectionType = controllerInjection.fieldInjectionType();
-        if (controllerInjectionType instanceof final ControllerFieldInjectionTypes types) {
+        final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
+        if (fieldInjectionType instanceof final ControllerFieldInjectionTypes types) {
             final var sb = progress.stringBuilder();
             switch (types) {
                 case FACTORY ->
-                        sb.append("    fieldMap.put(\"").append(id).append("\", ").append(variable).append(");\n");
-                case ASSIGN -> sb.append("    controller.").append(id).append(" = ").append(variable).append(";\n");
+                        sb.append("        fieldMap.put(\"").append(id).append("\", ").append(variable).append(");\n");
+                case ASSIGN -> sb.append("        controller.").append(id).append(" = ").append(variable).append(";\n");
                 case SETTERS -> {
-                    final var setMethod = getSetMethod(id);
-                    sb.append("    controller.").append(setMethod).append("(").append(variable).append(");\n");
+                    final var setMethod = GenerationHelper.getSetMethod(id);
+                    sb.append("        controller.").append(setMethod).append("(").append(variable).append(");\n");
                 }
                 case REFLECTION ->
-                        sb.append("    injectField(\"").append(id).append("\", ").append(variable).append(");\n");
+                        sb.append("        injectField(\"").append(id).append("\", ").append(variable).append(");\n");
             }
         } else {
-            throw new GenerationException("Unknown controller injection type : " + controllerInjectionType);
+            throw new GenerationException("Unknown controller injection type : " + fieldInjectionType);
         }
     }
 
@@ -80,14 +76,14 @@ final class ControllerInjector {
      * @throws GenerationException if an error occurs
      */
     private static void injectControllerMethod(final GenerationProgress progress, final String methodInjection) throws GenerationException {
-        final var injection = getControllerInjection(progress);
-        if (injection.fieldInjectionType() instanceof final ControllerFieldInjectionTypes fieldTypes) {
+        final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
+        if (fieldInjectionType instanceof final ControllerFieldInjectionTypes fieldTypes) {
             switch (fieldTypes) {
                 case FACTORY -> progress.controllerFactoryPostAction().add(methodInjection);
                 case ASSIGN, SETTERS, REFLECTION -> progress.stringBuilder().append(methodInjection);
             }
         } else {
-            throw getUnknownInjectionException(injection.fieldInjectionType());
+            throw getUnknownInjectionException(fieldInjectionType);
         }
     }
 
@@ -101,24 +97,24 @@ final class ControllerInjector {
      * @throws GenerationException if an error occurs
      */
     private static String getEventHandlerMethodInjection(final GenerationProgress progress, final ParsedProperty property, final String parentVariable) throws GenerationException {
-        final var setMethod = getSetMethod(property.name());
-        final var injection = getControllerInjection(progress);
+        final var setMethod = GenerationHelper.getSetMethod(property.name());
+        final var methodInjectionType = progress.request().parameters().methodInjectionType();
         final var controllerMethod = property.value().replace("#", "");
-        if (injection.methodInjectionType() instanceof final ControllerMethodsInjectionType methodTypes) {
+        if (methodInjectionType instanceof final ControllerMethodsInjectionType methodTypes) {
             return switch (methodTypes) {
                 case REFERENCE -> {
                     final var hasArgument = progress.request().controllerInfo().handlerHasArgument(controllerMethod);
                     if (hasArgument) {
-                        yield "    " + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
+                        yield "        " + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
                     } else {
-                        yield "    " + parentVariable + "." + setMethod + "(e -> controller." + controllerMethod + "());\n";
+                        yield "        " + parentVariable + "." + setMethod + "(e -> controller." + controllerMethod + "());\n";
                     }
                 }
                 case REFLECTION ->
-                        "    " + parentVariable + "." + setMethod + "(e -> callEventHandlerMethod(\"" + controllerMethod + "\", e));\n";
+                        "        " + parentVariable + "." + setMethod + "(e -> callEventHandlerMethod(\"" + controllerMethod + "\", e));\n";
             };
         } else {
-            throw getUnknownInjectionException(injection.methodInjectionType());
+            throw getUnknownInjectionException(methodInjectionType);
         }
     }
 
@@ -133,18 +129,18 @@ final class ControllerInjector {
      * @throws GenerationException if an error occurs
      */
     private static String getCallbackMethodInjection(final GenerationProgress progress, final ParsedProperty property, final String parentVariable, final String argumentClazz) throws GenerationException {
-        final var setMethod = getSetMethod(property.name());
-        final var injection = getControllerInjection(progress);
+        final var setMethod = GenerationHelper.getSetMethod(property.name());
+        final var methodInjectionType = progress.request().parameters().methodInjectionType();
         final var controllerMethod = property.value().replace("#", "");
-        if (injection.methodInjectionType() instanceof final ControllerMethodsInjectionType methodTypes) {
+        if (methodInjectionType instanceof final ControllerMethodsInjectionType methodTypes) {
             return switch (methodTypes) {
                 case REFERENCE ->
-                        "    " + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
+                        "        " + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
                 case REFLECTION ->
-                        "    " + parentVariable + "." + setMethod + "(e -> callCallbackMethod(\"" + controllerMethod + "\", e, " + argumentClazz + "));\n";
+                        "        " + parentVariable + "." + setMethod + "(e -> callCallbackMethod(\"" + controllerMethod + "\", e, " + argumentClazz + "));\n";
             };
         } else {
-            throw getUnknownInjectionException(injection.methodInjectionType());
+            throw getUnknownInjectionException(methodInjectionType);
         }
     }
 

@@ -11,12 +11,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import static com.github.gtache.fxml.compiler.impl.internal.ReflectionHelper.getConstructorArgs;
-
 /**
- * Helper methods for {@link GeneratorImpl} to handle constructors
+ * Helper methods for {@link GeneratorImpl} to handle objects constructors
  */
 final class ConstructorHelper {
+
     private ConstructorHelper() {
     }
 
@@ -58,7 +57,7 @@ final class ConstructorHelper {
     static ConstructorArgs getMatchingConstructorArgs(final Constructor<?>[] constructors, final Set<String> allPropertyNames) {
         ConstructorArgs matchingConstructorArgs = null;
         for (final var constructor : constructors) {
-            final var constructorArgs = getConstructorArgs(constructor);
+            final var constructorArgs = ReflectionHelper.getConstructorArgs(constructor);
             final var matchingArgsCount = getMatchingArgsCount(constructorArgs, allPropertyNames);
             if (matchingConstructorArgs == null ? matchingArgsCount > 0 : matchingArgsCount > getMatchingArgsCount(matchingConstructorArgs, allPropertyNames)) {
                 matchingConstructorArgs = constructorArgs;

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 
+<?import javafx.collections.FXCollections?>
 <?import javafx.geometry.Insets?>
 <?import javafx.geometry.Point3D?>
 <?import javafx.scene.control.*?>
@@ -19,6 +20,14 @@
           onKeyReleased="#keyReleased"
           onKeyTyped="#keyTyped" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1"
           fx:controller="com.github.gtache.fxml.compiler.parsing.xml.ControlsController">
+    <fx:define>
+        <FXCollections fx:id="list" fx:factory="observableArrayList">
+            <String>text1</String>
+            <String fx:value="text2"/>
+            <String value="text3"/>
+        </FXCollections>
+        <FXCollections fx:id="emptyMap" fx:factory="emptyObservableMap"/>
+    </fx:define>
     <rowConstraints>
         <RowConstraints/>
         <RowConstraints/>

@@ -8,9 +8,16 @@ import java.util.Map;
 public interface ControllerInfo {
 
     /**
+     * Returns the controller class name
+     *
+     * @return The name
+     */
+    String className();
+
+    /**
      * Returns a mapping of event handler method name -> boolean
      *
-     * @return A mapping of method name to true if the method has an argument
+     * @return A mapping of method name to true if the method has an argument (event handler may not have an argument)
      */
     Map<String, Boolean> handlerHasArgument();
 
@@ -18,7 +25,7 @@ public interface ControllerInfo {
      * Returns whether the given event handler method has an argument
      *
      * @param methodName The method name
-     * @return A mapping of method name to true if the method has an event
+     * @return True if the method has an argument
      */
     default boolean handlerHasArgument(final String methodName) {
         return handlerHasArgument().getOrDefault(methodName, true);
@@ -40,4 +47,11 @@ public interface ControllerInfo {
     default ControllerFieldInfo fieldInfo(final String property) {
         return fieldInfo().get(property);
     }
+
+    /**
+     * Returns whether the controller has an initialize method
+     *
+     * @return True if the controller has an initialize method
+     */
+    boolean hasInitialize();
 }

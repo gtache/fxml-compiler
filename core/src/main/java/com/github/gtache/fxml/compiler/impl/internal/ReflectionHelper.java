@@ -1,6 +1,7 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
 import com.github.gtache.fxml.compiler.GenerationException;
+import com.github.gtache.fxml.compiler.GenericTypes;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import javafx.beans.DefaultProperty;
 import javafx.beans.NamedArg;
@@ -8,11 +9,14 @@ import javafx.scene.Node;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,11 +28,23 @@ import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.FX_
  */
 final class ReflectionHelper {
     private static final Logger logger = LogManager.getLogger(ReflectionHelper.class);
-    private static final Map<Class<?>, Boolean> HAS_VALUE_OF = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Boolean> IS_GENERIC = new ConcurrentHashMap<>();
-    private static final Map<String, String> DEFAULT_PROPERTY = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Map<String, Method>> METHODS = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Map<String, Method>> STATIC_METHODS = new ConcurrentHashMap<>();
+    private static final Map<String, Class<?>> classMap = new HashMap<>();
+    private static final Map<Class<?>, Boolean> hasValueOf = new HashMap<>();
+    private static final Map<Class<?>, Boolean> isGeneric = new HashMap<>();
+    private static final Map<String, String> defaultProperty = new HashMap<>();
+    private static final Map<Class<?>, Map<String, Method>> methods = new HashMap<>();
+    private static final Map<Class<?>, Map<String, Method>> staticMethods = new HashMap<>();
+
+    private static final Map<String, Class<?>> PRIMITIVE_TYPES = Map.of(
+            "boolean", boolean.class,
+            "byte", byte.class,
+            "char", char.class,
+            "short", short.class,
+            "int", int.class,
+            "long", long.class,
+            "float", float.class,
+            "double", double.class
+    );
 
     private ReflectionHelper() {
     }
@@ -41,7 +57,7 @@ final class ReflectionHelper {
      * @return True if the class is generic
      */
     static boolean isGeneric(final Class<?> clazz) {
-        return IS_GENERIC.computeIfAbsent(clazz, c -> c.getTypeParameters().length > 0);
+        return isGeneric.computeIfAbsent(clazz, c -> c.getTypeParameters().length > 0);
     }
 
     /**
@@ -53,7 +69,7 @@ final class ReflectionHelper {
      * @return True if the class has a method with the given name
      */
     static boolean hasMethod(final Class<?> clazz, final String methodName) {
-        final var methodMap = METHODS.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
+        final var methodMap = methods.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
         final var method = methodMap.computeIfAbsent(methodName, m -> computeMethod(clazz, m));
         return method != null;
     }
@@ -67,7 +83,7 @@ final class ReflectionHelper {
      * @return The method
      */
     static Method getMethod(final Class<?> clazz, final String methodName) {
-        final var methodMap = METHODS.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
+        final var methodMap = methods.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
         return methodMap.computeIfAbsent(methodName, m -> computeMethod(clazz, m));
     }
 
@@ -110,7 +126,7 @@ final class ReflectionHelper {
      * @return True if the class has a static method with the given name
      */
     static boolean hasStaticMethod(final Class<?> clazz, final String methodName) {
-        final var methodMap = STATIC_METHODS.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
+        final var methodMap = staticMethods.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
         final var method = methodMap.computeIfAbsent(methodName, m -> computeStaticMethod(clazz, m));
         return method != null;
     }
@@ -124,7 +140,7 @@ final class ReflectionHelper {
      * @return The method
      */
     static Method getStaticMethod(final Class<?> clazz, final String methodName) {
-        final var methodMap = STATIC_METHODS.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
+        final var methodMap = staticMethods.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
         return methodMap.computeIfAbsent(methodName, m -> computeStaticMethod(clazz, m));
     }
 
@@ -161,7 +177,7 @@ final class ReflectionHelper {
      * @return True if the class has a valueOf(String)
      */
     static boolean hasValueOf(final Class<?> clazz) {
-        return HAS_VALUE_OF.computeIfAbsent(clazz, ReflectionHelper::computeHasValueOf);
+        return hasValueOf.computeIfAbsent(clazz, ReflectionHelper::computeHasValueOf);
     }
 
     /**
@@ -216,14 +232,14 @@ final class ReflectionHelper {
      * @throws GenerationException If the class is not found or no default property is found
      */
     static String getDefaultProperty(final String className) throws GenerationException {
-        if (DEFAULT_PROPERTY.containsKey(className)) {
-            return DEFAULT_PROPERTY.get(className);
+        if (defaultProperty.containsKey(className)) {
+            return defaultProperty.get(className);
         } else {
-            final var defaultProperty = computeDefaultProperty(className);
-            if (defaultProperty != null) {
-                DEFAULT_PROPERTY.put(className, defaultProperty);
+            final var property = computeDefaultProperty(className);
+            if (property != null) {
+                defaultProperty.put(className, property);
             }
-            return defaultProperty;
+            return property;
         }
     }
 
@@ -238,7 +254,7 @@ final class ReflectionHelper {
         if (name.contains(".") || Character.isUpperCase(name.charAt(0))) {
             return name;
         } else {
-            return name.substring(0, 1).toUpperCase() + name.substring(1);
+            return MethodType.methodType(clazz).wrap().returnType().getName();
         }
     }
 
@@ -249,11 +265,25 @@ final class ReflectionHelper {
      * @return The class
      * @throws GenerationException If the class is not found
      */
-    public static Class<?> getClass(final String className) throws GenerationException {
-        try {
-            return Class.forName(className, false, Thread.currentThread().getContextClassLoader());
-        } catch (final ClassNotFoundException e) {
-            throw new GenerationException("Cannot find class " + className + " ; Is a dependency missing for the plugin?", e);
+    static Class<?> getClass(final String className) throws GenerationException {
+        if (classMap.containsKey(className)) {
+            return classMap.get(className);
+        } else {
+            final var clazz = computeClass(className);
+            classMap.put(className, clazz);
+            return clazz;
+        }
+    }
+
+    private static Class<?> computeClass(final String className) throws GenerationException {
+        if (PRIMITIVE_TYPES.containsKey(className)) {
+            return PRIMITIVE_TYPES.get(className);
+        } else {
+            try {
+                return Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+            } catch (final ClassNotFoundException e) {
+                throw new GenerationException("Cannot find class " + className + " ; Is a dependency missing for the plugin?", e);
+            }
         }
     }
 
@@ -312,10 +342,55 @@ final class ReflectionHelper {
                     logger.warn("No field found for generic class {} (id={}) ; Using raw", clazz.getName(), id);
                     return "";
                 } else if (fieldInfo.isGeneric()) {
-                    return "<" + String.join(", ", fieldInfo.genericTypes()) + ">";
+                    return formatGenerics(fieldInfo.genericTypes());
                 }
             }
         }
         return "";
+    }
+
+    private static String formatGenerics(final List<? extends GenericTypes> genericTypes) {
+        final var sb = new StringBuilder();
+        sb.append("<");
+        for (var i = 0; i < genericTypes.size(); i++) {
+            final var genericType = genericTypes.get(i);
+            sb.append(genericType.name());
+            formatGenerics(genericType.subTypes(), sb);
+            if (i < genericTypes.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append(">");
+        return sb.toString();
+    }
+
+    private static void formatGenerics(final List<? extends GenericTypes> genericTypes, final StringBuilder sb) {
+        if (!genericTypes.isEmpty()) {
+            sb.append("<");
+            for (var i = 0; i < genericTypes.size(); i++) {
+                final var genericType = genericTypes.get(i);
+                sb.append(genericType.name());
+                formatGenerics(genericType.subTypes(), sb);
+                if (i < genericTypes.size() - 1) {
+                    sb.append(", ");
+                }
+            }
+            sb.append(">");
+        }
+    }
+
+    /**
+     * Gets the return type of the given method for the given class
+     *
+     * @param className  The class
+     * @param methodName The method
+     * @return The return type
+     * @throws GenerationException if an error occurs
+     */
+    static String getReturnType(final String className, final String methodName) throws GenerationException {
+        final var clazz = getClass(className);
+        final var method = Arrays.stream(clazz.getMethods()).filter(m -> m.getName().equals(methodName))
+                .findFirst().orElseThrow(() -> new GenerationException("Method " + methodName + " not found in class " + className));
+        return method.getReturnType().getName();
     }
 }

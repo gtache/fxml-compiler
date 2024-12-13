@@ -15,18 +15,7 @@ import java.util.SequencedCollection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.github.gtache.fxml.compiler.impl.internal.ConstructorHelper.getListConstructorArgs;
-import static com.github.gtache.fxml.compiler.impl.internal.ConstructorHelper.getMatchingConstructorArgs;
-import static com.github.gtache.fxml.compiler.impl.internal.ControllerInjector.injectControllerField;
-import static com.github.gtache.fxml.compiler.impl.internal.FontFormatter.formatFont;
 import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
-import static com.github.gtache.fxml.compiler.impl.internal.ImageBuilder.formatImage;
-import static com.github.gtache.fxml.compiler.impl.internal.PropertyFormatter.formatProperty;
-import static com.github.gtache.fxml.compiler.impl.internal.ReflectionHelper.*;
-import static com.github.gtache.fxml.compiler.impl.internal.SceneBuilder.formatScene;
-import static com.github.gtache.fxml.compiler.impl.internal.TriangleMeshBuilder.formatTriangleMesh;
-import static com.github.gtache.fxml.compiler.impl.internal.URLBuilder.formatURL;
-import static com.github.gtache.fxml.compiler.impl.internal.WebViewBuilder.formatWebView;
 
 /**
  * Helper methods for {@link GeneratorImpl} to format properties
@@ -34,7 +23,7 @@ import static com.github.gtache.fxml.compiler.impl.internal.WebViewBuilder.forma
 public final class ObjectFormatter {
 
     private static final Logger logger = LogManager.getLogger(ObjectFormatter.class);
-    
+
     private static final String NEW_ASSIGN = " = new ";
 
     private static final Set<String> BUILDER_CLASSES = Set.of(
@@ -57,7 +46,6 @@ public final class ObjectFormatter {
     );
 
     private ObjectFormatter() {
-
     }
 
     /**
@@ -72,7 +60,7 @@ public final class ObjectFormatter {
         switch (parsedObject) {
             case final ParsedConstant constant -> formatConstant(progress, constant, variableName);
             case final ParsedCopy copy -> formatCopy(progress, copy, variableName);
-            case final ParsedDefine define -> formatDefine(progress, define, variableName);
+            case final ParsedDefine define -> formatDefine(progress, define);
             case final ParsedFactory factory -> formatFactory(progress, factory, variableName);
             case final ParsedInclude include -> formatInclude(progress, include, variableName);
             case final ParsedReference reference -> formatReference(progress, reference, variableName);
@@ -90,7 +78,7 @@ public final class ObjectFormatter {
      * @param variableName The variable name
      */
     private static void formatText(final GenerationProgress progress, final ParsedText text, final String variableName) {
-        progress.stringBuilder().append(START_VAR).append(variableName).append(" = \"").append(text.text()).append("\";\n");
+        progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, "String")).append(variableName).append(" = \"").append(text.text()).append("\";\n");
     }
 
     /**
@@ -118,12 +106,13 @@ public final class ObjectFormatter {
     private static void formatBuilderObject(final GenerationProgress progress, final ParsedObject parsedObject, final String variableName) throws GenerationException {
         final var className = parsedObject.className();
         switch (className) {
-            case "javafx.scene.Scene" -> formatScene(progress, parsedObject, variableName);
-            case "javafx.scene.text.Font" -> formatFont(progress, parsedObject, variableName);
-            case "javafx.scene.image.Image" -> formatImage(progress, parsedObject, variableName);
-            case "java.net.URL" -> formatURL(progress, parsedObject, variableName);
-            case "javafx.scene.shape.TriangleMesh" -> formatTriangleMesh(progress, parsedObject, variableName);
-            case "javafx.scene.web.WebView" -> formatWebView(progress, parsedObject, variableName);
+            case "javafx.scene.Scene" -> SceneFormatter.formatScene(progress, parsedObject, variableName);
+            case "javafx.scene.text.Font" -> FontFormatter.formatFont(progress, parsedObject, variableName);
+            case "javafx.scene.image.Image" -> ImageFormatter.formatImage(progress, parsedObject, variableName);
+            case "java.net.URL" -> URLFormatter.formatURL(progress, parsedObject, variableName);
+            case "javafx.scene.shape.TriangleMesh" ->
+                    TriangleMeshFormatter.formatTriangleMesh(progress, parsedObject, variableName);
+            case "javafx.scene.web.WebView" -> WebViewFormatter.formatWebView(progress, parsedObject, variableName);
             default -> throw new IllegalArgumentException("Unknown builder class : " + className);
         }
     }
@@ -145,8 +134,8 @@ public final class ObjectFormatter {
         }
         final var value = getSimpleValue(progress, parsedObject);
         final var valueStr = ValueFormatter.toString(value, ReflectionHelper.getClass(parsedObject.className()));
-        progress.stringBuilder().append(START_VAR).append(variableName).append(" = ").append(valueStr).append(";\n");
-        handleId(progress, parsedObject, variableName);
+        progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, parsedObject)).append(variableName).append(" = ").append(valueStr).append(";\n");
+        GenerationHelper.handleId(progress, parsedObject, variableName);
     }
 
     private static String getSimpleValue(final GenerationProgress progress, final ParsedObject parsedObject) throws GenerationException {
@@ -217,12 +206,12 @@ public final class ObjectFormatter {
             }
         }
         if (!notDefinedChildren.isEmpty()) {
-            final var defaultProperty = getDefaultProperty(parsedObject.className());
+            final var defaultProperty = ReflectionHelper.getDefaultProperty(parsedObject.className());
             if (defaultProperty != null) {
                 allPropertyNames.add(defaultProperty);
             }
         }
-        final var constructorArgs = getMatchingConstructorArgs(constructors, allPropertyNames);
+        final var constructorArgs = ConstructorHelper.getMatchingConstructorArgs(constructors, allPropertyNames);
         if (constructorArgs == null) {
             formatNoConstructor(progress, parsedObject, variableName, allPropertyNames);
         } else {
@@ -234,21 +223,21 @@ public final class ObjectFormatter {
         final var clazz = ReflectionHelper.getClass(parsedObject.className());
         if (allPropertyNames.size() == 1 && allPropertyNames.iterator().next().equals("fx:constant")) {
             final var property = parsedObject.attributes().get("fx:constant");
-            progress.stringBuilder().append(START_VAR).append(variableName).append(" = ").append(clazz.getCanonicalName()).append(".").append(property.value()).append(";\n");
+            progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, parsedObject)).append(variableName).append(" = ").append(clazz.getCanonicalName()).append(".").append(property.value()).append(";\n");
         } else {
             throw new GenerationException("Cannot find constructor for " + clazz.getCanonicalName());
         }
     }
 
     private static void formatConstructor(final GenerationProgress progress, final ParsedObject parsedObject, final String variableName, final ConstructorArgs constructorArgs) throws GenerationException {
-        final var args = getListConstructorArgs(constructorArgs, parsedObject);
-        final var genericTypes = getGenericTypes(progress, parsedObject);
-        progress.stringBuilder().append(START_VAR).append(variableName).append(NEW_ASSIGN).append(parsedObject.className())
+        final var args = ConstructorHelper.getListConstructorArgs(constructorArgs, parsedObject);
+        final var genericTypes = ReflectionHelper.getGenericTypes(progress, parsedObject);
+        progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, parsedObject)).append(variableName).append(NEW_ASSIGN).append(parsedObject.className())
                 .append(genericTypes).append("(").append(String.join(", ", args)).append(");\n");
         final var sortedAttributes = getSortedAttributes(parsedObject);
         for (final var value : sortedAttributes) {
             if (!constructorArgs.namedArgs().containsKey(value.name())) {
-                formatProperty(progress, value, parsedObject, variableName);
+                PropertyFormatter.formatProperty(progress, value, parsedObject, variableName);
             }
         }
         final var sortedProperties = parsedObject.properties().entrySet().stream().sorted(Comparator.comparing(e -> e.getKey().name())).toList();
@@ -261,7 +250,7 @@ public final class ObjectFormatter {
         }
         final var notDefinedChildren = parsedObject.children().stream().filter(c -> !(c instanceof ParsedDefine)).toList();
         if (!notDefinedChildren.isEmpty()) {
-            final var defaultProperty = getDefaultProperty(parsedObject.className());
+            final var defaultProperty = ReflectionHelper.getDefaultProperty(parsedObject.className());
             if (!constructorArgs.namedArgs().containsKey(defaultProperty)) {
                 final var property = new ParsedPropertyImpl(defaultProperty, null, null);
                 formatChild(progress, parsedObject, property, notDefinedChildren, variableName);
@@ -278,26 +267,8 @@ public final class ObjectFormatter {
      */
     private static void formatInclude(final GenerationProgress progress, final ParsedInclude include, final String subNodeName) throws GenerationException {
         final var subViewVariable = progress.getNextVariableName("view");
-        final var source = include.source();
-        final var resources = include.resources();
-        final var request = progress.request();
-        final var subControllerClass = request.parameters().sourceToControllerName().get(source);
-        final var subClassName = request.parameters().sourceToGeneratedClassName().get(source);
-        if (subClassName == null) {
-            throw new GenerationException("Unknown include source : " + source);
-        }
-        final var sb = progress.stringBuilder();
-        if (resources == null) {
-            sb.append(START_VAR).append(subViewVariable).append(NEW_ASSIGN).append(subClassName).append("(controllersMap, resourceBundlesMap);\n");
-        } else {
-            final var subResourceBundlesMapVariable = progress.getNextVariableName("map");
-            final var subBundleVariable = progress.getNextVariableName("bundle");
-            sb.append(START_VAR).append(subResourceBundlesMapVariable).append(" = new HashMap<>(resourceBundlesMap);\n");
-            sb.append(START_VAR).append(subBundleVariable).append(" = java.util.ResourceBundle.getBundle(\"").append(resources).append("\");\n");
-            sb.append("    ").append(subResourceBundlesMapVariable).append(".put(").append(subControllerClass).append(", ").append(subBundleVariable).append(");\n");
-            sb.append(START_VAR).append(subViewVariable).append(NEW_ASSIGN).append(subClassName).append("(controllersMap, ").append(subResourceBundlesMapVariable).append(");\n");
-        }
-        sb.append("    final javafx.scene.Parent ").append(subNodeName).append(" = ").append(subViewVariable).append(".load();\n");
+        final var viewVariable = ConstructorFormatter.formatSubViewConstructorCall(progress, include);
+        progress.stringBuilder().append("    final javafx.scene.Parent ").append(subNodeName).append(" = ").append(viewVariable).append(".load();\n");
         injectSubController(progress, include, subViewVariable);
     }
 
@@ -305,13 +276,13 @@ public final class ObjectFormatter {
         final var id = include.controllerId();
         if (id != null) {
             final var subControllerVariable = progress.getNextVariableName("controller");
-            progress.stringBuilder().append(START_VAR).append(subControllerVariable).append(" = ").append(subViewVariable).append(".controller();\n");
-            progress.idToVariableName().put(id, subControllerVariable);
-            progress.idToObject().put(id, include);
+            final var controllerClass = progress.request().sourceInfo().sourceToSourceInfo().get(include.source()).controllerClassName();
+            progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, controllerClass)).append(subControllerVariable).append(" = ").append(subViewVariable).append(".controller();\n");
+            progress.idToVariableInfo().put(id, new VariableInfo(id, include, subControllerVariable, controllerClass));
             if (progress.request().controllerInfo().fieldInfo(id) == null) {
                 logger.debug("Not injecting {} because it is not found in controller", id);
             } else {
-                injectControllerField(progress, id, subControllerVariable);
+                ControllerInjector.injectControllerField(progress, id, subControllerVariable);
             }
         }
     }
@@ -319,13 +290,14 @@ public final class ObjectFormatter {
     /**
      * Formats a fx:define
      *
-     * @param progress     The generation progress
-     * @param define       The parsed define
-     * @param variableName The variable name
+     * @param progress The generation progress
+     * @param define   The parsed define
      * @throws GenerationException if an error occurs
      */
-    private static void formatDefine(final GenerationProgress progress, final ParsedDefine define, final String variableName) throws GenerationException {
-        formatObject(progress, define.object(), variableName);
+    private static void formatDefine(final GenerationProgress progress, final ParsedObject define) throws GenerationException {
+        for (final var child : define.children()) {
+            format(progress, child, progress.getNextVariableName("definedObject"));
+        }
     }
 
     /**
@@ -337,11 +309,12 @@ public final class ObjectFormatter {
      */
     private static void formatReference(final GenerationProgress progress, final ParsedReference reference, final String variableName) throws GenerationException {
         final var id = reference.source();
-        final var variable = progress.idToVariableName().get(id);
-        if (variable == null) {
+        final var variableInfo = progress.idToVariableInfo().get(id);
+        if (variableInfo == null) {
             throw new GenerationException("Unknown id : " + id);
         }
-        progress.stringBuilder().append(START_VAR).append(variableName).append(" = ").append(variable).append(";\n");
+        final var referenceName = variableInfo.variableName();
+        progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, variableInfo.className())).append(variableName).append(" = ").append(referenceName).append(";\n");
     }
 
     /**
@@ -354,12 +327,12 @@ public final class ObjectFormatter {
      */
     private static void formatCopy(final GenerationProgress progress, final ParsedCopy copy, final String variableName) throws GenerationException {
         final var id = copy.source();
-        final var variable = progress.idToVariableName().get(id);
-        final var object = progress.idToObject().get(id);
-        if (variable == null || object == null) {
+        final var variableInfo = progress.idToVariableInfo().get(id);
+        if (variableInfo == null) {
             throw new GenerationException("Unknown id : " + id);
         }
-        progress.stringBuilder().append(START_VAR).append(variableName).append(NEW_ASSIGN).append(object.className()).append("(").append(variable).append(");\n");
+        final var copyVariable = variableInfo.variableName();
+        progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, variableInfo.className())).append(variableName).append(NEW_ASSIGN).append(variableInfo.className()).append("(").append(copyVariable).append(");\n");
     }
 
     /**
@@ -370,7 +343,7 @@ public final class ObjectFormatter {
      * @param variableName The variable name
      */
     private static void formatConstant(final GenerationProgress progress, final ParsedConstant constant, final String variableName) {
-        progress.stringBuilder().append(START_VAR).append(variableName).append(" = ").append(constant.className()).append(".").append(constant.constant()).append(";\n");
+        progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, constant.className())).append(variableName).append(" = ").append(constant.className()).append(".").append(constant.constant()).append(";\n");
     }
 
     /**
@@ -381,7 +354,7 @@ public final class ObjectFormatter {
      * @param variableName The variable name
      */
     private static void formatValue(final GenerationProgress progress, final ParsedValue value, final String variableName) {
-        progress.stringBuilder().append(START_VAR).append(variableName).append(" = ").append(value.className()).append(".valueOf(\"").append(value.value()).append("\");\n");
+        progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, value.className())).append(variableName).append(" = ").append(value.className()).append(".valueOf(\"").append(value.value()).append("\");\n");
     }
 
     /**
@@ -398,8 +371,14 @@ public final class ObjectFormatter {
             variables.add(argumentVariable);
             format(progress, argument, argumentVariable);
         }
-        progress.stringBuilder().append(START_VAR).append(variableName).append(" = ").append(factory.className())
-                .append(".").append(factory.factory()).append("(").append(String.join(", ", variables)).append(");\n");
+        if (progress.request().parameters().compatibility().useVar()) {
+            progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, factory.className())).append(variableName).append(" = ").append(factory.className())
+                    .append(".").append(factory.factory()).append("(").append(String.join(", ", variables)).append(");\n");
+        } else {
+            final var returnType = ReflectionHelper.getReturnType(factory.className(), factory.factory());
+            progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, returnType)).append(variableName).append(" = ").append(factory.className())
+                    .append(".").append(factory.factory()).append("(").append(String.join(", ", variables)).append(");\n");
+        }
     }
 
     /**
@@ -416,7 +395,7 @@ public final class ObjectFormatter {
         final var propertyName = property.name();
         final var variables = new ArrayList<String>();
         for (final var object : objects) {
-            final var vn = progress.getNextVariableName(getVariablePrefix(object));
+            final var vn = progress.getNextVariableName(GenerationHelper.getVariablePrefix(object));
             format(progress, object, vn);
             if (!(object instanceof ParsedDefine)) {
                 variables.add(vn);
@@ -441,9 +420,9 @@ public final class ObjectFormatter {
      */
     private static void formatMultipleChildren(final GenerationProgress progress, final Iterable<String> variables, final String propertyName, final ParsedObject parent,
                                                final String parentVariable) throws GenerationException {
-        final var getMethod = getGetMethod(propertyName);
-        if (hasMethod(ReflectionHelper.getClass(parent.className()), getMethod)) {
-            progress.stringBuilder().append("    ").append(parentVariable).append(".").append(getMethod).append("().addAll(java.util.List.of(").append(String.join(", ", variables)).append("));\n");
+        final var getMethod = GenerationHelper.getGetMethod(propertyName);
+        if (ReflectionHelper.hasMethod(ReflectionHelper.getClass(parent.className()), getMethod)) {
+            progress.stringBuilder().append("        ").append(parentVariable).append(".").append(getMethod).append("().addAll(").append(GenerationCompatibilityHelper.getListOf(progress)).append(String.join(", ", variables)).append("));\n");
         } else {
             throw getCannotSetException(propertyName, parent.className());
         }
@@ -479,15 +458,15 @@ public final class ObjectFormatter {
     private static void formatSingleChildInstance(final GenerationProgress progress, final String variableName,
                                                   final ParsedProperty property, final ParsedObject parent,
                                                   final String parentVariable) throws GenerationException {
-        final var setMethod = getSetMethod(property);
-        final var getMethod = getGetMethod(property);
+        final var setMethod = GenerationHelper.getSetMethod(property);
+        final var getMethod = GenerationHelper.getGetMethod(property);
         final var parentClass = ReflectionHelper.getClass(parent.className());
         final var sb = progress.stringBuilder();
-        if (hasMethod(parentClass, setMethod)) {
-            sb.append("    ").append(parentVariable).append(".").append(setMethod).append("(").append(variableName).append(");\n");
-        } else if (hasMethod(parentClass, getMethod)) {
+        if (ReflectionHelper.hasMethod(parentClass, setMethod)) {
+            sb.append("        ").append(parentVariable).append(".").append(setMethod).append("(").append(variableName).append(");\n");
+        } else if (ReflectionHelper.hasMethod(parentClass, getMethod)) {
             //Probably a list method that has only one element
-            sb.append("    ").append(parentVariable).append(".").append(getMethod).append("().addAll(java.util.List.of(").append(variableName).append("));\n");
+            sb.append("        ").append(parentVariable).append(".").append(getMethod).append("().addAll(").append(GenerationCompatibilityHelper.getListOf(progress)).append(variableName).append("));\n");
         } else {
             throw getCannotSetException(property.name(), parent.className());
         }
@@ -503,9 +482,9 @@ public final class ObjectFormatter {
      */
     private static void formatSingleChildStatic(final GenerationProgress progress, final String variableName,
                                                 final ParsedProperty property, final String parentVariable) throws GenerationException {
-        final var setMethod = getSetMethod(property);
-        if (hasStaticMethod(ReflectionHelper.getClass(property.sourceType()), setMethod)) {
-            progress.stringBuilder().append("    ").append(property.sourceType()).append(".").append(setMethod)
+        final var setMethod = GenerationHelper.getSetMethod(property);
+        if (ReflectionHelper.hasStaticMethod(ReflectionHelper.getClass(property.sourceType()), setMethod)) {
+            progress.stringBuilder().append("        ").append(property.sourceType()).append(".").append(setMethod)
                     .append("(").append(parentVariable).append(", ").append(variableName).append(");\n");
         } else {
             throw getCannotSetException(property.name(), property.sourceType());

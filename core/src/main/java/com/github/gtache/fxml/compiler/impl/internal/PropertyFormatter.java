@@ -10,18 +10,15 @@ import javafx.event.EventHandler;
 
 import java.util.Objects;
 
-import static com.github.gtache.fxml.compiler.impl.internal.ControllerInjector.injectEventHandlerControllerMethod;
-import static com.github.gtache.fxml.compiler.impl.internal.FieldSetter.setEventHandler;
-import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
-import static com.github.gtache.fxml.compiler.impl.internal.ReflectionHelper.*;
-import static com.github.gtache.fxml.compiler.impl.internal.ValueFormatter.getArg;
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.FX_ID;
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.RESOURCE_KEY_PREFIX;
 
 /**
  * Helper methods for {@link GeneratorImpl} to format properties
  */
 final class PropertyFormatter {
-    private PropertyFormatter() {
 
+    private PropertyFormatter() {
     }
 
     /**
@@ -36,7 +33,7 @@ final class PropertyFormatter {
     static void formatProperty(final GenerationProgress progress, final ParsedProperty property, final ParsedObject parent, final String parentVariable) throws GenerationException {
         final var propertyName = property.name();
         if (propertyName.equals(FX_ID)) {
-            handleId(progress, parent, parentVariable);
+            GenerationHelper.handleId(progress, parent, parentVariable);
         } else if (propertyName.equals("fx:controller")) {
             checkDuplicateController(progress, parent);
         } else if (Objects.equals(property.sourceType(), EventHandler.class.getName())) {
@@ -56,20 +53,20 @@ final class PropertyFormatter {
 
     private static void handleEventHandler(final GenerationProgress progress, final ParsedProperty property, final String parentVariable) throws GenerationException {
         if (property.value().startsWith("#")) {
-            injectEventHandlerControllerMethod(progress, property, parentVariable);
+            ControllerInjector.injectEventHandlerControllerMethod(progress, property, parentVariable);
         } else {
-            setEventHandler(progress, property, parentVariable);
+            FieldSetter.setEventHandler(progress, property, parentVariable);
         }
     }
 
     private static void handleStaticProperty(final GenerationProgress progress, final ParsedProperty property, final String parentVariable, final String propertyName) throws GenerationException {
-        final var setMethod = getSetMethod(propertyName);
+        final var setMethod = GenerationHelper.getSetMethod(propertyName);
         final var propertySourceTypeClass = ReflectionHelper.getClass(property.sourceType());
-        if (hasStaticMethod(propertySourceTypeClass, setMethod)) {
-            final var method = getStaticMethod(propertySourceTypeClass, setMethod);
+        if (ReflectionHelper.hasStaticMethod(propertySourceTypeClass, setMethod)) {
+            final var method = ReflectionHelper.getStaticMethod(propertySourceTypeClass, setMethod);
             final var parameterType = method.getParameterTypes()[1];
-            final var arg = getArg(progress, property.value(), parameterType);
-            setLaterIfNeeded(progress, property, parameterType, "    " + property.sourceType() + "." + setMethod + "(" + parentVariable + ", " + arg + ");\n");
+            final var arg = ValueFormatter.getArg(progress, property.value(), parameterType);
+            setLaterIfNeeded(progress, property, parameterType, "        " + property.sourceType() + "." + setMethod + "(" + parentVariable + ", " + arg + ");\n");
         } else {
             throw new GenerationException("Cannot set " + propertyName + " on " + property.sourceType());
         }
@@ -77,12 +74,12 @@ final class PropertyFormatter {
 
     private static void handleProperty(final GenerationProgress progress, final ParsedProperty property, final ParsedObject parent, final String parentVariable) throws GenerationException {
         final var propertyName = property.name();
-        final var setMethod = getSetMethod(propertyName);
-        final var getMethod = getGetMethod(propertyName);
+        final var setMethod = GenerationHelper.getSetMethod(propertyName);
+        final var getMethod = GenerationHelper.getGetMethod(propertyName);
         final var parentClass = ReflectionHelper.getClass(parent.className());
-        if (hasMethod(parentClass, setMethod)) {
+        if (ReflectionHelper.hasMethod(parentClass, setMethod)) {
             handleSetProperty(progress, property, parentClass, parentVariable);
-        } else if (hasMethod(parentClass, getMethod)) {
+        } else if (ReflectionHelper.hasMethod(parentClass, getMethod)) {
             handleGetProperty(progress, property, parentClass, parentVariable);
         } else {
             throw new GenerationException("Cannot set " + propertyName + " on " + parent.className());
@@ -90,20 +87,20 @@ final class PropertyFormatter {
     }
 
     private static void handleSetProperty(final GenerationProgress progress, final ParsedProperty property, final Class<?> parentClass, final String parentVariable) throws GenerationException {
-        final var setMethod = getSetMethod(property.name());
-        final var method = getMethod(parentClass, setMethod);
+        final var setMethod = GenerationHelper.getSetMethod(property.name());
+        final var method = ReflectionHelper.getMethod(parentClass, setMethod);
         final var parameterType = method.getParameterTypes()[0];
-        final var arg = getArg(progress, property.value(), parameterType);
-        setLaterIfNeeded(progress, property, parameterType, "    " + parentVariable + "." + setMethod + "(" + arg + ");\n");
+        final var arg = ValueFormatter.getArg(progress, property.value(), parameterType);
+        setLaterIfNeeded(progress, property, parameterType, "        " + parentVariable + "." + setMethod + "(" + arg + ");\n");
     }
 
     private static void handleGetProperty(final GenerationProgress progress, final ParsedProperty property, final Class<?> parentClass, final String parentVariable) throws GenerationException {
-        final var getMethod = getGetMethod(property.name());
-        final var method = getMethod(parentClass, getMethod);
+        final var getMethod = GenerationHelper.getGetMethod(property.name());
+        final var method = ReflectionHelper.getMethod(parentClass, getMethod);
         final var returnType = method.getReturnType();
-        if (hasMethod(returnType, "addAll")) {
-            final var arg = getArg(progress, property.value(), String.class);
-            setLaterIfNeeded(progress, property, String.class, "    " + parentVariable + "." + getMethod + "().addAll(java.util.List.of(" + arg + "));\n");
+        if (ReflectionHelper.hasMethod(returnType, "addAll")) {
+            final var arg = ValueFormatter.getArg(progress, property.value(), String.class);
+            setLaterIfNeeded(progress, property, String.class, "        " + parentVariable + "." + getMethod + "().addAll(" + GenerationCompatibilityHelper.getListOf(progress) + arg + "));\n");
         }
     }
 
@@ -114,11 +111,11 @@ final class PropertyFormatter {
      * @param property The property
      * @param type     The type
      * @param arg      The argument
-     * @throws GenerationException if an error occurs
      */
-    private static void setLaterIfNeeded(final GenerationProgress progress, final ParsedProperty property, final Class<?> type, final String arg) throws GenerationException {
-        if (type == String.class && property.value().startsWith("%") && progress.request().parameters().resourceBundleInjection().injectionType() == ResourceBundleInjectionTypes.GETTER
-                && getControllerInjection(progress).fieldInjectionType() == ControllerFieldInjectionTypes.FACTORY) {
+    private static void setLaterIfNeeded(final GenerationProgress progress, final ParsedProperty property, final Class<?> type, final String arg) {
+        final var parameters = progress.request().parameters();
+        if (type == String.class && property.value().startsWith(RESOURCE_KEY_PREFIX) && parameters.resourceInjectionType() == ResourceBundleInjectionTypes.GETTER
+                && parameters.fieldInjectionType() == ControllerFieldInjectionTypes.FACTORY) {
             progress.controllerFactoryPostAction().add(arg);
         } else {
             progress.stringBuilder().append(arg);

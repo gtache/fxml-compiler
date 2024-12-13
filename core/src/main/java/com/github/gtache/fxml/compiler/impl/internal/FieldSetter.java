@@ -5,7 +5,7 @@ import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 
-import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.EXPRESSION_PREFIX;
 
 /**
  * Helper methods for {@link GeneratorImpl} to set fields
@@ -13,7 +13,6 @@ import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
 final class FieldSetter {
 
     private FieldSetter() {
-
     }
 
     /**
@@ -39,8 +38,8 @@ final class FieldSetter {
      * @throws GenerationException if an error occurs
      */
     static void setField(final GenerationProgress progress, final ParsedProperty property, final String parentVariable, final String fieldType) throws GenerationException {
-        final var injection = getControllerInjection(progress);
-        if (injection.fieldInjectionType() instanceof final ControllerFieldInjectionTypes fieldTypes) {
+        final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
+        if (fieldInjectionType instanceof final ControllerFieldInjectionTypes fieldTypes) {
             switch (fieldTypes) {
                 case ASSIGN -> setAssign(progress, property, parentVariable);
                 case FACTORY -> setFactory(progress, property, parentVariable);
@@ -48,14 +47,14 @@ final class FieldSetter {
                 case REFLECTION -> setReflection(progress, property, parentVariable, fieldType);
             }
         } else {
-            throw new GenerationException("Unknown injection type : " + injection.fieldInjectionType());
+            throw new GenerationException("Unknown injection type : " + fieldInjectionType);
         }
     }
 
     private static void setAssign(final GenerationProgress progress, final ParsedProperty property, final String parentVariable) {
-        final var methodName = getSetMethod(property);
-        final var value = property.value().replace("$", "");
-        progress.stringBuilder().append("    ").append(parentVariable).append(".").append(methodName).append("(").append(value).append(");\n");
+        final var methodName = GenerationHelper.getSetMethod(property);
+        final var value = property.value().replace(EXPRESSION_PREFIX, "");
+        progress.stringBuilder().append("        ").append(parentVariable).append(".").append(methodName).append("(").append(value).append(");\n");
     }
 
     private static void setFactory(final GenerationProgress progress, final ParsedProperty property, final String parentVariable) {
@@ -67,28 +66,27 @@ final class FieldSetter {
     }
 
     private static String getSetString(final ParsedProperty property, final String parentVariable) {
-        final var methodName = getSetMethod(property);
-        final var value = property.value().replace("$", "");
+        final var methodName = GenerationHelper.getSetMethod(property);
+        final var value = property.value().replace(EXPRESSION_PREFIX, "");
         final var split = value.split("\\.");
-        final var getterName = getGetMethod(split[1]);
-        return "    " + parentVariable + "." + methodName + "(" + split[0] + "." + getterName + ");\n";
+        final var getterName = GenerationHelper.getGetMethod(split[1]);
+        return "        " + parentVariable + "." + methodName + "(" + split[0] + "." + getterName + ");\n";
     }
 
     private static void setReflection(final GenerationProgress progress, final ParsedProperty property, final String parentVariable, final String fieldType) {
-        final var methodName = getSetMethod(property);
-        final var value = property.value().replace("$", "");
+        final var methodName = GenerationHelper.getSetMethod(property);
+        final var value = property.value().replace(EXPRESSION_PREFIX, "");
         final var split = value.split("\\.");
         final var fieldName = split[1];
-        progress.stringBuilder().append("""
-                try {
-                    final var field = controller.getClass().getDeclaredField("%s");
-                    field.setAccessible(true);
-                    final var value = (%s) field.get(controller);
-                    %s.%s(value);
-                } catch (NoSuchFieldException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-                """.formatted(fieldName, fieldType, parentVariable, methodName));
+        final var sb = progress.stringBuilder();
+        sb.append("        try {\n");
+        sb.append("            ").append(GenerationCompatibilityHelper.getStartVar(progress, "java.lang.reflect.Field", 0)).append("field = controller.getClass().getDeclaredField(\"").append(fieldName).append("\");\n");
+        sb.append("            field.setAccessible(true);\n");
+        sb.append("            final var value = (").append(fieldType).append(") field.get(controller);\n");
+        sb.append("            ").append(parentVariable).append(".").append(methodName).append("(value);\n");
+        sb.append("        } catch (final NoSuchFieldException | IllegalAccessException e) {\n");
+        sb.append("            throw new RuntimeException(e);\n");
+        sb.append("        }\n");
     }
 
 }

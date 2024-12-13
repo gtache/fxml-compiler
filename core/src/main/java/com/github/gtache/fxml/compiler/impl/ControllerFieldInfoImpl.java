@@ -1,6 +1,7 @@
 package com.github.gtache.fxml.compiler.impl;
 
 import com.github.gtache.fxml.compiler.ControllerFieldInfo;
+import com.github.gtache.fxml.compiler.GenericTypes;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,7 +12,7 @@ import java.util.Objects;
  * @param name         The field name
  * @param genericTypes The generic types
  */
-public record ControllerFieldInfoImpl(String name, List<String> genericTypes) implements ControllerFieldInfo {
+public record ControllerFieldInfoImpl(String name, List<GenericTypes> genericTypes) implements ControllerFieldInfo {
 
     /**
      * Instantiates a new info

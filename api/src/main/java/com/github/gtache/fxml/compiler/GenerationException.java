@@ -6,7 +6,7 @@ package com.github.gtache.fxml.compiler;
 public class GenerationException extends Exception {
 
     /**
-     * Instantiates a new GenerationException
+     * Instantiates a new exception
      *
      * @param message The message
      */
@@ -15,7 +15,7 @@ public class GenerationException extends Exception {
     }
 
     /**
-     * Instantiates a new GenerationException
+     * Instantiates a new exception
      *
      * @param message The message
      * @param cause   The cause
@@ -25,7 +25,7 @@ public class GenerationException extends Exception {
     }
 
     /**
-     * Instantiates a new GenerationException
+     * Instantiates a new exception
      *
      * @param cause The cause
      */

@@ -6,8 +6,7 @@ import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionTypes;
 
 import java.util.regex.Pattern;
 
-import static com.github.gtache.fxml.compiler.impl.internal.ReflectionHelper.getWrapperClass;
-import static com.github.gtache.fxml.compiler.impl.internal.ReflectionHelper.hasValueOf;
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
 
 /**
  * Helper methods for {@link GeneratorImpl} to format values
@@ -31,19 +30,19 @@ final class ValueFormatter {
      * @throws GenerationException if an error occurs
      */
     static String getArg(final GenerationProgress progress, final String value, final Class<?> parameterType) throws GenerationException {
-        if (parameterType == String.class && value.startsWith("%")) {
+        if (parameterType == String.class && value.startsWith(RESOURCE_KEY_PREFIX)) {
             return getBundleValue(progress, value.substring(1));
-        } else if (value.startsWith("@")) {
+        } else if (value.startsWith(RELATIVE_PATH_PREFIX)) {
             final var subpath = value.substring(1);
             return getResourceValue(subpath);
-        } else if (value.startsWith("${")) {
+        } else if (value.startsWith(BINDING_EXPRESSION_PREFIX)) {
             throw new UnsupportedOperationException("Not implemented yet");
-        } else if (value.startsWith("$")) {
-            final var variable = progress.idToVariableName().get(value.substring(1));
+        } else if (value.startsWith(EXPRESSION_PREFIX)) {
+            final var variable = progress.idToVariableInfo().get(value.substring(1));
             if (variable == null) {
                 throw new GenerationException("Unknown variable : " + value.substring(1));
             }
-            return variable;
+            return variable.variableName();
         } else {
             return toString(value, parameterType);
         }
@@ -62,11 +61,12 @@ final class ValueFormatter {
      * @throws GenerationException if an error occurs
      */
     private static String getBundleValue(final GenerationProgress progress, final String value) throws GenerationException {
-        final var resourceBundleInjectionType = progress.request().parameters().resourceBundleInjection().injectionType();
+        final var resourceBundleInjectionType = progress.request().parameters().resourceInjectionType();
         if (resourceBundleInjectionType instanceof final ResourceBundleInjectionTypes types) {
             return switch (types) {
-                case CONSTRUCTOR, GET_BUNDLE -> "bundle.getString(\"" + value + "\")";
+                case CONSTRUCTOR, GET_BUNDLE, CONSTRUCTOR_NAME -> "resourceBundle.getString(\"" + value + "\")";
                 case GETTER -> "controller.resources().getString(\"" + value + "\")";
+                case CONSTRUCTOR_FUNCTION -> "resourceBundleFunction.apply(\"" + value + "\")";
             };
         } else {
             throw new GenerationException("Unknown resource bundle injection type : " + resourceBundleInjectionType);
@@ -90,25 +90,37 @@ final class ValueFormatter {
             return value;
         } else if (clazz == byte.class || clazz == Byte.class || clazz == short.class || clazz == Short.class ||
                 clazz == int.class || clazz == Integer.class || clazz == long.class || clazz == Long.class) {
-            if (INT_PATTERN.matcher(value).matches()) {
-                return value;
-            } else {
-                return getValueOf(getWrapperClass(clazz), value);
-            }
+            return intToString(value, clazz);
         } else if (clazz == float.class || clazz == Float.class || clazz == double.class || clazz == Double.class) {
-            if (DECIMAL_PATTERN.matcher(value).matches()) {
-                return value;
-            } else {
-                return getValueOf(getWrapperClass(clazz), value);
-            }
-        } else if (hasValueOf(clazz)) {
-            if (clazz.isEnum()) {
-                return clazz.getCanonicalName() + "." + value;
-            } else {
-                return getValueOf(clazz.getCanonicalName(), value);
-            }
+            return decimalToString(value, clazz);
+        } else if (ReflectionHelper.hasValueOf(clazz)) {
+            return valueOfToString(value, clazz);
         } else {
             return value;
+        }
+    }
+
+    private static String intToString(final String value, final Class<?> clazz) {
+        if (INT_PATTERN.matcher(value).matches()) {
+            return value;
+        } else {
+            return getValueOf(ReflectionHelper.getWrapperClass(clazz), value);
+        }
+    }
+
+    private static String decimalToString(final String value, final Class<?> clazz) {
+        if (DECIMAL_PATTERN.matcher(value).matches()) {
+            return value;
+        } else {
+            return getValueOf(ReflectionHelper.getWrapperClass(clazz), value);
+        }
+    }
+
+    private static String valueOfToString(final String value, final Class<?> clazz) {
+        if (clazz.isEnum()) {
+            return clazz.getCanonicalName() + "." + value;
+        } else {
+            return getValueOf(clazz.getCanonicalName(), value);
         }
     }
 

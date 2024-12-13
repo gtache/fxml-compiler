@@ -1,10 +1,10 @@
 package com.github.gtache.fxml.compiler.parsing.xml;
 
-import com.github.gtache.fxml.compiler.parsing.impl.ParsedIncludeImpl;
-import com.github.gtache.fxml.compiler.parsing.impl.ParsedObjectImpl;
-import com.github.gtache.fxml.compiler.parsing.impl.ParsedPropertyImpl;
+import com.github.gtache.fxml.compiler.parsing.impl.*;
+import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.BorderPane;
@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SequencedMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,24 +33,45 @@ class TestDOMFXMLParser {
         final var expected = new ParsedObjectImpl(BorderPane.class.getName(),
                 newLinkedHashMap("fx:controller", new ParsedPropertyImpl("fx:controller", null, "com.github.gtache.fxml.compiler.parsing.xml.LoadController")),
                 newLinkedHashMap(new ParsedPropertyImpl("bottom", null, null),
-                        List.of(new ParsedObjectImpl(VBox.class.getName(),
-                                newLinkedHashMap("alignment", new ParsedPropertyImpl("alignment", BorderPane.class.getName(), "CENTER")),
-                                newLinkedHashMap(new ParsedPropertyImpl("children", null, null), List.of(
-                                        new ParsedObjectImpl(Slider.class.getName(),
-                                                newLinkedHashMap("hgrow", new ParsedPropertyImpl("hgrow", HBox.class.getName(), "ALWAYS"), "fx:id", new ParsedPropertyImpl("fx:id", null, "playSlider")),
-                                                newLinkedHashMap(new ParsedPropertyImpl("padding", null, null),
-                                                        List.of(new ParsedObjectImpl(Insets.class.getName(),
-                                                                newLinkedHashMap("left", new ParsedPropertyImpl("left", null, "10.0")),
-                                                                newLinkedHashMap(), List.of()))), List.of()),
-                                        new ParsedObjectImpl(Label.class.getName(),
-                                                newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "playLabel"), "onMouseClicked", new ParsedPropertyImpl("onMouseClicked", EventHandler.class.getName(), "#mouseClicked"), "text", new ParsedPropertyImpl("text", null, "Label")),
-                                                newLinkedHashMap(new ParsedPropertyImpl("padding", null, null),
-                                                        List.of(new ParsedObjectImpl(Insets.class.getName(),
-                                                                newLinkedHashMap("right", new ParsedPropertyImpl("right", null, "10.0")),
-                                                                newLinkedHashMap(), List.of()))), List.of()),
-                                        new ParsedIncludeImpl(
-                                                newLinkedHashMap("source", new ParsedPropertyImpl("source", null, "includedView.fxml"), "resources", new ParsedPropertyImpl("resources", null, "com/github/gtache/fxml/compiler/parsing/xml/IncludedBundle"), "fx:id", new ParsedPropertyImpl("fx:id", null, "id")))
-                                )), List.of())),
+                        List.of(new ParsedDefineImpl(List.of(new ParsedObjectImpl(HBox.class.getName(), Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "define1")), newLinkedHashMap(), List.of()))),
+                                new ParsedObjectImpl(VBox.class.getName(),
+                                        Map.of("alignment", new ParsedPropertyImpl("alignment", BorderPane.class.getName(), "CENTER")),
+                                        newLinkedHashMap(new ParsedPropertyImpl("children", null, null), List.of(
+                                                new ParsedObjectImpl(Slider.class.getName(),
+                                                        Map.of("hgrow", new ParsedPropertyImpl("hgrow", HBox.class.getName(), "ALWAYS"), "fx:id", new ParsedPropertyImpl("fx:id", null, "playSlider")),
+                                                        newLinkedHashMap(new ParsedPropertyImpl("padding", null, null),
+                                                                List.of(new ParsedObjectImpl(Insets.class.getName(),
+                                                                        Map.of("left", new ParsedPropertyImpl("left", null, "$define7")),
+                                                                        newLinkedHashMap(), List.of()))), List.of()),
+                                                new ParsedObjectImpl(Label.class.getName(),
+                                                        Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "playLabel"), "onMouseClicked", new ParsedPropertyImpl("onMouseClicked", EventHandler.class.getName(), "#mouseClicked"), "text", new ParsedPropertyImpl("text", null, "Label")),
+                                                        newLinkedHashMap(new ParsedPropertyImpl("padding", null, null),
+                                                                List.of(new ParsedObjectImpl(Insets.class.getName(),
+                                                                        Map.of(),
+                                                                        newLinkedHashMap(new ParsedPropertyImpl("right", null, null),
+                                                                                List.of(new ParsedReferenceImpl(Map.of("source", new ParsedPropertyImpl("source", null, "define7"))))), List.of()))), List.of()),
+                                                new ParsedIncludeImpl(
+                                                        Map.of("source", new ParsedPropertyImpl("source", null, "includedView.fxml"), "resources", new ParsedPropertyImpl("resources", null, "com/github/gtache/fxml/compiler/parsing/xml/IncludedBundle"), "fx:id", new ParsedPropertyImpl("fx:id", null, "id")))
+                                        )), List.of(new ParsedDefineImpl(List.of(
+                                        new ParsedConstantImpl(Cursor.class.getName(), Map.of("fx:constant", new ParsedPropertyImpl("fx:constant", null, "CLOSED_HAND"))),
+                                        new ParsedObjectImpl(String.class.getName(), Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "define2")), newLinkedHashMap(), List.of(new ParsedTextImpl("text"))),
+                                        new ParsedObjectImpl(String.class.getName(), Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "define3"), "value", new ParsedPropertyImpl("value", null, "text")), newLinkedHashMap(), List.of()),
+                                        new ParsedValueImpl(String.class.getName(), Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "define4"), "fx:value", new ParsedPropertyImpl("fx:value", null, "text"))),
+                                        new ParsedObjectImpl(Integer.class.getName(), Map.of("value", new ParsedPropertyImpl("value", null, "1")), newLinkedHashMap(), List.of()),
+                                        new ParsedValueImpl(Integer.class.getName(), Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "define7"), "fx:value", new ParsedPropertyImpl("fx:value", null, "2"))),
+                                        new ParsedObjectImpl(Double.class.getName(), Map.of("value", new ParsedPropertyImpl("value", null, "Infinity")), newLinkedHashMap(), List.of()),
+                                        new ParsedValueImpl(Long.class.getName(), Map.of("fx:value", new ParsedPropertyImpl("fx:value", null, "3"))),
+                                        new ParsedObjectImpl(Float.class.getName(), Map.of(), newLinkedHashMap(), List.of(new ParsedTextImpl("-Infinity"))),
+                                        new ParsedObjectImpl(Float.class.getName(), Map.of(), newLinkedHashMap(), List.of()),
+                                        new ParsedFactoryImpl(FXCollections.class.getName(), Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "define5"), "fx:factory", new ParsedPropertyImpl("fx:factory", null, "observableArrayList")), List.of(
+                                                new ParsedObjectImpl(String.class.getName(), Map.of(), newLinkedHashMap(), List.of(new ParsedTextImpl("text1"))),
+                                                new ParsedValueImpl(String.class.getName(), Map.of("fx:value", new ParsedPropertyImpl("fx:value", null, "text2"))),
+                                                new ParsedObjectImpl(String.class.getName(), Map.of("value", new ParsedPropertyImpl("value", null, "text3")), newLinkedHashMap(), List.of()),
+                                                new ParsedCopyImpl(Map.of("source", new ParsedPropertyImpl("source", null, "define2")))
+                                        ), List.of(new ParsedDefineImpl(
+                                                List.of(new ParsedObjectImpl(Byte.class.getName(), Map.of(), newLinkedHashMap(), List.of(new ParsedTextImpl("3")))))
+                                        )),
+                                        new ParsedFactoryImpl(FXCollections.class.getName(), Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "define6"), "fx:factory", new ParsedPropertyImpl("fx:factory", null, "emptyObservableMap")), List.of(), List.of())))))),
                         new ParsedPropertyImpl("center", null, null),
                         List.of(new ParsedObjectImpl(VBox.class.getName(), newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "vbox")), newLinkedHashMap(), List.of()))
                 ), List.of());

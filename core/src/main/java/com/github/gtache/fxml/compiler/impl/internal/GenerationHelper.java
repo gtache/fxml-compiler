@@ -1,6 +1,5 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
-import com.github.gtache.fxml.compiler.ControllerInjection;
 import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
@@ -11,21 +10,54 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.gtache.fxml.compiler.impl.internal.ControllerInjector.injectControllerField;
-
 /**
  * Various helper methods for {@link GeneratorImpl}
  */
-public final class GenerationHelper {
+final class GenerationHelper {
 
     private static final Logger logger = LogManager.getLogger(GenerationHelper.class);
     static final String FX_ID = "fx:id";
     static final String FX_VALUE = "fx:value";
     static final String VALUE = "value";
-    static final String START_VAR = "    final var ";
+
+    //Taken from FXMLLoader
+    static final String ESCAPE_PREFIX = "\\";
+    static final String RELATIVE_PATH_PREFIX = "@";
+    static final String RESOURCE_KEY_PREFIX = "%";
+    static final String EXPRESSION_PREFIX = "$";
+    static final String BINDING_EXPRESSION_PREFIX = "${";
+    static final String BI_DIRECTIONAL_BINDING_PREFIX = "#{";
+
 
     private GenerationHelper() {
+    }
 
+    /**
+     * Handles the fx:id attribute of an object
+     *
+     * @param progress     The generation progress
+     * @param parsedObject The parsed object
+     * @param variableName The variable name
+     * @throws GenerationException if an error occurs
+     */
+    static void handleId(final GenerationProgress progress, final ParsedObject parsedObject, final String variableName) throws GenerationException {
+        final var id = parsedObject.attributes().get(FX_ID);
+        if (id != null) {
+            final var idValue = id.value();
+            final String className;
+            if (progress.request().controllerInfo().fieldInfo(idValue) == null) {
+                className = parsedObject.className();
+                logger.debug("Not injecting {} because it is not found in controller", idValue);
+            } else {
+                if (ReflectionHelper.isGeneric(ReflectionHelper.getClass(parsedObject.className()))) {
+                    className = parsedObject.className() + ReflectionHelper.getGenericTypes(progress, parsedObject);
+                } else {
+                    className = parsedObject.className();
+                }
+                ControllerInjector.injectControllerField(progress, idValue, variableName);
+            }
+            progress.idToVariableInfo().put(idValue, new VariableInfo(idValue, parsedObject, variableName, className));
+        }
     }
 
     /**
@@ -34,27 +66,18 @@ public final class GenerationHelper {
      * @param object The object
      * @return The variable prefix
      */
-    public static String getVariablePrefix(final ParsedObject object) {
-        final var className = object.className();
-        return className.substring(className.lastIndexOf('.') + 1).toLowerCase();
+    static String getVariablePrefix(final ParsedObject object) {
+        return getVariablePrefix(object.className());
     }
 
     /**
-     * Gets the controller injection object from the generation request
+     * Returns the variable prefix for the given class name
      *
-     * @param progress The generation progress
-     * @return The controller injection
-     * @throws GenerationException If the controller is not found
+     * @param className The class name
+     * @return The variable prefix
      */
-    public static ControllerInjection getControllerInjection(final GenerationProgress progress) throws GenerationException {
-        final var request = progress.request();
-        final var property = request.rootObject().attributes().get("fx:controller");
-        if (property == null) {
-            throw new GenerationException("Root object must have a controller property");
-        } else {
-            final var id = property.value();
-            return request.parameters().controllerInjections().get(id);
-        }
+    static String getVariablePrefix(final String className) {
+        return className.substring(className.lastIndexOf('.') + 1).toLowerCase();
     }
 
     /**
@@ -95,27 +118,6 @@ public final class GenerationHelper {
      */
     static String getSetMethod(final String propertyName) {
         return "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-    }
-
-    /**
-     * Handles the fx:id attribute of an object
-     *
-     * @param progress     The generation progress
-     * @param parsedObject The parsed object
-     * @param variableName The variable name
-     * @throws GenerationException if an error occurs
-     */
-    static void handleId(final GenerationProgress progress, final ParsedObject parsedObject, final String variableName) throws GenerationException {
-        final var id = parsedObject.attributes().get(FX_ID);
-        if (id != null) {
-            progress.idToVariableName().put(id.value(), variableName);
-            progress.idToObject().put(id.value(), parsedObject);
-            if (progress.request().controllerInfo().fieldInfo(id.value()) == null) {
-                logger.debug("Not injecting {} because it is not found in controller", id.value());
-            } else {
-                injectControllerField(progress, id.value(), variableName);
-            }
-        }
     }
 
     /**

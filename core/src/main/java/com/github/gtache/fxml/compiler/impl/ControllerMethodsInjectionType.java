@@ -1,10 +1,9 @@
 package com.github.gtache.fxml.compiler.impl;
 
-import com.github.gtache.fxml.compiler.ControllerInjection;
 import com.github.gtache.fxml.compiler.InjectionType;
 
 /**
- * Base methods {@link InjectionType}s for {@link ControllerInjection}
+ * Base methods {@link InjectionType}s
  */
 public enum ControllerMethodsInjectionType implements InjectionType {
     /**

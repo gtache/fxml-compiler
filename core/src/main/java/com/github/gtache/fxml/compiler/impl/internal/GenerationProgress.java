@@ -2,28 +2,29 @@ package com.github.gtache.fxml.compiler.impl.internal;
 
 import com.github.gtache.fxml.compiler.GenerationRequest;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
-import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SequencedCollection;
+import java.util.SequencedMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Used by {@link GeneratorImpl} to track the generation progress
  *
  * @param request                     The generation request
- * @param idToVariableName            The id to variable name mapping
- * @param idToObject                  The id to parsed object mapping
+ * @param idToVariableInfo            The id to variable info
  * @param variableNameCounters        The variable name counters for variable name generation
+ * @param controllerClassToVariable   The controller class to variable mapping
  * @param controllerFactoryPostAction The controller factory post action for factory injection
  * @param stringBuilder               The string builder
  */
-public record GenerationProgress(GenerationRequest request, Map<String, String> idToVariableName,
-                                 Map<String, ParsedObject> idToObject,
+public record GenerationProgress(GenerationRequest request, Map<String, VariableInfo> idToVariableInfo,
                                  Map<String, AtomicInteger> variableNameCounters,
+                                 SequencedMap<String, String> controllerClassToVariable,
                                  SequencedCollection<String> controllerFactoryPostAction,
                                  StringBuilder stringBuilder) {
 
@@ -31,18 +32,18 @@ public record GenerationProgress(GenerationRequest request, Map<String, String> 
      * Instantiates a new GenerationProgress
      *
      * @param request                     The generation request
-     * @param idToVariableName            The id to variable name mapping
-     * @param idToObject                  The id to parsed object mapping
+     * @param idToVariableInfo            The id to variable info mapping
      * @param variableNameCounters        The variable name counters
+     * @param controllerClassToVariable   The controller class to variable mapping
      * @param controllerFactoryPostAction The controller factory post action
      * @param stringBuilder               The string builder
      * @throws NullPointerException if any parameter is null
      */
     public GenerationProgress {
         Objects.requireNonNull(request);
-        Objects.requireNonNull(idToVariableName);
-        Objects.requireNonNull(idToObject);
+        Objects.requireNonNull(idToVariableInfo);
         Objects.requireNonNull(variableNameCounters);
+        Objects.requireNonNull(controllerClassToVariable);
         Objects.requireNonNull(controllerFactoryPostAction);
         Objects.requireNonNull(stringBuilder);
     }
@@ -54,7 +55,7 @@ public record GenerationProgress(GenerationRequest request, Map<String, String> 
      * @throws NullPointerException if request is null
      */
     public GenerationProgress(final GenerationRequest request) {
-        this(request, new HashMap<>(), new HashMap<>(), new HashMap<>(), new ArrayList<>(), new StringBuilder());
+        this(request, new HashMap<>(), new HashMap<>(), new LinkedHashMap<>(), new ArrayList<>(), new StringBuilder());
     }
 
     /**

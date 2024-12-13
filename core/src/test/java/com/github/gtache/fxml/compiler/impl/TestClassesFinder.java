@@ -14,6 +14,7 @@ class TestClassesFinder {
         final var expected = Set.of(
                 "com.github.gtache.fxml.compiler.parsing.impl.TestParsedConstantImpl",
                 "com.github.gtache.fxml.compiler.parsing.impl.TestParsedCopyImpl",
+                "com.github.gtache.fxml.compiler.parsing.impl.TestParsedDefineImpl",
                 "com.github.gtache.fxml.compiler.parsing.impl.TestParsedFactoryImpl",
                 "com.github.gtache.fxml.compiler.parsing.impl.TestParsedIncludeImpl",
                 "com.github.gtache.fxml.compiler.parsing.impl.TestParsedObjectImpl",

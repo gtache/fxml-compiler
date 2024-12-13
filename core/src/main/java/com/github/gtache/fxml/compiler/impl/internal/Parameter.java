@@ -19,7 +19,7 @@ record Parameter(String name, Class<?> type, String defaultValue) {
      * @param defaultValue The parameter default value
      * @throws NullPointerException if any parameter is null
      */
-    public Parameter {
+    Parameter {
         requireNonNull(name);
         requireNonNull(type);
         requireNonNull(defaultValue);

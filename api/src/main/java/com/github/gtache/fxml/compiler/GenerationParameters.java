@@ -1,5 +1,7 @@
 package com.github.gtache.fxml.compiler;
 
+import com.github.gtache.fxml.compiler.compatibility.GenerationCompatibility;
+
 import java.util.Map;
 
 /**
@@ -8,31 +10,52 @@ import java.util.Map;
 public interface GenerationParameters {
 
     /**
-     * Returns the mapping of controller class name to controller injection
+     * Returns the compatibility information
      *
-     * @return The mapping
+     * @return The compatibility
      */
-    Map<String, ControllerInjection> controllerInjections();
+    GenerationCompatibility compatibility();
 
     /**
-     * Returns the mapping of fx:include source to generated class name
+     * Returns whether to use Image InputStream constructor instead of the String (url) one.
+     * This allows avoiding opening some packages with JPMS
      *
-     * @return The mapping
+     * @return True if the constructor should be used
      */
-    Map<String, String> sourceToGeneratedClassName();
-
+    boolean useImageInputStreamConstructor();
 
     /**
-     * Returns the mapping of fx:include source to controller class name
+     * Returns the mapping of controller class to resource bundle path (in case of GET-BUNDLE injection)
      *
-     * @return The mapping
+     * @return The map
      */
-    Map<String, String> sourceToControllerName();
+    Map<String, String> bundleMap();
 
     /**
-     * Returns the resource bundle injection to use
+     * Returns the controller injection to use
      *
      * @return The injection
      */
-    ResourceBundleInjection resourceBundleInjection();
+    InjectionType controllerInjectionType();
+
+    /**
+     * Returns the field injection to use
+     *
+     * @return The injection
+     */
+    InjectionType fieldInjectionType();
+
+    /**
+     * Returns the method injection to use
+     *
+     * @return The injection
+     */
+    InjectionType methodInjectionType();
+
+    /**
+     * Returns the resource injection to use
+     *
+     * @return The injection
+     */
+    InjectionType resourceInjectionType();
 }

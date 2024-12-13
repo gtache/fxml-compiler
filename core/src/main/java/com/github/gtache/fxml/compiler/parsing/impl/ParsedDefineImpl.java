@@ -3,7 +3,7 @@ package com.github.gtache.fxml.compiler.parsing.impl;
 import com.github.gtache.fxml.compiler.parsing.ParsedDefine;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 
-import java.util.Objects;
+import java.util.List;
 
 /**
  * Implementation of {@link ParsedObject}
@@ -12,9 +12,9 @@ import java.util.Objects;
  * @param attributes The object properties
  * @param properties The object children (complex properties)
  */
-public record ParsedDefineImpl(ParsedObject object) implements ParsedDefine {
+public record ParsedDefineImpl(List<ParsedObject> children) implements ParsedDefine {
 
     public ParsedDefineImpl {
-        Objects.requireNonNull(object);
+        children = List.copyOf(children);
     }
 }

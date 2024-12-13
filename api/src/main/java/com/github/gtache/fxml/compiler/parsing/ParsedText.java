@@ -21,7 +21,7 @@ public interface ParsedText extends ParsedObject {
 
     @Override
     default String className() {
-        return "java.lang.String";
+        return String.class.getName();
     }
 
     @Override

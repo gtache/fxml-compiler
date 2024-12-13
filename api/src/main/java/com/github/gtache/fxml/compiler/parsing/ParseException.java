@@ -6,7 +6,7 @@ package com.github.gtache.fxml.compiler.parsing;
 public class ParseException extends Exception {
 
     /**
-     * Instantiates a new ParseException
+     * Instantiates a new exception
      *
      * @param message The message
      */
@@ -15,7 +15,7 @@ public class ParseException extends Exception {
     }
 
     /**
-     * Instantiates a new ParseException
+     * Instantiates a new exception
      *
      * @param message The message
      * @param cause   The cause
@@ -25,7 +25,7 @@ public class ParseException extends Exception {
     }
 
     /**
-     * Instantiates a new ParseException
+     * Instantiates a new exception
      *
      * @param cause The cause
      */

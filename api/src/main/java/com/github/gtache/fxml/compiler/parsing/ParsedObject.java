@@ -10,7 +10,7 @@ import java.util.SequencedMap;
 public interface ParsedObject {
 
     /**
-     * The type of the object
+     * Returns the type of the object
      *
      * @return The class name
      */

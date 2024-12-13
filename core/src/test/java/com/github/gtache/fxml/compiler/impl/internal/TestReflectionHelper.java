@@ -1,7 +1,13 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
+import com.github.gtache.fxml.compiler.ControllerFieldInfo;
+import com.github.gtache.fxml.compiler.ControllerInfo;
 import com.github.gtache.fxml.compiler.GenerationException;
-import com.github.gtache.fxml.compiler.impl.WholeConstructorArgs;
+import com.github.gtache.fxml.compiler.GenerationRequest;
+import com.github.gtache.fxml.compiler.impl.GenericTypesImpl;
+import com.github.gtache.fxml.compiler.parsing.ParsedObject;
+import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
+import com.github.gtache.fxml.compiler.parsing.impl.ParsedPropertyImpl;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
@@ -9,14 +15,53 @@ import javafx.scene.control.TableCell;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class TestReflectionHelper {
+
+    private final GenerationProgress progress;
+    private final GenerationRequest request;
+    private final Map<String, ParsedProperty> attributes;
+    private final ControllerInfo controllerInfo;
+    private final ControllerFieldInfo fieldInfo;
+    private final ParsedObject parsedObject;
+
+    TestReflectionHelper(@Mock final GenerationProgress progress, @Mock final GenerationRequest request,
+                         @Mock final ControllerInfo controllerInfo, @Mock final ControllerFieldInfo fieldInfo,
+                         @Mock final ParsedObject parsedObject) {
+        this.progress = Objects.requireNonNull(progress);
+        this.request = Objects.requireNonNull(request);
+        this.controllerInfo = Objects.requireNonNull(controllerInfo);
+        this.fieldInfo = Objects.requireNonNull(fieldInfo);
+        this.parsedObject = Objects.requireNonNull(parsedObject);
+        this.attributes = new HashMap<>();
+    }
+
+    @BeforeEach
+    void beforeEach() {
+        when(progress.request()).thenReturn(request);
+        when(request.controllerInfo()).thenReturn(controllerInfo);
+        when(controllerInfo.fieldInfo("id")).thenReturn(fieldInfo);
+        when(parsedObject.attributes()).thenReturn(attributes);
+        when(parsedObject.className()).thenReturn("javafx.scene.control.ComboBox");
+        attributes.put("fx:id", new ParsedPropertyImpl("fx:id", null, "id"));
+        when(fieldInfo.isGeneric()).thenReturn(true);
+    }
 
     @Test
     void testIsGeneric() {
@@ -126,5 +171,51 @@ class TestReflectionHelper {
     @Test
     void testGetDefaultProperty() throws GenerationException {
         assertEquals("items", ReflectionHelper.getDefaultProperty("javafx.scene.control.ListView"));
+    }
+
+    @Test
+    void testGetWrapperClass() {
+        assertEquals(Integer.class.getName(), ReflectionHelper.getWrapperClass(int.class));
+        assertEquals(String.class.getName(), ReflectionHelper.getWrapperClass(String.class));
+        assertEquals(Object.class.getName(), ReflectionHelper.getWrapperClass(Object.class));
+        assertEquals(Double.class.getName(), ReflectionHelper.getWrapperClass(double.class));
+    }
+
+    @Test
+    void testGetClass() throws GenerationException {
+        assertEquals(String.class, ReflectionHelper.getClass("java.lang.String"));
+        assertEquals(Object.class, ReflectionHelper.getClass("java.lang.Object"));
+        assertEquals(int.class, ReflectionHelper.getClass("int"));
+    }
+
+    @Test
+    void testGetGenericTypesNotGeneric() throws GenerationException {
+        when(parsedObject.className()).thenReturn("java.lang.String");
+        assertEquals("", ReflectionHelper.getGenericTypes(progress, parsedObject));
+    }
+
+    @Test
+    void testGetGenericTypesNullProperty() throws GenerationException {
+        attributes.clear();
+        assertEquals("", ReflectionHelper.getGenericTypes(progress, parsedObject));
+    }
+
+    @Test
+    void testGetGenericTypesFieldNotFound() throws GenerationException {
+        when(controllerInfo.fieldInfo("id")).thenReturn(null);
+        assertEquals("", ReflectionHelper.getGenericTypes(progress, parsedObject));
+    }
+
+    @Test
+    void testGetGenericTypesFieldNotGeneric() throws GenerationException {
+        when(fieldInfo.isGeneric()).thenReturn(false);
+        when(fieldInfo.genericTypes()).thenReturn(List.of(new GenericTypesImpl("java.lang.String", List.of()), new GenericTypesImpl("java.lang.Integer", List.of())));
+        assertEquals("", ReflectionHelper.getGenericTypes(progress, parsedObject));
+    }
+
+    @Test
+    void testGetGenericTypes() throws GenerationException {
+        when(fieldInfo.genericTypes()).thenReturn(List.of(new GenericTypesImpl("java.lang.String", List.of()), new GenericTypesImpl("java.lang.Integer", List.of())));
+        assertEquals("<java.lang.String, java.lang.Integer>", ReflectionHelper.getGenericTypes(progress, parsedObject));
     }
 }

@@ -22,6 +22,13 @@ public interface GenerationRequest {
     GenerationParameters parameters();
 
     /**
+     * Returns the info about the main source file
+     *
+     * @return The info
+     */
+    SourceInfo sourceInfo();
+
+    /**
      * Returns the object to generate code for
      *
      * @return The object

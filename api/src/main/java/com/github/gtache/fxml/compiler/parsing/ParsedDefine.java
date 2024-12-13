@@ -1,5 +1,6 @@
 package com.github.gtache.fxml.compiler.parsing;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SequencedCollection;
 import java.util.SequencedMap;
@@ -10,30 +11,18 @@ import java.util.SequencedMap;
 @FunctionalInterface
 public interface ParsedDefine extends ParsedObject {
 
-    /**
-     * Returns the object defined by this fx:define
-     *
-     * @return The object
-     */
-    ParsedObject object();
-
     @Override
     default String className() {
-        return object().className();
+        return ParsedDefine.class.getName();
     }
 
     @Override
     default Map<String, ParsedProperty> attributes() {
-        return object().attributes();
+        return Map.of();
     }
 
     @Override
     default SequencedMap<ParsedProperty, SequencedCollection<ParsedObject>> properties() {
-        return object().properties();
-    }
-
-    @Override
-    default SequencedCollection<ParsedObject> children() {
-        return object().children();
+        return new LinkedHashMap<>();
     }
 }

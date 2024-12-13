@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.HBox?>
+<HBox xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.github.gtache.fxml.compiler.parsing.xml.IncludesController">
+    <fx:include source="include1.fxml"/>
+    <fx:include source="include2.fxml"/>
+    <fx:include source="include3.fxml"/>
+    <fx:include resources="com/github/gtache/fxml/compiler/parsing/xml/includes/IncludedBundle" source="include1.fxml"/>
+</HBox>

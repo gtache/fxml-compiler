@@ -109,26 +109,18 @@ public class DOMFXMLParser implements FXMLParser {
 
     private ParsedDefine parseDefine(final Node node, final Imports imports) throws ParseException {
         final var children = node.getChildNodes();
-        ParsedObject parsed = null;
+        final var parsedChildren = new ArrayList<ParsedObject>();
         for (var i = 0; i < children.getLength(); i++) {
             final var item = children.item(i);
             if (item.getNodeType() == Node.ELEMENT_NODE) {
                 if (isObject(item)) {
-                    if (parsed == null) {
-                        parsed = parseObject(item, imports);
-                    } else {
-                        throw new ParseException("fx:define with multiple children");
-                    }
+                    parsedChildren.add(parseObject(item, imports));
                 } else {
                     throw new ParseException("fx:define with unexpected node : " + item.getNodeName());
                 }
             }
         }
-        if (parsed == null) {
-            throw new ParseException("fx:define with no children");
-        } else {
-            return new ParsedDefineImpl(parsed);
-        }
+        return new ParsedDefineImpl(parsedChildren);
     }
 
     private ParsedObject parseObject(final Node node, final Map<String, ParsedProperty> attributes, final Imports imports) throws ParseException {
