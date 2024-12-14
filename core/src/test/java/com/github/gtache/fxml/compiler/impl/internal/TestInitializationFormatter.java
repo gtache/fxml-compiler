@@ -19,27 +19,31 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class TestConstructorFormatter {
+class TestInitializationFormatter {
 
     private final GenerationProgress progress;
     private final GenerationRequest request;
     private final GenerationParameters parameters;
+    private final HelperProvider helperProvider;
     private final StringBuilder stringBuilder;
     private final SourceInfo sourceInfo;
     private final ParsedInclude include;
     private final Map<String, SourceInfo> sourceToSourceInfo;
+    private final InitializationFormatter initializationFormatter;
 
 
-    TestConstructorFormatter(@Mock final GenerationProgress progress, @Mock final GenerationRequest request,
-                             @Mock final GenerationParameters parameters, @Mock final StringBuilder stringBuilder,
-                             @Mock final SourceInfo sourceInfo, @Mock final ParsedInclude include) {
+    TestInitializationFormatter(@Mock final GenerationProgress progress, @Mock final GenerationRequest request,
+                                @Mock final GenerationParameters parameters, @Mock final HelperProvider helperProvider,
+                                @Mock final SourceInfo sourceInfo, @Mock final ParsedInclude include) {
         this.progress = Objects.requireNonNull(progress);
         this.request = Objects.requireNonNull(request);
         this.parameters = Objects.requireNonNull(parameters);
-        this.stringBuilder = Objects.requireNonNull(stringBuilder);
+        this.stringBuilder = new StringBuilder();
+        this.helperProvider = Objects.requireNonNull(helperProvider);
         this.sourceInfo = Objects.requireNonNull(sourceInfo);
         this.include = Objects.requireNonNull(include);
         this.sourceToSourceInfo = new HashMap<>();
+        this.initializationFormatter = new InitializationFormatter(helperProvider, progress);
     }
 
     @BeforeEach
@@ -53,6 +57,6 @@ class TestConstructorFormatter {
 
     @Test
     void testFormatSubViewConstructorCallNullSubInfo() {
-        assertThrows(GenerationException.class, () -> ConstructorFormatter.formatSubViewConstructorCall(progress, include));
+        assertThrows(GenerationException.class, () -> initializationFormatter.formatSubViewConstructorCall(include));
     }
 }

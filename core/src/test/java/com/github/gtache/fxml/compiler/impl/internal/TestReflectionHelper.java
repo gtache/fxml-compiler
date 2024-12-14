@@ -3,7 +3,6 @@ package com.github.gtache.fxml.compiler.impl.internal;
 import com.github.gtache.fxml.compiler.ControllerFieldInfo;
 import com.github.gtache.fxml.compiler.ControllerInfo;
 import com.github.gtache.fxml.compiler.GenerationException;
-import com.github.gtache.fxml.compiler.GenerationRequest;
 import com.github.gtache.fxml.compiler.impl.GenericTypesImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
@@ -34,28 +33,23 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TestReflectionHelper {
 
-    private final GenerationProgress progress;
-    private final GenerationRequest request;
     private final Map<String, ParsedProperty> attributes;
     private final ControllerInfo controllerInfo;
     private final ControllerFieldInfo fieldInfo;
     private final ParsedObject parsedObject;
+    private final ReflectionHelper reflectionHelper;
 
-    TestReflectionHelper(@Mock final GenerationProgress progress, @Mock final GenerationRequest request,
-                         @Mock final ControllerInfo controllerInfo, @Mock final ControllerFieldInfo fieldInfo,
+    TestReflectionHelper(@Mock final ControllerInfo controllerInfo, @Mock final ControllerFieldInfo fieldInfo,
                          @Mock final ParsedObject parsedObject) {
-        this.progress = Objects.requireNonNull(progress);
-        this.request = Objects.requireNonNull(request);
         this.controllerInfo = Objects.requireNonNull(controllerInfo);
         this.fieldInfo = Objects.requireNonNull(fieldInfo);
         this.parsedObject = Objects.requireNonNull(parsedObject);
         this.attributes = new HashMap<>();
+        this.reflectionHelper = new ReflectionHelper(controllerInfo);
     }
 
     @BeforeEach
     void beforeEach() {
-        when(progress.request()).thenReturn(request);
-        when(request.controllerInfo()).thenReturn(controllerInfo);
         when(controllerInfo.fieldInfo("id")).thenReturn(fieldInfo);
         when(parsedObject.attributes()).thenReturn(attributes);
         when(parsedObject.className()).thenReturn("javafx.scene.control.ComboBox");
@@ -191,31 +185,31 @@ class TestReflectionHelper {
     @Test
     void testGetGenericTypesNotGeneric() throws GenerationException {
         when(parsedObject.className()).thenReturn("java.lang.String");
-        assertEquals("", ReflectionHelper.getGenericTypes(progress, parsedObject));
+        assertEquals("", reflectionHelper.getGenericTypes(parsedObject));
     }
 
     @Test
     void testGetGenericTypesNullProperty() throws GenerationException {
         attributes.clear();
-        assertEquals("", ReflectionHelper.getGenericTypes(progress, parsedObject));
+        assertEquals("", reflectionHelper.getGenericTypes(parsedObject));
     }
 
     @Test
     void testGetGenericTypesFieldNotFound() throws GenerationException {
         when(controllerInfo.fieldInfo("id")).thenReturn(null);
-        assertEquals("", ReflectionHelper.getGenericTypes(progress, parsedObject));
+        assertEquals("", reflectionHelper.getGenericTypes(parsedObject));
     }
 
     @Test
     void testGetGenericTypesFieldNotGeneric() throws GenerationException {
         when(fieldInfo.isGeneric()).thenReturn(false);
         when(fieldInfo.genericTypes()).thenReturn(List.of(new GenericTypesImpl("java.lang.String", List.of()), new GenericTypesImpl("java.lang.Integer", List.of())));
-        assertEquals("", ReflectionHelper.getGenericTypes(progress, parsedObject));
+        assertEquals("", reflectionHelper.getGenericTypes(parsedObject));
     }
 
     @Test
     void testGetGenericTypes() throws GenerationException {
         when(fieldInfo.genericTypes()).thenReturn(List.of(new GenericTypesImpl("java.lang.String", List.of()), new GenericTypesImpl("java.lang.Integer", List.of())));
-        assertEquals("<java.lang.String, java.lang.Integer>", ReflectionHelper.getGenericTypes(progress, parsedObject));
+        assertEquals("<java.lang.String, java.lang.Integer>", reflectionHelper.getGenericTypes(parsedObject));
     }
 }

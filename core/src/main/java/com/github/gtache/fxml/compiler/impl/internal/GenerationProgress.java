@@ -64,7 +64,7 @@ public record GenerationProgress(GenerationRequest request, Map<String, Variable
      * @param prefix The variable name prefix
      * @return The next available variable name
      */
-    public String getNextVariableName(final String prefix) {
+    String getNextVariableName(final String prefix) {
         final var counter = variableNameCounters.computeIfAbsent(prefix, k -> new AtomicInteger(0));
         return prefix + counter.getAndIncrement();
     }

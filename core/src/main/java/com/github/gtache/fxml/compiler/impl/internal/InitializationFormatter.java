@@ -7,32 +7,38 @@ import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionTypes;
 import com.github.gtache.fxml.compiler.parsing.ParsedInclude;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * Utility class to provide the view's constructor and fields
  */
-public final class ConstructorFormatter {
+public final class InitializationFormatter {
 
-    private ConstructorFormatter() {
+    private final HelperProvider helperProvider;
+    private final GenerationProgress progress;
+
+    InitializationFormatter(final HelperProvider helperProvider, final GenerationProgress progress) {
+        this.helperProvider = Objects.requireNonNull(helperProvider);
+        this.progress = Objects.requireNonNull(progress);
     }
 
-    public static void formatFieldsAndConstructor(final GenerationProgress progress) throws GenerationException {
+    public void formatFieldsAndConstructor() throws GenerationException {
         final var className = progress.request().outputClassName();
         final var simpleClassName = className.substring(className.lastIndexOf('.') + 1);
         final var mainControllerClass = progress.request().controllerInfo().className();
         final var isFactory = progress.request().parameters().controllerInjectionType() == ControllerInjectionTypes.FACTORY;
-        if (hasDuplicateControllerClass(progress) && !isFactory) {
+        if (hasDuplicateControllerClass() && !isFactory) {
             throw new GenerationException("Some controllers in the view tree have the same class ; Factory field injection is required");
         }
-        fillControllers(progress);
+        fillControllers();
         final var sb = progress.stringBuilder();
         final var controllerMap = progress.controllerClassToVariable();
         controllerMap.forEach((c, v) -> sb.append("    private final ").append(c).append(" ").append(v).append(isFactory ? "Factory" : "").append(";\n"));
         final var controllerArg = getVariableName("controller", isFactory);
         final var controllerArgClass = getType(mainControllerClass, isFactory);
-        final var resourceBundleInfo = getResourceBundleInfo(progress);
+        final var resourceBundleInfo = getResourceBundleInfo();
         final var resourceBundleType = resourceBundleInfo.type();
         final var resourceBundleArg = resourceBundleInfo.variableName();
         if (isFactory) {
@@ -70,7 +76,7 @@ public final class ConstructorFormatter {
         sb.append("    }\n");
     }
 
-    private static ResourceBundleInfo getResourceBundleInfo(final GenerationProgress progress) throws GenerationException {
+    private ResourceBundleInfo getResourceBundleInfo() throws GenerationException {
         final var injectionType = progress.request().parameters().resourceInjectionType();
         if (injectionType instanceof final ResourceBundleInjectionTypes types) {
             return switch (types) {
@@ -109,7 +115,7 @@ public final class ConstructorFormatter {
         return variableName + suffix;
     }
 
-    private static boolean hasDuplicateControllerClass(final GenerationProgress progress) {
+    private boolean hasDuplicateControllerClass() {
         final var set = new HashSet<String>();
         return hasDuplicateControllerClass(progress.request().sourceInfo(), set);
     }
@@ -122,13 +128,13 @@ public final class ConstructorFormatter {
         return info.includedSources().stream().anyMatch(s -> hasDuplicateControllerClass(s, controllers));
     }
 
-    private static void fillControllers(final GenerationProgress progress) {
-        progress.request().sourceInfo().includedSources().forEach(s -> fillControllers(progress, s));
+    private void fillControllers() {
+        progress.request().sourceInfo().includedSources().forEach(this::fillControllers);
     }
 
-    private static void fillControllers(final GenerationProgress progress, final SourceInfo info) {
+    private void fillControllers(final SourceInfo info) {
         progress.controllerClassToVariable().put(info.controllerClassName(), progress.getNextVariableName(GenerationHelper.getVariablePrefix(info.controllerClassName())));
-        info.includedSources().forEach(s -> fillControllers(progress, s));
+        info.includedSources().forEach(this::fillControllers);
     }
 
     private static void fillControllers(final SourceInfo info, final Set<? super String> controllers) {
@@ -136,7 +142,7 @@ public final class ConstructorFormatter {
         info.includedSources().forEach(s -> fillControllers(s, controllers));
     }
 
-    static String formatSubViewConstructorCall(final GenerationProgress progress, final ParsedInclude include) throws GenerationException {
+    String formatSubViewConstructorCall(final ParsedInclude include) throws GenerationException {
         final var request = progress.request();
         final var info = request.sourceInfo();
         final var subInfo = info.sourceToSourceInfo().get(include.source());
@@ -149,17 +155,17 @@ public final class ConstructorFormatter {
             final var subControllers = new HashSet<String>();
             subInfo.includedSources().forEach(s -> fillControllers(s, subControllers));
             final var arguments = subControllers.stream().sorted().map(c -> getVariableName(progress.controllerClassToVariable().get(c), isFactory)).collect(Collectors.joining(", "));
-            final var bundleVariable = subInfo.requiresResourceBundle() ? getBundleVariable(progress, include) : null;
+            final var bundleVariable = subInfo.requiresResourceBundle() ? getBundleVariable(include) : null;
             final var argumentList = subControllerVariable + (arguments.isEmpty() ? "" : ", " + arguments) + (bundleVariable == null ? "" : ", " + bundleVariable);
             final var subViewName = subInfo.generatedClassName();
             final var variable = progress.getNextVariableName(GenerationHelper.getVariablePrefix(subViewName));
-            progress.stringBuilder().append(GenerationCompatibilityHelper.getStartVar(progress, subViewName)).append(variable).append(" = new ").append(subViewName).append("(").append(argumentList).append(");\n");
+            progress.stringBuilder().append(helperProvider.getCompatibilityHelper().getStartVar(subViewName)).append(variable).append(" = new ").append(subViewName).append("(").append(argumentList).append(");\n");
             return variable;
         }
     }
 
-    private static String getBundleVariable(final GenerationProgress progress, final ParsedInclude include) throws GenerationException {
-        final var info = getResourceBundleInfo(progress);
+    private String getBundleVariable(final ParsedInclude include) throws GenerationException {
+        final var info = getResourceBundleInfo();
         if (info.type() == null) {
             return null;
         } else if (include.resources() == null) {
@@ -167,21 +173,22 @@ public final class ConstructorFormatter {
         } else {
             final var sb = progress.stringBuilder();
             if (progress.request().parameters().resourceInjectionType() instanceof final ResourceBundleInjectionTypes types) {
+                final var compatibilityHelper = helperProvider.getCompatibilityHelper();
                 return switch (types) {
                     case GETTER, GET_BUNDLE -> null;
                     case CONSTRUCTOR_NAME -> {
                         final var bundleVariable = progress.getNextVariableName("resourceBundleName");
-                        sb.append(GenerationCompatibilityHelper.getStartVar(progress, "String")).append(bundleVariable).append(" = \"").append(include.resources()).append("\";\n");
+                        sb.append(compatibilityHelper.getStartVar("String")).append(bundleVariable).append(" = \"").append(include.resources()).append("\";\n");
                         yield bundleVariable;
                     }
                     case CONSTRUCTOR_FUNCTION -> {
                         final var bundleVariable = progress.getNextVariableName("resourceBundleFunction");
-                        sb.append(GenerationCompatibilityHelper.getStartVar(progress, "java.util.function.Function<String, String>")).append(bundleVariable).append(" = (java.util.function.Function<String, String>) s -> \"").append(include.resources()).append("\";\n");
+                        sb.append(compatibilityHelper.getStartVar("java.util.function.Function<String, String>")).append(bundleVariable).append(" = (java.util.function.Function<String, String>) s -> \"").append(include.resources()).append("\";\n");
                         yield bundleVariable;
                     }
                     case CONSTRUCTOR -> {
                         final var bundleVariable = progress.getNextVariableName("resourceBundle");
-                        sb.append(GenerationCompatibilityHelper.getStartVar(progress, "java.util.ResourceBundle")).append(bundleVariable).append(" = java.util.ResourceBundle.getBundle(\"").append(include.resources()).append("\");\n");
+                        sb.append(compatibilityHelper.getStartVar("java.util.ResourceBundle")).append(bundleVariable).append(" = java.util.ResourceBundle.getBundle(\"").append(include.resources()).append("\");\n");
                         yield bundleVariable;
                     }
                 };

@@ -1,5 +1,6 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
+import com.github.gtache.fxml.compiler.ControllerInfo;
 import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.GenericTypes;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,8 +47,10 @@ final class ReflectionHelper {
             "float", float.class,
             "double", double.class
     );
+    private final ControllerInfo controllerInfo;
 
-    private ReflectionHelper() {
+    ReflectionHelper(final ControllerInfo controllerInfo) {
+        this.controllerInfo = Objects.requireNonNull(controllerInfo);
     }
 
     /**
@@ -323,12 +327,11 @@ final class ReflectionHelper {
     /**
      * Gets the generic types for the given object
      *
-     * @param progress     The generation progress
      * @param parsedObject The parsed object
      * @return The generic types
      * @throws GenerationException if an error occurs
      */
-    static String getGenericTypes(final GenerationProgress progress, final ParsedObject parsedObject) throws GenerationException {
+    String getGenericTypes(final ParsedObject parsedObject) throws GenerationException {
         final var clazz = getClass(parsedObject.className());
         if (isGeneric(clazz)) {
             final var idProperty = parsedObject.attributes().get(FX_ID);
@@ -337,7 +340,7 @@ final class ReflectionHelper {
                 return "";
             } else {
                 final var id = idProperty.value();
-                final var fieldInfo = progress.request().controllerInfo().fieldInfo(id);
+                final var fieldInfo = controllerInfo.fieldInfo(id);
                 if (fieldInfo == null) { //Not found
                     logger.warn("No field found for generic class {} (id={}) ; Using raw", clazz.getName(), id);
                     return "";

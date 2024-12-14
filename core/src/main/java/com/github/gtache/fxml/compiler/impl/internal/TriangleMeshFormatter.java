@@ -16,16 +16,22 @@ import java.util.stream.Collectors;
 
 import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.FX_ID;
 import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.getSortedAttributes;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Helper methods for {@link GeneratorImpl} to format TriangleMeshes
  */
 final class TriangleMeshFormatter {
 
-    private TriangleMeshFormatter() {
+    private final HelperProvider helperProvider;
+    private final StringBuilder sb;
+
+    TriangleMeshFormatter(final HelperProvider helperProvider, final StringBuilder sb) {
+        this.helperProvider = requireNonNull(helperProvider);
+        this.sb = requireNonNull(sb);
     }
 
-    static void formatTriangleMesh(final GenerationProgress progress, final ParsedObject parsedObject, final String variableName) throws GenerationException {
+    void formatTriangleMesh(final ParsedObject parsedObject, final String variableName) throws GenerationException {
         if (parsedObject.children().isEmpty() && parsedObject.properties().isEmpty()) {
             final var sortedAttributes = getSortedAttributes(parsedObject);
             final var points = new ArrayList<Float>();
@@ -63,15 +69,14 @@ final class TriangleMeshFormatter {
                     default -> throw new GenerationException("Unknown TriangleMesh attribute : " + property.name());
                 }
             }
-            final var sb = progress.stringBuilder();
-            sb.append(GenerationCompatibilityHelper.getStartVar(progress, "javafx.scene.shape.TriangleMesh")).append(variableName).append(" = new javafx.scene.shape.TriangleMesh();\n");
-            setPoints(progress, variableName, points);
-            setTexCoords(progress, variableName, texCoords);
-            setNormals(progress, variableName, normals);
-            setFaces(progress, variableName, faces);
-            setFaceSmoothingGroups(progress, variableName, faceSmoothingGroups);
-            setVertexFormat(progress, variableName, vertexFormat);
-            GenerationHelper.handleId(progress, parsedObject, variableName);
+            sb.append(helperProvider.getCompatibilityHelper().getStartVar("javafx.scene.shape.TriangleMesh")).append(variableName).append(" = new javafx.scene.shape.TriangleMesh();\n");
+            setPoints(variableName, points);
+            setTexCoords(variableName, texCoords);
+            setNormals(variableName, normals);
+            setFaces(variableName, faces);
+            setFaceSmoothingGroups(variableName, faceSmoothingGroups);
+            setVertexFormat(variableName, vertexFormat);
+            helperProvider.getGenerationHelper().handleId(parsedObject, variableName);
         } else {
             throw new GenerationException("Image cannot have children or properties : " + parsedObject);
         }
@@ -87,39 +92,39 @@ final class TriangleMeshFormatter {
         }
     }
 
-    private static void setPoints(final GenerationProgress progress, final String variableName, final Collection<Float> points) {
+    private void setPoints(final String variableName, final Collection<Float> points) {
         if (!points.isEmpty()) {
-            progress.stringBuilder().append("        ").append(variableName).append(".getPoints().setAll(new float[]{").append(formatList(points)).append("});\n");
+            sb.append("        ").append(variableName).append(".getPoints().setAll(new float[]{").append(formatList(points)).append("});\n");
         }
     }
 
-    private static void setTexCoords(final GenerationProgress progress, final String variableName, final Collection<Float> texCoords) {
+    private void setTexCoords(final String variableName, final Collection<Float> texCoords) {
         if (!texCoords.isEmpty()) {
-            progress.stringBuilder().append("        ").append(variableName).append(".getTexCoords().setAll(new float[]{").append(formatList(texCoords)).append("});\n");
+            sb.append("        ").append(variableName).append(".getTexCoords().setAll(new float[]{").append(formatList(texCoords)).append("});\n");
         }
     }
 
-    private static void setNormals(final GenerationProgress progress, final String variableName, final Collection<Float> normals) {
+    private void setNormals(final String variableName, final Collection<Float> normals) {
         if (!normals.isEmpty()) {
-            progress.stringBuilder().append("        ").append(variableName).append(".getNormals().setAll(new float[]{").append(formatList(normals)).append("});\n");
+            sb.append("        ").append(variableName).append(".getNormals().setAll(new float[]{").append(formatList(normals)).append("});\n");
         }
     }
 
-    private static void setFaces(final GenerationProgress progress, final String variableName, final Collection<Integer> faces) {
+    private void setFaces(final String variableName, final Collection<Integer> faces) {
         if (!faces.isEmpty()) {
-            progress.stringBuilder().append("        ").append(variableName).append(".getFaces().setAll(new int[]{").append(formatList(faces)).append("});\n");
+            sb.append("        ").append(variableName).append(".getFaces().setAll(new int[]{").append(formatList(faces)).append("});\n");
         }
     }
 
-    private static void setFaceSmoothingGroups(final GenerationProgress progress, final String variableName, final Collection<Integer> faceSmoothingGroups) {
+    private void setFaceSmoothingGroups(final String variableName, final Collection<Integer> faceSmoothingGroups) {
         if (!faceSmoothingGroups.isEmpty()) {
-            progress.stringBuilder().append("        ").append(variableName).append(".getFaceSmoothingGroups().setAll(new int[]{").append(formatList(faceSmoothingGroups)).append("});\n");
+            sb.append("        ").append(variableName).append(".getFaceSmoothingGroups().setAll(new int[]{").append(formatList(faceSmoothingGroups)).append("});\n");
         }
     }
 
-    private static void setVertexFormat(final GenerationProgress progress, final String variableName, final VertexFormat vertexFormat) {
+    private void setVertexFormat(final String variableName, final VertexFormat vertexFormat) {
         if (vertexFormat != null) {
-            progress.stringBuilder().append("        ").append(variableName).append(".setVertexFormat(javafx.scene.shape.VertexFormat.").append(vertexFormat).append(");\n");
+            sb.append("        ").append(variableName).append(".setVertexFormat(javafx.scene.shape.VertexFormat.").append(vertexFormat).append(");\n");
         }
     }
 
@@ -132,5 +137,4 @@ final class TriangleMeshFormatter {
         final var split = splitPattern.split(value);
         return Arrays.stream(split).map(parser).collect(Collectors.toList());
     }
-
 }

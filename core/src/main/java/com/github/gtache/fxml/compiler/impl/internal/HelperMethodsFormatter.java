@@ -1,30 +1,37 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
+import com.github.gtache.fxml.compiler.InjectionType;
 import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
 import com.github.gtache.fxml.compiler.impl.ControllerMethodsInjectionType;
+
+import java.util.Objects;
 
 /**
  * Formats the helper methods for the generated code
  */
 public final class HelperMethodsFormatter {
 
+    private final HelperProvider helperProvider;
+    private final InjectionType fieldInjectionType;
+    private final InjectionType methodInjectionType;
+    private final StringBuilder sb;
 
-    private HelperMethodsFormatter() {
+    HelperMethodsFormatter(final HelperProvider helperProvider, final InjectionType fieldInjectionType, final InjectionType methodInjectionType, final StringBuilder sb) {
+        this.helperProvider = Objects.requireNonNull(helperProvider);
+        this.fieldInjectionType = Objects.requireNonNull(fieldInjectionType);
+        this.methodInjectionType = Objects.requireNonNull(methodInjectionType);
+        this.sb = Objects.requireNonNull(sb);
     }
 
     /**
-     * Formats the helper methods for the given generation progress
-     *
-     * @param progress The generation progress
+     * Formats the helper methods
      */
-    public static void formatHelperMethods(final GenerationProgress progress) {
-        final var parameters = progress.request().parameters();
-        final var methodInjectionType = parameters.methodInjectionType();
-        final var sb = progress.stringBuilder();
+    public void formatHelperMethods() {
+        final var compatibilityHelper = helperProvider.getCompatibilityHelper();
         if (methodInjectionType == ControllerMethodsInjectionType.REFLECTION) {
-            final var toList = GenerationCompatibilityHelper.getToList(progress);
-            final var getFirst = GenerationCompatibilityHelper.getGetFirst(progress);
-            final var startVariableMethodList = GenerationCompatibilityHelper.getStartVar(progress, "java.util.List<java.lang.reflect.Method>", 0);
+            final var toList = compatibilityHelper.getToList();
+            final var getFirst = compatibilityHelper.getGetFirst();
+            final var startVariableMethodList = compatibilityHelper.getStartVar("java.util.List<java.lang.reflect.Method>", 0);
             sb.append("    private <T extends javafx.event.Event> void callEventHandlerMethod(final String methodName, final T event) {\n");
             sb.append("        try {\n");
             sb.append("            final java.lang.reflect.Method method;\n");
@@ -84,10 +91,10 @@ public final class HelperMethodsFormatter {
             sb.append("        }\n");
             sb.append("    }\n");
         }
-        if (parameters.fieldInjectionType() == ControllerFieldInjectionTypes.REFLECTION) {
+        if (fieldInjectionType == ControllerFieldInjectionTypes.REFLECTION) {
             sb.append("    private <T> void injectField(final String fieldName, final T object) {\n");
             sb.append("        try {\n");
-            sb.append("            ").append(GenerationCompatibilityHelper.getStartVar(progress, "java.lang.reflect.Field", 0)).append("field = controller.getClass().getDeclaredField(fieldName);\n");
+            sb.append("            ").append(compatibilityHelper.getStartVar("java.lang.reflect.Field", 0)).append("field = controller.getClass().getDeclaredField(fieldName);\n");
             sb.append("            field.setAccessible(true);\n");
             sb.append("            field.set(controller, object);\n");
             sb.append("        } catch (final NoSuchFieldException | IllegalAccessException e) {\n");

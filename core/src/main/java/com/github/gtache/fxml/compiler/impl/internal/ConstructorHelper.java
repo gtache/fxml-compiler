@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -16,7 +17,10 @@ import java.util.Set;
  */
 final class ConstructorHelper {
 
-    private ConstructorHelper() {
+    private final HelperProvider helperProvider;
+
+    ConstructorHelper(final HelperProvider helperProvider) {
+        this.helperProvider = Objects.requireNonNull(helperProvider);
     }
 
     /**
@@ -27,8 +31,9 @@ final class ConstructorHelper {
      * @return The list of constructor arguments
      * @throws GenerationException if an error occurs
      */
-    static List<String> getListConstructorArgs(final ConstructorArgs constructorArgs, final ParsedObject parsedObject) throws GenerationException {
+    List<String> getListConstructorArgs(final ConstructorArgs constructorArgs, final ParsedObject parsedObject) throws GenerationException {
         final var args = new ArrayList<String>(constructorArgs.namedArgs().size());
+        final var valueFormatter = helperProvider.getValueFormatter();
         for (final var entry : constructorArgs.namedArgs().entrySet()) {
             final var type = entry.getValue().type();
             final var p = parsedObject.attributes().get(entry.getKey());
@@ -36,12 +41,12 @@ final class ConstructorHelper {
                 final var c = parsedObject.properties().entrySet().stream().filter(e ->
                         e.getKey().name().equals(entry.getKey())).findFirst().orElse(null);
                 if (c == null) {
-                    args.add(ValueFormatter.toString(entry.getValue().defaultValue(), type));
+                    args.add(valueFormatter.toString(entry.getValue().defaultValue(), type));
                 } else {
                     throw new GenerationException("Constructor using complex property not supported yet");
                 }
             } else {
-                args.add(ValueFormatter.toString(p.value(), type));
+                args.add(valueFormatter.toString(p.value(), type));
             }
         }
         return args;

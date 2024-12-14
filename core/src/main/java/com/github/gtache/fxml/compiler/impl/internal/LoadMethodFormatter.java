@@ -5,21 +5,27 @@ import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
 import com.github.gtache.fxml.compiler.impl.ControllerMethodsInjectionType;
 import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionTypes;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Formats the load method for the generated code
  */
 public final class LoadMethodFormatter {
 
-    private LoadMethodFormatter() {
+    private final HelperProvider helperProvider;
+    private final GenerationProgress progress;
+
+    LoadMethodFormatter(final HelperProvider helperProvider, final GenerationProgress progress) {
+        this.helperProvider = requireNonNull(helperProvider);
+        this.progress = requireNonNull(progress);
     }
 
     /**
      * Formats the load method
      *
-     * @param progress The generation progress
      * @throws GenerationException if an error occurs
      */
-    public static void formatLoadMethod(final GenerationProgress progress) throws GenerationException {
+    public void formatLoadMethod() throws GenerationException {
         final var request = progress.request();
         final var rootObject = request.rootObject();
         final var parameters = progress.request().parameters();
@@ -36,23 +42,24 @@ public final class LoadMethodFormatter {
         sb.append("            throw new IllegalStateException(\"Already loaded\");\n");
         sb.append("        }\n");
         final var resourceBundleInjection = parameters.resourceInjectionType();
+        final var generationCompatibilityHelper = helperProvider.getCompatibilityHelper();
         if (resourceBundleInjection == ResourceBundleInjectionTypes.CONSTRUCTOR_NAME) {
-            sb.append(GenerationCompatibilityHelper.getStartVar(progress, "java.util.ResourceBundle")).append("resourceBundle = java.util.ResourceBundle.getBundle(\"resourceBundleName\");\n");
+            sb.append(generationCompatibilityHelper.getStartVar("java.util.ResourceBundle")).append("resourceBundle = java.util.ResourceBundle.getBundle(\"resourceBundleName\");\n");
         } else if (resourceBundleInjection == ResourceBundleInjectionTypes.GET_BUNDLE && parameters.bundleMap().containsKey(controllerClass)) {
-            sb.append(GenerationCompatibilityHelper.getStartVar(progress, "java.util.ResourceBundle")).append("resourceBundle = java.util.ResourceBundle.getBundle(\"").append(parameters.bundleMap().get(controllerClass)).append("\");\n");
+            sb.append(generationCompatibilityHelper.getStartVar("java.util.ResourceBundle")).append("resourceBundle = java.util.ResourceBundle.getBundle(\"").append(parameters.bundleMap().get(controllerClass)).append("\");\n");
         }
         if (controllerInjectionType == ControllerFieldInjectionTypes.FACTORY) {
-            sb.append(GenerationCompatibilityHelper.getStartVar(progress, "java.util.Map<String, Object>")).append("fieldMap = new java.util.HashMap<String, Object>();\n");
+            sb.append(generationCompatibilityHelper.getStartVar("java.util.Map<String, Object>")).append("fieldMap = new java.util.HashMap<String, Object>();\n");
         }
         final var variableName = progress.getNextVariableName(GenerationHelper.getVariablePrefix(rootObject));
-        ObjectFormatter.format(progress, rootObject, variableName);
+        helperProvider.getObjectFormatter().format(rootObject, variableName);
         if (controllerInjectionType == ControllerFieldInjectionTypes.FACTORY) {
             sb.append("        controller = (").append(controllerClass).append(") controllerFactory.create(fieldMap);\n");
             progress.controllerFactoryPostAction().forEach(sb::append);
         }
         if (parameters.methodInjectionType() == ControllerMethodsInjectionType.REFLECTION) {
             sb.append("        try {\n");
-            sb.append("            ").append(GenerationCompatibilityHelper.getStartVar(progress, "java.lang.reflect.Method", 0)).append("initialize = controller.getClass().getDeclaredMethod(\"initialize\");\n");
+            sb.append("            ").append(generationCompatibilityHelper.getStartVar("java.lang.reflect.Method", 0)).append("initialize = controller.getClass().getDeclaredMethod(\"initialize\");\n");
             sb.append("            initialize.setAccessible(true);\n");
             sb.append("            initialize.invoke(controller);\n");
             sb.append("        } catch (final java.lang.reflect.InvocationTargetException | IllegalAccessException e) {\n");

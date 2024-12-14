@@ -3,10 +3,8 @@ package com.github.gtache.fxml.compiler.impl;
 import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.GenerationRequest;
 import com.github.gtache.fxml.compiler.Generator;
-import com.github.gtache.fxml.compiler.impl.internal.ConstructorFormatter;
 import com.github.gtache.fxml.compiler.impl.internal.GenerationProgress;
-import com.github.gtache.fxml.compiler.impl.internal.HelperMethodsFormatter;
-import com.github.gtache.fxml.compiler.impl.internal.LoadMethodFormatter;
+import com.github.gtache.fxml.compiler.impl.internal.HelperProvider;
 
 //TODO handle binding (${})
 
@@ -14,11 +12,11 @@ import com.github.gtache.fxml.compiler.impl.internal.LoadMethodFormatter;
  * Implementation of {@link Generator}
  */
 public class GeneratorImpl implements Generator {
-    
 
     @Override
     public String generate(final GenerationRequest request) throws GenerationException {
         final var progress = new GenerationProgress(request);
+        final var helperProvider = new HelperProvider(progress);
         final var className = request.outputClassName();
         final var pkgName = className.substring(0, className.lastIndexOf('.'));
         final var simpleClassName = className.substring(className.lastIndexOf('.') + 1);
@@ -27,15 +25,15 @@ public class GeneratorImpl implements Generator {
         sb.append("package ").append(pkgName).append(";\n");
         sb.append("\n");
         sb.append("/**\n");
-        sb.append(" * Generated code, not thread-safe\n");
+        sb.append(" * Generated code\n");
         sb.append(" */\n");
         sb.append("public final class ").append(simpleClassName).append(" {\n");
         sb.append("\n");
-        ConstructorFormatter.formatFieldsAndConstructor(progress);
+        helperProvider.getInitializationFormatter().formatFieldsAndConstructor();
         sb.append("\n");
-        LoadMethodFormatter.formatLoadMethod(progress);
+        helperProvider.getLoadMethodFormatter().formatLoadMethod();
         sb.append("\n");
-        HelperMethodsFormatter.formatHelperMethods(progress);
+        helperProvider.getHelperMethodsFormatter().formatHelperMethods();
         sb.append("\n");
         formatControllerMethod(progress, controllerInjectionClass);
         sb.append("}\n");

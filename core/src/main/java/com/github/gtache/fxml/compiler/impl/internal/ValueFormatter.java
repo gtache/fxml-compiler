@@ -1,12 +1,15 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
 import com.github.gtache.fxml.compiler.GenerationException;
+import com.github.gtache.fxml.compiler.InjectionType;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionTypes;
 
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Helper methods for {@link GeneratorImpl} to format values
@@ -17,28 +20,32 @@ final class ValueFormatter {
     private static final Pattern DECIMAL_PATTERN = Pattern.compile("\\d+(?:\\.\\d+)?");
     private static final Pattern START_BACKSLASH_PATTERN = Pattern.compile("^\\\\");
 
-    private ValueFormatter() {
+    private final InjectionType resourceInjectionType;
+    private final Map<String, VariableInfo> idToVariableInfo;
+
+    ValueFormatter(final InjectionType resourceInjectionType, final Map<String, VariableInfo> idToVariableInfo) {
+        this.resourceInjectionType = requireNonNull(resourceInjectionType);
+        this.idToVariableInfo = requireNonNull(idToVariableInfo);
     }
 
     /**
      * Formats an argument to a method
      *
-     * @param progress      The generation progress
      * @param value         The value
      * @param parameterType The parameter type
      * @return The formatted value
      * @throws GenerationException if an error occurs
      */
-    static String getArg(final GenerationProgress progress, final String value, final Class<?> parameterType) throws GenerationException {
+    String getArg(final String value, final Class<?> parameterType) throws GenerationException {
         if (parameterType == String.class && value.startsWith(RESOURCE_KEY_PREFIX)) {
-            return getBundleValue(progress, value.substring(1));
+            return getBundleValue(value.substring(1));
         } else if (value.startsWith(RELATIVE_PATH_PREFIX)) {
             final var subpath = value.substring(1);
             return getResourceValue(subpath);
         } else if (value.startsWith(BINDING_EXPRESSION_PREFIX)) {
-            throw new UnsupportedOperationException("Not implemented yet");
+            throw new GenerationException("Not implemented yet");
         } else if (value.startsWith(EXPRESSION_PREFIX)) {
-            final var variable = progress.idToVariableInfo().get(value.substring(1));
+            final var variable = idToVariableInfo.get(value.substring(1));
             if (variable == null) {
                 throw new GenerationException("Unknown variable : " + value.substring(1));
             }
@@ -55,21 +62,19 @@ final class ValueFormatter {
     /**
      * Gets the resource bundle value for the given value
      *
-     * @param progress The generation progress
      * @param value    The value
      * @return The resource bundle value
      * @throws GenerationException if an error occurs
      */
-    private static String getBundleValue(final GenerationProgress progress, final String value) throws GenerationException {
-        final var resourceBundleInjectionType = progress.request().parameters().resourceInjectionType();
-        if (resourceBundleInjectionType instanceof final ResourceBundleInjectionTypes types) {
+    private String getBundleValue(final String value) throws GenerationException {
+        if (resourceInjectionType instanceof final ResourceBundleInjectionTypes types) {
             return switch (types) {
                 case CONSTRUCTOR, GET_BUNDLE, CONSTRUCTOR_NAME -> "resourceBundle.getString(\"" + value + "\")";
                 case GETTER -> "controller.resources().getString(\"" + value + "\")";
                 case CONSTRUCTOR_FUNCTION -> "resourceBundleFunction.apply(\"" + value + "\")";
             };
         } else {
-            throw new GenerationException("Unknown resource bundle injection type : " + resourceBundleInjectionType);
+            throw new GenerationException("Unknown resource bundle injection type : " + resourceInjectionType);
         }
     }
 
@@ -81,9 +86,10 @@ final class ValueFormatter {
      * @param clazz The value class
      * @return The computed string value
      */
-    static String toString(final String value, final Class<?> clazz) {
+    String toString(final String value, final Class<?> clazz) {
         if (clazz == String.class) {
-            return "\"" + START_BACKSLASH_PATTERN.matcher(value).replaceAll("").replace("\"", "\\\"") + "\"";
+            return "\"" + START_BACKSLASH_PATTERN.matcher(value).replaceAll("").replace("\\", "\\\\")
+                    .replace("\"", "\\\"") + "\"";
         } else if (clazz == char.class || clazz == Character.class) {
             return "'" + value + "'";
         } else if (clazz == boolean.class || clazz == Boolean.class) {

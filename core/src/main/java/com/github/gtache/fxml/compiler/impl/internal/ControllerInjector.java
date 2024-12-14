@@ -1,5 +1,6 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
+import com.github.gtache.fxml.compiler.ControllerInfo;
 import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.InjectionType;
 import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
@@ -7,26 +8,39 @@ import com.github.gtache.fxml.compiler.impl.ControllerMethodsInjectionType;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 
+import java.util.SequencedCollection;
+
+import static java.util.Objects.requireNonNull;
+
 /**
  * Various methods to help {@link GeneratorImpl} for injecting controllers
  */
 final class ControllerInjector {
 
-    private ControllerInjector() {
+    private final ControllerInfo controllerInfo;
+    private final InjectionType fieldInjectionType;
+    private final InjectionType methodInjectionType;
+    private final StringBuilder sb;
+    private final SequencedCollection<String> controllerFactoryPostAction;
+
+    ControllerInjector(final ControllerInfo controllerInfo, final InjectionType fieldInjectionType, final InjectionType methodInjectionType,
+                       final StringBuilder sb, final SequencedCollection<String> controllerFactoryPostAction) {
+        this.controllerInfo = controllerInfo;
+        this.fieldInjectionType = requireNonNull(fieldInjectionType);
+        this.methodInjectionType = requireNonNull(methodInjectionType);
+        this.sb = requireNonNull(sb);
+        this.controllerFactoryPostAction = requireNonNull(controllerFactoryPostAction);
     }
 
     /**
      * Injects the given variable into the controller
      *
-     * @param progress The generation progress
      * @param id       The object id
      * @param variable The object variable
      * @throws GenerationException if an error occurs
      */
-    static void injectControllerField(final GenerationProgress progress, final String id, final String variable) throws GenerationException {
-        final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
+    void injectControllerField(final String id, final String variable) throws GenerationException {
         if (fieldInjectionType instanceof final ControllerFieldInjectionTypes types) {
-            final var sb = progress.stringBuilder();
             switch (types) {
                 case FACTORY ->
                         sb.append("        fieldMap.put(\"").append(id).append("\", ").append(variable).append(");\n");
@@ -46,41 +60,37 @@ final class ControllerInjector {
     /**
      * Injects an event handler controller method
      *
-     * @param progress       The generation progress
      * @param property       The property to inject
      * @param parentVariable The parent variable
      * @throws GenerationException if an error occurs
      */
-    static void injectEventHandlerControllerMethod(final GenerationProgress progress, final ParsedProperty property, final String parentVariable) throws GenerationException {
-        injectControllerMethod(progress, getEventHandlerMethodInjection(progress, property, parentVariable));
+    void injectEventHandlerControllerMethod(final ParsedProperty property, final String parentVariable) throws GenerationException {
+        injectControllerMethod(getEventHandlerMethodInjection(property, parentVariable));
     }
 
     /**
      * Injects a callback controller method
      *
-     * @param progress       The generation progress
      * @param property       The property to inject
      * @param parentVariable The parent variable
      * @param argumentClazz  The argument class
      * @throws GenerationException if an error occurs
      */
-    static void injectCallbackControllerMethod(final GenerationProgress progress, final ParsedProperty property, final String parentVariable, final String argumentClazz) throws GenerationException {
-        injectControllerMethod(progress, getCallbackMethodInjection(progress, property, parentVariable, argumentClazz));
+    void injectCallbackControllerMethod(final ParsedProperty property, final String parentVariable, final String argumentClazz) throws GenerationException {
+        injectControllerMethod(getCallbackMethodInjection(property, parentVariable, argumentClazz));
     }
 
     /**
      * Injects a controller method
      *
-     * @param progress        The generation progress
      * @param methodInjection The method injection
      * @throws GenerationException if an error occurs
      */
-    private static void injectControllerMethod(final GenerationProgress progress, final String methodInjection) throws GenerationException {
-        final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
+    private void injectControllerMethod(final String methodInjection) throws GenerationException {
         if (fieldInjectionType instanceof final ControllerFieldInjectionTypes fieldTypes) {
             switch (fieldTypes) {
-                case FACTORY -> progress.controllerFactoryPostAction().add(methodInjection);
-                case ASSIGN, SETTERS, REFLECTION -> progress.stringBuilder().append(methodInjection);
+                case FACTORY -> controllerFactoryPostAction.add(methodInjection);
+                case ASSIGN, SETTERS, REFLECTION -> sb.append(methodInjection);
             }
         } else {
             throw getUnknownInjectionException(fieldInjectionType);
@@ -90,20 +100,18 @@ final class ControllerInjector {
     /**
      * Computes the method injection for event handler
      *
-     * @param progress       The generation progress
      * @param property       The property
      * @param parentVariable The parent variable
      * @return The method injection
      * @throws GenerationException if an error occurs
      */
-    private static String getEventHandlerMethodInjection(final GenerationProgress progress, final ParsedProperty property, final String parentVariable) throws GenerationException {
+    private String getEventHandlerMethodInjection(final ParsedProperty property, final String parentVariable) throws GenerationException {
         final var setMethod = GenerationHelper.getSetMethod(property.name());
-        final var methodInjectionType = progress.request().parameters().methodInjectionType();
         final var controllerMethod = property.value().replace("#", "");
         if (methodInjectionType instanceof final ControllerMethodsInjectionType methodTypes) {
             return switch (methodTypes) {
                 case REFERENCE -> {
-                    final var hasArgument = progress.request().controllerInfo().handlerHasArgument(controllerMethod);
+                    final var hasArgument = controllerInfo.handlerHasArgument(controllerMethod);
                     if (hasArgument) {
                         yield "        " + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
                     } else {
@@ -121,16 +129,14 @@ final class ControllerInjector {
     /**
      * Computes the method injection for callback
      *
-     * @param progress       The generation progress
      * @param property       The property
      * @param parentVariable The parent variable
      * @param argumentClazz  The argument class
      * @return The method injection
      * @throws GenerationException if an error occurs
      */
-    private static String getCallbackMethodInjection(final GenerationProgress progress, final ParsedProperty property, final String parentVariable, final String argumentClazz) throws GenerationException {
+    private String getCallbackMethodInjection(final ParsedProperty property, final String parentVariable, final String argumentClazz) throws GenerationException {
         final var setMethod = GenerationHelper.getSetMethod(property.name());
-        final var methodInjectionType = progress.request().parameters().methodInjectionType();
         final var controllerMethod = property.value().replace("#", "");
         if (methodInjectionType instanceof final ControllerMethodsInjectionType methodTypes) {
             return switch (methodTypes) {
