@@ -19,7 +19,7 @@ class TestParsedDefineImpl {
     private final List<ParsedObject> children;
     private final ParsedDefine parsedDefine;
 
-    TestParsedDefineImpl(@Mock ParsedObject parsedObject1, @Mock ParsedObject parsedObject2) {
+    TestParsedDefineImpl(@Mock final ParsedObject parsedObject1, @Mock final ParsedObject parsedObject2) {
         this.children = new ArrayList<>(List.of(parsedObject1, parsedObject2));
         this.parsedDefine = new ParsedDefineImpl(children);
     }

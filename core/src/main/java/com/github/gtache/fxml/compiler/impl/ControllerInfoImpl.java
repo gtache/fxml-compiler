@@ -18,6 +18,14 @@ public record ControllerInfoImpl(String className, Map<String, Boolean> handlerH
                                  Map<String, ControllerFieldInfo> fieldInfo,
                                  boolean hasInitialize) implements ControllerInfo {
 
+    /**
+     * Instantiates a new controller info
+     * @param className          The controller class name
+     * @param handlerHasArgument The mapping of method name to true if the method has an argument
+     * @param fieldInfo          The mapping of property name to controller field info
+     * @param hasInitialize      True if the controller has an initialize method
+     * @throws NullPointerException If any parameter is null
+     */
     public ControllerInfoImpl {
         Objects.requireNonNull(className);
         handlerHasArgument = Map.copyOf(handlerHasArgument);

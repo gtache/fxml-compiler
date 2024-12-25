@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 
-import javax.inject.Named;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
@@ -17,7 +16,6 @@ import java.util.Map;
 /**
  * Extracts FXML paths from Maven project
  */
-@Named
 public final class FXMLProvider {
     private static final Logger logger = LogManager.getLogger(FXMLProvider.class);
 

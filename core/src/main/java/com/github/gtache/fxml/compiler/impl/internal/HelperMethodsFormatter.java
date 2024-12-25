@@ -1,8 +1,7 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
-import com.github.gtache.fxml.compiler.InjectionType;
-import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
-import com.github.gtache.fxml.compiler.impl.ControllerMethodsInjectionType;
+import com.github.gtache.fxml.compiler.ControllerFieldInjectionType;
+import com.github.gtache.fxml.compiler.ControllerMethodsInjectionType;
 
 import java.util.Objects;
 
@@ -12,11 +11,12 @@ import java.util.Objects;
 public final class HelperMethodsFormatter {
 
     private final HelperProvider helperProvider;
-    private final InjectionType fieldInjectionType;
-    private final InjectionType methodInjectionType;
+    private final ControllerFieldInjectionType fieldInjectionType;
+    private final ControllerMethodsInjectionType methodInjectionType;
     private final StringBuilder sb;
 
-    HelperMethodsFormatter(final HelperProvider helperProvider, final InjectionType fieldInjectionType, final InjectionType methodInjectionType, final StringBuilder sb) {
+    HelperMethodsFormatter(final HelperProvider helperProvider, final ControllerFieldInjectionType fieldInjectionType,
+                           final ControllerMethodsInjectionType methodInjectionType, final StringBuilder sb) {
         this.helperProvider = Objects.requireNonNull(helperProvider);
         this.fieldInjectionType = Objects.requireNonNull(fieldInjectionType);
         this.methodInjectionType = Objects.requireNonNull(methodInjectionType);
@@ -73,7 +73,7 @@ public final class HelperMethodsFormatter {
             sb.append("                    .filter(m -> m.getName().equals(methodName))").append(toList).append(";\n");
             sb.append("            if (methods.size() > 1) {\n");
             sb.append("                ").append(startVariableMethodList).append("eventMethods = methods.stream().filter(m ->\n");
-            sb.append("                        m.getParameterCount() == 1 && clazz.isAssignableFrom(m.getParameterTypes()[0]))").append(toList).append(";\n");
+            sb.append("                        m.getParameterCount() == 2 && clazz.isAssignableFrom(m.getParameterTypes()[1]))").append(toList).append(";\n");
             sb.append("                if (eventMethods.size() == 1) {\n");
             sb.append("                    method = eventMethods").append(getFirst).append(";\n");
             sb.append("                } else {\n");
@@ -91,7 +91,7 @@ public final class HelperMethodsFormatter {
             sb.append("        }\n");
             sb.append("    }\n");
         }
-        if (fieldInjectionType == ControllerFieldInjectionTypes.REFLECTION) {
+        if (fieldInjectionType == ControllerFieldInjectionType.REFLECTION) {
             sb.append("    private <T> void injectField(final String fieldName, final T object) {\n");
             sb.append("        try {\n");
             sb.append("            ").append(compatibilityHelper.getStartVar("java.lang.reflect.Field", 0)).append("field = controller.getClass().getDeclaredField(fieldName);\n");

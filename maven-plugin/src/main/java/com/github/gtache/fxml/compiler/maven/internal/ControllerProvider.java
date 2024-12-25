@@ -3,7 +3,6 @@ package com.github.gtache.fxml.compiler.maven.internal;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.xml.sax.SAXException;
 
-import javax.inject.Named;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -13,7 +12,6 @@ import java.nio.file.Path;
 /**
  * Extracts controller class from FXMLs
  */
-@Named
 public final class ControllerProvider {
     private static final DocumentBuilder DOCUMENT_BUILDER;
 

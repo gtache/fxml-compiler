@@ -6,8 +6,9 @@ This projects aims at generating Java code from FXML files.
 
 ## Requirements
 
-- Java 21 (at least for the plugin, the generated code can be compatible with older Java versions)
-- Maven 3.8.0
+- Java 21+ for the plugin
+    - The generated code can be compatible with older java versions.
+- Maven 3.6.3+
 
 ## Installation
 
@@ -79,100 +80,55 @@ Optionally add dependencies to the plugin (e.g. when using MediaView and control
 
 ## Disadvantages
 
+- `fx:script` is not supported
 - Possible bugs (file an issue if you see one)
 - Expression binding is limited
 - Probably not fully compatible with all FXML features (file an issue if you need one in specific)
 
 ## Parameters
 
+### Controller injection
+
+There are two ways to inject controllers into a view:
+
+- `INSTANCE`: Inject the controller instance
+    - This is the default injection method
+- `FACTORY`: Inject the controller factory
+    - This injection method is required if the FXML tree contains multiple times the same controller class.
+    - By default, the factory is a `Supplier<Controller>`, but if used in conjunction with `field-injection`set to
+      `FACTORY`, the factory is a `Function<Map<String, Object>, Controller>`.
+
 ### Field injection
 
 There are four ways to inject fields into a controller:
 
 - `REFLECTION`: Inject fields using reflection (like FXMLLoader)
--
-    - ```java
-      try {
-        final var field = controller.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(controller, object);
-      } catch (final NoSuchFieldException | IllegalAccessException e) {
-      throw new RuntimeException("Error using reflection on " + fieldName, e);
-      }
-      ```
--
     - Slowest method
--
     - Fully compatible with FXMLLoader, so this allows easy switching between the two.
--
     - This is the default injection method (for compatibility reasons).
 - `ASSIGN`: variable assignment
--
     - `controller.field = value`
--
     - This means that the field must be accessible from the view (e.g. package-private).
 - `SETTERS`: controller setters methods
--
     - `controller.setField(value)`
 - `FACTORY`: controller factory
--
     - `controller = factory.create(fieldMap)`
--
-    - `factory` is a `ControllerFactory` instance that is created at runtime and passed to the view.
--
+    - `factory` is a `Function<Map<String, Object>, Controller>` instance that is created at runtime and passed to the
+      view.
     - `fieldMap` is a map of field name (String) to value (Object) that is computed during the view `load` method.
--
     - This allows the controller to have final fields.
+    - This also forces the `controller-injection` method to be `FACTORY`.
 
 ### Method injections
 
 There are two ways to inject methods (meaning use them as event handlers) into a controller:
 
 - `REFLECTION`: Inject methods using reflection (like FXMLLoader)
--
-    - ```java
-      try {
-        final java.lang.reflect.Method method;
-        final var methods = java.util.Arrays.stream(controller.getClass().getDeclaredMethods())
-                .filter(m -> m.getName().equals(methodName)).toList();
-        if (methods.size() > 1) {
-            final var eventMethods = methods.stream().filter(m ->
-                    m.getParameterCount() == 1 && javafx.event.Event.class.isAssignableFrom(m.getParameterTypes()[0])).toList();
-            if (eventMethods.size() == 1) {
-                method = eventMethods.getFirst();
-            } else {
-                final var emptyMethods = methods.stream().filter(m -> m.getParameterCount() == 0).toList();
-                if (emptyMethods.size() == 1) {
-                    method = emptyMethods.getFirst();
-                } else {
-                    throw new IllegalArgumentException("Multiple matching methods for " + methodName);
-                }
-            }
-        } else if (methods.size() == 1) {
-            method = methods.getFirst();
-        } else {
-            throw new IllegalArgumentException("No matching method for " + methodName);
-        }
-        method.setAccessible(true);
-        if (method.getParameterCount() == 0) {
-            method.invoke(controller);
-        } else {
-            method.invoke(controller, event);
-        }
-      } catch (final IllegalAccessException | java.lang.reflect.InvocationTargetException ex) {
-        throw new RuntimeException("Error using reflection on " + methodName, ex);
-      }
-      ```
--
     - Slowest method
--
     - Fully compatible with FXMLLoader, so this allows easy switching between the two.
--
     - This is the default injection method (for compatibility reasons).
 - `REFERENCE`: Directly reference the method
--
     - `controller.method(event)`
--
     - This means that the method must be accessible from the view (e.g. package-private).
 
 ### Resource bundle injection
@@ -180,31 +136,23 @@ There are two ways to inject methods (meaning use them as event handlers) into a
 There are three ways to inject resource bundles into a controller:
 
 - `CONSTRUCTOR`: Inject resource bundle in the view constructor
--
     - ```java
       view = new View(controller, resourceBundle);
       ```
--
     - This is the default injection method because it is the most similar to FXMLLoader (
       `FXMLLoader.setResources(resourceBundle)`).
 - `CONSTRUCTOR_FUNCTION`: Injects a function in the view constructor
--
     - `bundleFunction.apply(key)`
--
     - The function takes a string (the key) and returns a string (the value)
     - This allows using another object than a resource bundle for example
-- `GETTER`: Retrieves the resource bundle using a controller getter method
--
-    - `controller.resources()`
--
-    - The method name (resources) was chosen because it matches the name of the field injected by FXMLLoader.
--
-    - The method must be accessible from the view (e.g. package-private).
-- `GET-BUNDLE`: Injects the bundle name in the view constructor and retrieves it using
-  `ResourceBundle.getBundle(bundleName)`
--
+- `CONSTRUCTOR_NAME`: Injects the resource bundle name in the view constructor
     - `ResourceBundle.getBundle(bundleName)`
-    - Also used when fx:include specifies a resource attribute to pass it to the included view.
+- `GETTER`: Retrieves the resource bundle using a controller getter method
+    - `controller.resources()`
+    - The method name (resources) was chosen because it matches the name of the field injected by FXMLLoader.
+    - The method must be accessible from the view (e.g. package-private).
+- `GET-BUNDLE`: Retrieves the resource bundle using a resource path
+    - The resource path is passed to the generator (see [Maven Plugin](#maven-plugin)).
 
 ## View creation
 
@@ -229,47 +177,43 @@ The smallest constructor will have only one argument: The controller (or control
 ### Parameters
 
 - output-directory
--
     - The output directory of the generated classes
--
     - default: `${project.build.directory}/generated-sources/java`)
 - target-version
--
     - The target Java version for the generated code
     - default: `21`
     - minimum: `8`
     - File an issue if the generated code is not compatible with the target version
 - use-image-inputstream-constructor
--
     - Use the InputStream constructor for Image instead of the String (URL) one.
--
     - default: `true`
     - Disables background loading
+- controller-injection
+    - The type of controller injections to use (see [Controller injection](#controller-injection))
+    - default: `INSTANCE`
 - field-injection
--
     - The type of field injections to use (see [Field injection](#field-injection))
     - default: `REFLECTION`
 - method-injection
--
     - The type of method injections to use (see [Method injection](#method-injection))
     - default: `REFLECTION`
 - bundle-injection
--
     - The type of resource bundle injection to use (see [Resource bundle injection](#resource-bundle-injection))
     - default: `CONSTRUCTOR`
 - bundle-map
--
     - A map of resource bundle name to resource bundle path
     - Used with `GET-BUNDLE` injection
     - default: `{}`
+- parallelism
+    - The number of threads to use for compilation
+    - default: `1`
+    - if `<1`, the number of cores will be used
 
 ### Limitations
 
 - Given that the plugin operates during the `generate-sources` phase, it doesn't have access to the classes of the
   application.
--
     - The controller info (fields, methods) is obtained from the source file and may therefore be inaccurate.
--
     - Custom classes instantiated in the FXML files are not available during generation and may therefore cause it to
       fail.
 - If the application uses e.g. WebView, the javafx-web dependency must be added to the plugin dependencies.

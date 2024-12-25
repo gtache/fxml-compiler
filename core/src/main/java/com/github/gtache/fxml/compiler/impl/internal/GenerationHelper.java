@@ -1,7 +1,5 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
-import com.github.gtache.fxml.compiler.ControllerInfo;
-import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
@@ -10,8 +8,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Various helper methods for {@link GeneratorImpl}
@@ -31,42 +27,8 @@ final class GenerationHelper {
     static final String BINDING_EXPRESSION_PREFIX = "${";
     static final String BI_DIRECTIONAL_BINDING_PREFIX = "#{";
 
-    private final HelperProvider helperProvider;
-    private final ControllerInfo controllerInfo;
-    private final Map<String, VariableInfo> idToVariableInfo;
+    private GenerationHelper() {
 
-    GenerationHelper(final HelperProvider helperProvider, final ControllerInfo controllerInfo, final Map<String, VariableInfo> idToVariableInfo) {
-        this.helperProvider = requireNonNull(helperProvider);
-        this.controllerInfo = requireNonNull(controllerInfo);
-        this.idToVariableInfo = requireNonNull(idToVariableInfo);
-    }
-
-    /**
-     * Handles the fx:id attribute of an object
-     *
-     * @param parsedObject The parsed object
-     * @param variableName The variable name
-     * @throws GenerationException if an error occurs
-     */
-    void handleId(final ParsedObject parsedObject, final String variableName) throws GenerationException {
-        final var id = parsedObject.attributes().get(FX_ID);
-        if (id != null) {
-            final var idValue = id.value();
-            final String className;
-            if (controllerInfo.fieldInfo(idValue) == null) {
-                className = parsedObject.className();
-                logger.debug("Not injecting {} because it is not found in controller", idValue);
-            } else {
-                final var reflectionHelper = helperProvider.getReflectionHelper();
-                if (ReflectionHelper.isGeneric(ReflectionHelper.getClass(parsedObject.className()))) {
-                    className = parsedObject.className() + reflectionHelper.getGenericTypes(parsedObject);
-                } else {
-                    className = parsedObject.className();
-                }
-                helperProvider.getControllerInjector().injectControllerField(idValue, variableName);
-            }
-            idToVariableInfo.put(idValue, new VariableInfo(idValue, parsedObject, variableName, className));
-        }
     }
 
     /**

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -17,10 +16,8 @@ import java.util.Set;
  */
 final class ConstructorHelper {
 
-    private final HelperProvider helperProvider;
+    private ConstructorHelper() {
 
-    ConstructorHelper(final HelperProvider helperProvider) {
-        this.helperProvider = Objects.requireNonNull(helperProvider);
     }
 
     /**
@@ -31,22 +28,22 @@ final class ConstructorHelper {
      * @return The list of constructor arguments
      * @throws GenerationException if an error occurs
      */
-    List<String> getListConstructorArgs(final ConstructorArgs constructorArgs, final ParsedObject parsedObject) throws GenerationException {
+    static List<String> getListConstructorArgs(final ConstructorArgs constructorArgs, final ParsedObject parsedObject) throws GenerationException {
         final var args = new ArrayList<String>(constructorArgs.namedArgs().size());
-        final var valueFormatter = helperProvider.getValueFormatter();
         for (final var entry : constructorArgs.namedArgs().entrySet()) {
-            final var type = entry.getValue().type();
+            final var parameter = entry.getValue();
+            final var type = parameter.type();
             final var p = parsedObject.attributes().get(entry.getKey());
             if (p == null) {
                 final var c = parsedObject.properties().entrySet().stream().filter(e ->
                         e.getKey().name().equals(entry.getKey())).findFirst().orElse(null);
                 if (c == null) {
-                    args.add(valueFormatter.toString(entry.getValue().defaultValue(), type));
+                    args.add(ValueFormatter.toString(parameter.defaultValue(), type));
                 } else {
                     throw new GenerationException("Constructor using complex property not supported yet");
                 }
             } else {
-                args.add(valueFormatter.toString(p.value(), type));
+                args.add(ValueFormatter.toString(p.value(), type));
             }
         }
         return args;
@@ -69,7 +66,8 @@ final class ConstructorHelper {
             }
         }
         if (matchingConstructorArgs == null) {
-            return Arrays.stream(constructors).filter(c -> c.getParameterCount() == 0).findFirst().map(c -> new ConstructorArgs(c, new LinkedHashMap<>())).orElse(null);
+            return Arrays.stream(constructors).filter(c -> c.getParameterCount() == 0).findFirst()
+                    .map(c -> new ConstructorArgs(c, new LinkedHashMap<>())).orElse(null);
         } else {
             return matchingConstructorArgs;
         }
@@ -83,6 +81,10 @@ final class ConstructorHelper {
      * @return The number of matching arguments
      */
     private static long getMatchingArgsCount(final ConstructorArgs constructorArgs, final Set<String> allPropertyNames) {
-        return constructorArgs.namedArgs().keySet().stream().filter(allPropertyNames::contains).count();
+        if (constructorArgs.namedArgs().keySet().stream().anyMatch(s -> !allPropertyNames.contains(s))) {
+            return 0;
+        } else {
+            return constructorArgs.namedArgs().keySet().stream().filter(allPropertyNames::contains).count();
+        }
     }
 }

@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.SequencedMap;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,7 +21,7 @@ class TestParsedCopyImpl {
 
     TestParsedCopyImpl(@Mock final ParsedProperty property) {
         this.properties = new LinkedHashMap<>();
-        this.properties.put("name", property);
+        this.properties.put("source", property);
         this.copy = new ParsedCopyImpl(properties);
     }
 
@@ -46,7 +47,15 @@ class TestParsedCopyImpl {
     }
 
     @Test
+    void testOtherConstructor() {
+        final var otherCopy = new ParsedCopyImpl("source");
+        assertEquals("source", otherCopy.source());
+    }
+
+    @Test
     void testIllegal() {
-        assertThrows(NullPointerException.class, () -> new TestParsedCopyImpl(null));
+        assertThrows(NullPointerException.class, () -> new ParsedCopyImpl((Map<String, ParsedProperty>) null));
+        final var emptyMap = Map.<String, ParsedProperty>of();
+        assertThrows(IllegalArgumentException.class, () -> new ParsedCopyImpl(emptyMap));
     }
 }

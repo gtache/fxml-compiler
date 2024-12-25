@@ -16,12 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ExtendWith(MockitoExtension.class)
 class TestControllerProvider {
 
-    private final ControllerProvider provider;
-
-    TestControllerProvider() {
-        this.provider = new ControllerProvider();
-    }
-
     @Test
     void testGetController(@TempDir final Path tempDir) throws Exception {
         final var fxml = tempDir.resolve("fxml.fxml");

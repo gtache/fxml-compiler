@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.SequencedMap;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,7 +21,7 @@ class TestParsedIncludeImpl {
 
     TestParsedIncludeImpl(@Mock final ParsedProperty property) {
         this.properties = new LinkedHashMap<>();
-        this.properties.put("name", property);
+        this.properties.put("source", property);
         this.include = new ParsedIncludeImpl(properties);
     }
 
@@ -46,7 +47,20 @@ class TestParsedIncludeImpl {
     }
 
     @Test
+    void testOtherConstructor() {
+        final var otherInclude = new ParsedIncludeImpl("s", "r", "f");
+        final var attributes = Map.of("source", new ParsedPropertyImpl("source", null, "s"),
+                "resources", new ParsedPropertyImpl("resources", null, "r"),
+                "fx:id", new ParsedPropertyImpl("fx:id", null, "f"));
+        assertEquals(attributes, otherInclude.attributes());
+    }
+
+    @Test
     void testIllegal() {
         assertThrows(NullPointerException.class, () -> new ParsedIncludeImpl(null));
+        assertThrows(NullPointerException.class, () -> new ParsedIncludeImpl(null, "", ""));
+        assertDoesNotThrow(() -> new ParsedIncludeImpl("", null, null));
+        final var emptyMap = Map.<String, ParsedProperty>of();
+        assertThrows(IllegalArgumentException.class, () -> new ParsedIncludeImpl(emptyMap));
     }
 }

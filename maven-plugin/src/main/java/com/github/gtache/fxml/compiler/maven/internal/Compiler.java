@@ -12,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.plugin.MojoExecutionException;
 
-import javax.inject.Named;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +20,6 @@ import java.util.Map;
 /**
  * Creates compiled Java code
  */
-@Named
 public final class Compiler {
 
     private static final Logger logger = LogManager.getLogger(Compiler.class);
@@ -45,7 +43,7 @@ public final class Compiler {
         }
     }
 
-    private static void compile(final Path inputPath, final CompilationInfo info, final Map<Path, CompilationInfo> mapping, final GenerationParameters parameters) throws MojoExecutionException {
+    public static void compile(final Path inputPath, final CompilationInfo info, final Map<Path, CompilationInfo> mapping, final GenerationParameters parameters) throws MojoExecutionException {
         try {
             logger.info("Parsing {} with {}", inputPath, PARSER.getClass().getSimpleName());
             final var root = PARSER.parse(inputPath);

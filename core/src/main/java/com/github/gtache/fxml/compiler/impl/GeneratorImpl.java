@@ -6,6 +6,9 @@ import com.github.gtache.fxml.compiler.Generator;
 import com.github.gtache.fxml.compiler.impl.internal.GenerationProgress;
 import com.github.gtache.fxml.compiler.impl.internal.HelperProvider;
 
+import java.util.Objects;
+import java.util.function.Function;
+
 //TODO handle binding (${})
 
 /**
@@ -13,10 +16,28 @@ import com.github.gtache.fxml.compiler.impl.internal.HelperProvider;
  */
 public class GeneratorImpl implements Generator {
 
+
+    private final Function<GenerationProgress, HelperProvider> helperProviderFactory;
+
+    /**
+     * Instantiates a new generator
+     */
+    public GeneratorImpl() {
+        this(HelperProvider::new);
+    }
+
+    /**
+     * Used for testing
+     * @param helperProviderFactory The helper provider factory
+     */
+    GeneratorImpl(final Function<GenerationProgress, HelperProvider> helperProviderFactory) {
+        this.helperProviderFactory = Objects.requireNonNull(helperProviderFactory);
+    }
+
     @Override
     public String generate(final GenerationRequest request) throws GenerationException {
         final var progress = new GenerationProgress(request);
-        final var helperProvider = new HelperProvider(progress);
+        final var helperProvider = helperProviderFactory.apply(progress);
         final var className = request.outputClassName();
         final var pkgName = className.substring(0, className.lastIndexOf('.'));
         final var simpleClassName = className.substring(className.lastIndexOf('.') + 1);
@@ -43,7 +64,9 @@ public class GeneratorImpl implements Generator {
     private static void formatControllerMethod(final GenerationProgress progress, final String controllerInjectionClass) {
         final var sb = progress.stringBuilder();
         sb.append("    /**\n");
+        sb.append("     * Returns the controller if available\n");
         sb.append("     * @return The controller\n");
+        sb.append("     * @throws IllegalStateException If the view is not loaded\n");
         sb.append("     */\n");
         sb.append("    public ").append(controllerInjectionClass).append(" controller() {\n");
         sb.append("        if (loaded) {\n");

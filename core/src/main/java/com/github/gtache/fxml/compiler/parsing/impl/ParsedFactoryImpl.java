@@ -13,13 +13,23 @@ import java.util.SequencedCollection;
  * Implementation of {@link ParsedFactory}
  *
  * @param className  The factory class
- * @param attributes The factory properties
+ * @param attributes The factory attributes
  * @param arguments  The factory arguments
+ * @param children   The factory children
  */
 public record ParsedFactoryImpl(String className, Map<String, ParsedProperty> attributes,
                                 SequencedCollection<ParsedObject> arguments,
                                 SequencedCollection<ParsedObject> children) implements ParsedFactory {
 
+    /**
+     * Instantiates the factory
+     *
+     * @param className  The factory class
+     * @param attributes The factory attributes
+     * @param arguments  The factory arguments
+     * @param children   The factory children
+     * @throws NullPointerException if any argument is null
+     */
     public ParsedFactoryImpl {
         Objects.requireNonNull(className);
         attributes = Map.copyOf(attributes);

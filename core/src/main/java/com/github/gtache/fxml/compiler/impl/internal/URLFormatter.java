@@ -17,11 +17,11 @@ import static java.util.Objects.requireNonNull;
 final class URLFormatter {
 
     private final HelperProvider helperProvider;
-    private final GenerationProgress progress;
+    private final StringBuilder sb;
 
-    URLFormatter(final HelperProvider helperProvider, final GenerationProgress progress) {
+    URLFormatter(final HelperProvider helperProvider, final StringBuilder sb) {
         this.helperProvider = requireNonNull(helperProvider);
-        this.progress = requireNonNull(progress);
+        this.sb = requireNonNull(sb);
     }
 
     List<String> formatURL(final Iterable<String> stylesheets) {
@@ -33,8 +33,7 @@ final class URLFormatter {
     }
 
     String formatURL(final String url) {
-        final var variableName = progress.getNextVariableName("url");
-        final var sb = progress.stringBuilder();
+        final var variableName = helperProvider.getVariableProvider().getNextVariableName("url");
         if (url.startsWith(RELATIVE_PATH_PREFIX)) {
             sb.append(getStartURL()).append(variableName).append(" = getClass().getResource(\"").append(url.substring(1)).append("\");\n");
         } else {
@@ -62,8 +61,7 @@ final class URLFormatter {
                 }
             }
             //FIXME only relative path (@) ?
-            progress.stringBuilder().append(getStartURL()).append(variableName).append(" = getClass().getResource(\"").append(value).append("\");\n");
-            helperProvider.getGenerationHelper().handleId(parsedObject, variableName);
+            sb.append(getStartURL()).append(variableName).append(" = getClass().getResource(\"").append(value).append("\");\n");
         } else {
             throw new GenerationException("URL cannot have children or properties : " + parsedObject);
         }

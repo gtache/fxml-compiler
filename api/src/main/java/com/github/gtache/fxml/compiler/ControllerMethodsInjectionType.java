@@ -1,6 +1,4 @@
-package com.github.gtache.fxml.compiler.impl;
-
-import com.github.gtache.fxml.compiler.InjectionType;
+package com.github.gtache.fxml.compiler;
 
 /**
  * Base methods {@link InjectionType}s

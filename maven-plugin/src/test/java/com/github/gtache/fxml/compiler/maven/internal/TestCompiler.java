@@ -25,7 +25,6 @@ import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,7 +40,6 @@ class TestCompiler {
     private final SourceInfo sourceInfo;
     private final String content;
     private final GenerationParameters parameters;
-    private final Compiler compiler;
 
     TestCompiler(@Mock final ControllerInfoProvider controllerInfoProvider, @Mock final SourceInfoProvider sourceInfoProvider,
                  @Mock final FXMLParser fxmlParser, @Mock final CompilationInfo compilationInfo, @Mock final ParsedObject object,
@@ -57,7 +55,6 @@ class TestCompiler {
         this.content = "content";
         this.parameters = Objects.requireNonNull(parameters);
         this.generator = Objects.requireNonNull(generator);
-        this.compiler = new Compiler(controllerInfoProvider, sourceInfoProvider, fxmlParser, generator);
     }
 
     @BeforeEach
@@ -77,7 +74,7 @@ class TestCompiler {
         when(compilationInfo.outputClass()).thenReturn(outputClass);
         final var mapping = Map.of(path, compilationInfo);
         final var request = new GenerationRequestImpl(parameters, controllerInfo, sourceInfo, object, outputClass);
-        compiler.compile(mapping, parameters);
+        Compiler.compile(mapping, parameters);
         verify(fxmlParser).parse(path);
         ControllerInfoProvider.getControllerInfo(compilationInfo);
         SourceInfoProvider.getSourceInfo(compilationInfo, mapping);
@@ -94,7 +91,7 @@ class TestCompiler {
         when(compilationInfo.outputClass()).thenReturn(outputClass);
         final var mapping = Map.of(path, compilationInfo);
         final var request = new GenerationRequestImpl(parameters, controllerInfo, sourceInfo, object, outputClass);
-        assertThrows(MojoExecutionException.class, () -> compiler.compile(mapping, parameters));
+        assertThrows(MojoExecutionException.class, () -> Compiler.compile(mapping, parameters));
         verify(fxmlParser).parse(path);
         ControllerInfoProvider.getControllerInfo(compilationInfo);
         SourceInfoProvider.getSourceInfo(compilationInfo, mapping);
@@ -111,7 +108,7 @@ class TestCompiler {
         final var mapping = Map.of(path, compilationInfo);
         final var request = new GenerationRequestImpl(parameters, controllerInfo, sourceInfo, object, outputClass);
         when(generator.generate(request)).thenThrow(RuntimeException.class);
-        assertThrows(MojoExecutionException.class, () -> compiler.compile(mapping, parameters));
+        assertThrows(MojoExecutionException.class, () -> Compiler.compile(mapping, parameters));
         verify(fxmlParser).parse(path);
         ControllerInfoProvider.getControllerInfo(compilationInfo);
         SourceInfoProvider.getSourceInfo(compilationInfo, mapping);
@@ -123,7 +120,7 @@ class TestCompiler {
         when(fxmlParser.parse((Path) any())).thenThrow(ParseException.class);
         final var path = tempDir.resolve("fxml1.fxml");
         final var mapping = Map.of(path, compilationInfo);
-        assertThrows(MojoExecutionException.class, () -> compiler.compile(mapping, parameters));
+        assertThrows(MojoExecutionException.class, () -> Compiler.compile(mapping, parameters));
         verify(fxmlParser).parse(path);
         verifyNoInteractions(controllerInfoProvider, sourceInfoProvider, generator);
     }
@@ -138,18 +135,10 @@ class TestCompiler {
         final var mapping = Map.of(path, compilationInfo);
         final var request = new GenerationRequestImpl(parameters, controllerInfo, sourceInfo, object, outputClass);
         when(generator.generate(request)).thenThrow(GenerationException.class);
-        assertThrows(MojoExecutionException.class, () -> compiler.compile(mapping, parameters));
+        assertThrows(MojoExecutionException.class, () -> Compiler.compile(mapping, parameters));
         verify(fxmlParser).parse(path);
         ControllerInfoProvider.getControllerInfo(compilationInfo);
         SourceInfoProvider.getSourceInfo(compilationInfo, mapping);
         verify(generator).generate(request);
-    }
-
-    @Test
-    void testIllegal() {
-        assertThrows(NullPointerException.class, () -> new Compiler(null, sourceInfoProvider, fxmlParser, generator));
-        assertThrows(NullPointerException.class, () -> new Compiler(controllerInfoProvider, null, fxmlParser, generator));
-        assertThrows(NullPointerException.class, () -> new Compiler(controllerInfoProvider, sourceInfoProvider, null, generator));
-        assertThrows(NullPointerException.class, () -> new Compiler(controllerInfoProvider, sourceInfoProvider, fxmlParser, null));
     }
 }

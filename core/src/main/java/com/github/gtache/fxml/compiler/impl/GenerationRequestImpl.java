@@ -20,6 +20,15 @@ import java.util.Objects;
 public record GenerationRequestImpl(GenerationParameters parameters, ControllerInfo controllerInfo,
                                     SourceInfo sourceInfo, ParsedObject rootObject,
                                     String outputClassName) implements GenerationRequest {
+    /**
+     * Instantiates a new request
+     * @param parameters      The generation parameters
+     * @param controllerInfo  The controller info
+     * @param sourceInfo      The source info
+     * @param rootObject      The root object
+     * @param outputClassName The output class name
+     * @throws NullPointerException If any parameter is null
+     */
     public GenerationRequestImpl {
         Objects.requireNonNull(parameters);
         Objects.requireNonNull(controllerInfo);

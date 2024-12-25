@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -122,5 +123,11 @@ class TestGenerationCompatibilityHelper {
     void testGetListOfDontUse() {
         when(compatibility.useCollectionsOf()).thenReturn(false);
         assertEquals("java.util.Arrays.asList(", compatibilityHelper.getListOf());
+    }
+
+    @Test
+    void testIllegal() {
+        assertThrows(NullPointerException.class, () -> new GenerationCompatibilityHelper(null, compatibility));
+        assertThrows(NullPointerException.class, () -> new GenerationCompatibilityHelper(helperProvider, null));
     }
 }

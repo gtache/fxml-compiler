@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.SequencedMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class TestDOMFXMLParser {
 
@@ -76,6 +77,7 @@ class TestDOMFXMLParser {
                         List.of(new ParsedObjectImpl(VBox.class.getName(), newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "vbox")), newLinkedHashMap(), List.of()))
                 ), List.of());
         try (final var in = getClass().getResourceAsStream("loadView.fxml")) {
+            assertNotNull(in);
             final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             final var actual = parser.parse(content);
             assertEquals(expected, actual);

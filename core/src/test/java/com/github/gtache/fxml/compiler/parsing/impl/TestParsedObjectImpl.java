@@ -31,7 +31,7 @@ class TestParsedObjectImpl {
         this.attributes = new LinkedHashMap<>();
         this.attributes.put("name", property);
         this.properties = new LinkedHashMap<>();
-        this.properties.put(property, List.of(object));
+        this.properties.put(new ParsedPropertyImpl("property", null, ""), List.of(object));
         this.objects = new ArrayList<>(List.of(define));
         this.parsedObject = new ParsedObjectImpl(clazz, attributes, properties, objects);
     }

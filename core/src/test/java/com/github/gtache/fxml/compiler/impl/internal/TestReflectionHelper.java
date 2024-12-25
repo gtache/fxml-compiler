@@ -114,7 +114,7 @@ class TestReflectionHelper {
         parameters.put("p16", new Parameter("p16", Double.class, "0"));
         parameters.put("p17", new Parameter("p17", String.class, "null"));
         parameters.put("p18", new Parameter("p18", Object.class, "null"));
-        final var defaultConstructor = Arrays.stream(WholeConstructorArgs.class.getConstructors()).filter(c -> c.getParameterCount() == 18).findFirst().orElseThrow();
+        final var defaultConstructor = Arrays.stream(WholeConstructorArgs.class.getDeclaredConstructors()).filter(c -> c.getParameterCount() == 18).findFirst().orElseThrow();
         final var expected = new ConstructorArgs(defaultConstructor, parameters);
         final var actual = ReflectionHelper.getConstructorArgs(defaultConstructor);
         assertEquals(expected, actual);
@@ -132,7 +132,7 @@ class TestReflectionHelper {
         parameters.put("p13", new Parameter("p13", float.class, "5.5"));
         parameters.put("p15", new Parameter("p15", double.class, "6.6"));
         parameters.put("p17", new Parameter("p17", String.class, "str"));
-        final var constructor = Arrays.stream(WholeConstructorArgs.class.getConstructors()).filter(c -> c.getParameterCount() == 9).findFirst().orElseThrow();
+        final var constructor = Arrays.stream(WholeConstructorArgs.class.getDeclaredConstructors()).filter(c -> c.getParameterCount() == 9).findFirst().orElseThrow();
         final var expected = new ConstructorArgs(constructor, parameters);
         final var actual = ReflectionHelper.getConstructorArgs(constructor);
         assertEquals(expected, actual);
@@ -140,7 +140,7 @@ class TestReflectionHelper {
 
     @Test
     void testGetConstructorArgsNoNamedArgs() {
-        final var constructor = Arrays.stream(WholeConstructorArgs.class.getConstructors()).filter(c -> c.getParameterCount() == 2).findFirst().orElseThrow();
+        final var constructor = Arrays.stream(WholeConstructorArgs.class.getDeclaredConstructors()).filter(c -> c.getParameterCount() == 2).findFirst().orElseThrow();
         final var expected = new ConstructorArgs(constructor, new LinkedHashMap<>());
         final var actual = ReflectionHelper.getConstructorArgs(constructor);
         assertEquals(expected, actual);
@@ -148,7 +148,7 @@ class TestReflectionHelper {
 
     @Test
     void testGetConstructorArgsMixed() {
-        final var constructor = Arrays.stream(WholeConstructorArgs.class.getConstructors()).filter(c -> c.getParameterCount() == 3).findFirst().orElseThrow();
+        final var constructor = Arrays.stream(WholeConstructorArgs.class.getDeclaredConstructors()).filter(c -> c.getParameterCount() == 3).findFirst().orElseThrow();
         assertThrows(IllegalStateException.class, () -> ReflectionHelper.getConstructorArgs(constructor));
     }
 
@@ -211,5 +211,26 @@ class TestReflectionHelper {
     void testGetGenericTypes() throws GenerationException {
         when(fieldInfo.genericTypes()).thenReturn(List.of(new GenericTypesImpl("java.lang.String", List.of()), new GenericTypesImpl("java.lang.Integer", List.of())));
         assertEquals("<java.lang.String, java.lang.Integer>", reflectionHelper.getGenericTypes(parsedObject));
+    }
+
+    @Test
+    void testGetGenericTypesRecursive() throws GenerationException {
+        when(fieldInfo.genericTypes()).thenReturn(List.of(new GenericTypesImpl("java.lang.String", List.of(new GenericTypesImpl("java.lang.Integer", List.of()), new GenericTypesImpl("java.lang.Short", List.of()))), new GenericTypesImpl("java.lang.Byte", List.of())));
+        assertEquals("<java.lang.String<java.lang.Integer, java.lang.Short>, java.lang.Byte>", reflectionHelper.getGenericTypes(parsedObject));
+    }
+
+    @Test
+    void testGetReturnTypeNotFound() {
+        assertThrows(GenerationException.class, () -> ReflectionHelper.getReturnType("java.lang.String", "whatever"));
+    }
+
+    @Test
+    void testGetReturnType() throws GenerationException {
+        assertEquals(String.class.getName(), ReflectionHelper.getReturnType("java.lang.String", "valueOf"));
+    }
+
+    @Test
+    void testIllegal() {
+        assertThrows(NullPointerException.class, () -> new ReflectionHelper(null));
     }
 }

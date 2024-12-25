@@ -1,7 +1,10 @@
 package com.github.gtache.fxml.compiler.impl;
 
+import com.github.gtache.fxml.compiler.ControllerFieldInjectionType;
+import com.github.gtache.fxml.compiler.ControllerInjectionType;
+import com.github.gtache.fxml.compiler.ControllerMethodsInjectionType;
 import com.github.gtache.fxml.compiler.GenerationParameters;
-import com.github.gtache.fxml.compiler.InjectionType;
+import com.github.gtache.fxml.compiler.ResourceBundleInjectionType;
 import com.github.gtache.fxml.compiler.compatibility.GenerationCompatibility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,15 +23,15 @@ class TestGenerationParametersImpl {
     private final GenerationCompatibility compatibility;
     private final boolean useImageInputStreamConstructor;
     private final Map<String, String> bundleMap;
-    private final InjectionType controllerInjectionType;
-    private final InjectionType fieldInjectionType;
-    private final InjectionType methodInjectionType;
-    private final InjectionType resourceInjectionType;
+    private final ControllerInjectionType controllerInjectionType;
+    private final ControllerFieldInjectionType fieldInjectionType;
+    private final ControllerMethodsInjectionType methodInjectionType;
+    private final ResourceBundleInjectionType resourceInjectionType;
     private final GenerationParameters parameters;
 
-    TestGenerationParametersImpl(@Mock final GenerationCompatibility compatibility, @Mock final InjectionType controllerInjectionType,
-                                 @Mock final InjectionType fieldInjectionType, @Mock final InjectionType methodInjectionType,
-                                 @Mock final InjectionType resourceInjectionType) {
+    TestGenerationParametersImpl(@Mock final GenerationCompatibility compatibility, @Mock final ControllerInjectionType controllerInjectionType,
+                                 @Mock final ControllerFieldInjectionType fieldInjectionType, @Mock final ControllerMethodsInjectionType methodInjectionType,
+                                 @Mock final ResourceBundleInjectionType resourceInjectionType) {
         this.compatibility = requireNonNull(compatibility);
         this.useImageInputStreamConstructor = true;
         this.controllerInjectionType = requireNonNull(controllerInjectionType);

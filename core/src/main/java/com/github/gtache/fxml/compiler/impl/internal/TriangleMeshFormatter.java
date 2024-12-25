@@ -76,7 +76,6 @@ final class TriangleMeshFormatter {
             setFaces(variableName, faces);
             setFaceSmoothingGroups(variableName, faceSmoothingGroups);
             setVertexFormat(variableName, vertexFormat);
-            helperProvider.getGenerationHelper().handleId(parsedObject, variableName);
         } else {
             throw new GenerationException("Image cannot have children or properties : " + parsedObject);
         }
@@ -133,8 +132,8 @@ final class TriangleMeshFormatter {
     }
 
     private static <T> List<T> parseList(final CharSequence value, final Function<? super String, ? extends T> parser) {
-        final var splitPattern = Pattern.compile("[\\s+,]");
+        final var splitPattern = Pattern.compile("\\s*,\\s*|\\s+");
         final var split = splitPattern.split(value);
-        return Arrays.stream(split).map(parser).collect(Collectors.toList());
+        return Arrays.stream(split).map(String::trim).filter(s -> !s.isEmpty()).map(parser).collect(Collectors.toList());
     }
 }

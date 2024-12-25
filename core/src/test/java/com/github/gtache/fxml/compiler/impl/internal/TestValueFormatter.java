@@ -1,20 +1,18 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
 import com.github.gtache.fxml.compiler.GenerationException;
-import com.github.gtache.fxml.compiler.InjectionType;
-import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionTypes;
+import com.github.gtache.fxml.compiler.ResourceBundleInjectionType;
 import javafx.geometry.Pos;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.URL;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
-import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -23,39 +21,40 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TestValueFormatter {
 
-    private final Map<String, VariableInfo> idToVariableInfo;
-    private final InjectionType resourceInjectionType;
+    private final HelperProvider helperProvider;
+    private final VariableProvider variableProvider;
     private final ValueFormatter formatter;
 
-    TestValueFormatter(@Mock final InjectionType resourceInjectionType) {
-        this.resourceInjectionType = requireNonNull(resourceInjectionType);
-        this.idToVariableInfo = new HashMap<>();
-        this.formatter = new ValueFormatter(resourceInjectionType, idToVariableInfo);
+    TestValueFormatter(@Mock final HelperProvider helperProvider, @Mock final VariableProvider variableProvider,
+                       @Mock final ResourceBundleInjectionType resourceInjectionType) {
+        this.helperProvider = Objects.requireNonNull(helperProvider);
+        this.variableProvider = Objects.requireNonNull(variableProvider);
+        this.formatter = new ValueFormatter(helperProvider, resourceInjectionType);
     }
 
-    @Test
-    void testGetArgStringResourceUnknown() {
-        assertThrows(GenerationException.class, () -> formatter.getArg("%value", String.class));
+    @BeforeEach
+    void beforeEach() {
+        when(helperProvider.getVariableProvider()).thenReturn(variableProvider);
     }
 
     @Test
     void testGetArgStringResourceSimpleGet() throws GenerationException {
-        final var types = List.of(ResourceBundleInjectionTypes.CONSTRUCTOR, ResourceBundleInjectionTypes.CONSTRUCTOR_NAME, ResourceBundleInjectionTypes.GET_BUNDLE);
+        final var types = List.of(ResourceBundleInjectionType.CONSTRUCTOR, ResourceBundleInjectionType.CONSTRUCTOR_NAME, ResourceBundleInjectionType.GET_BUNDLE);
         for (final var type : types) {
-            final var resourceFormatter = new ValueFormatter(type, idToVariableInfo);
+            final var resourceFormatter = new ValueFormatter(helperProvider, type);
             assertEquals("resourceBundle.getString(\"value\")", resourceFormatter.getArg("%value", String.class));
         }
     }
 
     @Test
     void testGetArgStringResourceController() throws GenerationException {
-        final var resourceFormatter = new ValueFormatter(ResourceBundleInjectionTypes.GETTER, idToVariableInfo);
+        final var resourceFormatter = new ValueFormatter(helperProvider, ResourceBundleInjectionType.GETTER);
         assertEquals("controller.resources().getString(\"value\")", resourceFormatter.getArg("%value", String.class));
     }
 
     @Test
     void testGetArgStringResourceFunction() throws GenerationException {
-        final var resourceFormatter = new ValueFormatter(ResourceBundleInjectionTypes.CONSTRUCTOR_FUNCTION, idToVariableInfo);
+        final var resourceFormatter = new ValueFormatter(helperProvider, ResourceBundleInjectionType.CONSTRUCTOR_FUNCTION);
         assertEquals("resourceBundleFunction.apply(\"value\")", resourceFormatter.getArg("%value", String.class));
     }
 
@@ -78,8 +77,8 @@ class TestValueFormatter {
     @Test
     void testGetArgExpression() throws GenerationException {
         final var info = mock(VariableInfo.class);
+        when(variableProvider.getVariableInfo("value")).thenReturn(info);
         when(info.variableName()).thenReturn("variable");
-        idToVariableInfo.put("value", info);
         assertEquals("variable", formatter.getArg("$value", String.class));
     }
 
@@ -90,32 +89,32 @@ class TestValueFormatter {
 
     @Test
     void testToStringString() {
-        assertEquals("\"value\"", formatter.toString("value", String.class));
+        assertEquals("\"value\"", ValueFormatter.toString("value", String.class));
     }
 
     @Test
     void testToStringEscape() {
-        assertEquals("\"val\\\\u\\\"e\"", formatter.toString("\\val\\u\"e", String.class));
+        assertEquals("\"val\\\\u\\\"e\"", ValueFormatter.toString("\\val\\u\"e", String.class));
     }
 
     @Test
     void testToStringChar() {
-        assertEquals("'v'", formatter.toString("v", char.class));
-        assertEquals("'v'", formatter.toString("v", Character.class));
+        assertEquals("'v'", ValueFormatter.toString("v", char.class));
+        assertEquals("'v'", ValueFormatter.toString("v", Character.class));
     }
 
     @Test
     void testToStringBoolean() {
-        assertEquals("true", formatter.toString("true", boolean.class));
-        assertEquals("true", formatter.toString("true", Boolean.class));
+        assertEquals("true", ValueFormatter.toString("true", boolean.class));
+        assertEquals("true", ValueFormatter.toString("true", Boolean.class));
     }
 
     @Test
     void testToStringInteger() {
         final var types = List.of(byte.class, Byte.class, short.class, Short.class, long.class, Long.class, int.class, Integer.class);
         for (final var type : types) {
-            assertEquals("1", formatter.toString("1", type));
-            assertEquals(ReflectionHelper.getWrapperClass(type) + ".valueOf(\"value\")", formatter.toString("value", type));
+            assertEquals("1", ValueFormatter.toString("1", type));
+            assertEquals(ReflectionHelper.getWrapperClass(type) + ".valueOf(\"value\")", ValueFormatter.toString("value", type));
         }
     }
 
@@ -123,23 +122,29 @@ class TestValueFormatter {
     void testToStringDecimal() {
         final var types = List.of(float.class, Float.class, double.class, Double.class);
         for (final var type : types) {
-            assertEquals("1.0", formatter.toString("1.0", type));
-            assertEquals(ReflectionHelper.getWrapperClass(type) + ".valueOf(\"value\")", formatter.toString("value", type));
+            assertEquals("1.0", ValueFormatter.toString("1.0", type));
+            assertEquals(ReflectionHelper.getWrapperClass(type) + ".valueOf(\"value\")", ValueFormatter.toString("value", type));
         }
     }
 
     @Test
     void testToStringValueOfEnum() {
-        assertEquals("javafx.geometry.Pos.value", formatter.toString("value", Pos.class));
+        assertEquals("javafx.geometry.Pos.value", ValueFormatter.toString("value", Pos.class));
     }
 
     @Test
     void testToStringValueOfColor() {
-        assertEquals("javafx.scene.paint.Color.valueOf(\"value\")", formatter.toString("value", javafx.scene.paint.Color.class));
+        assertEquals("javafx.scene.paint.Color.valueOf(\"value\")", ValueFormatter.toString("value", javafx.scene.paint.Color.class));
     }
 
     @Test
     void testOther() {
-        assertEquals("value", formatter.toString("value", Object.class));
+        assertEquals("value", ValueFormatter.toString("value", Object.class));
+    }
+
+    @Test
+    void testIllegal() {
+        assertThrows(NullPointerException.class, () -> new ValueFormatter(null, ResourceBundleInjectionType.CONSTRUCTOR));
+        assertThrows(NullPointerException.class, () -> new ValueFormatter(helperProvider, null));
     }
 }

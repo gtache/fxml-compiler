@@ -8,12 +8,15 @@ import java.util.List;
 /**
  * Implementation of {@link ParsedObject}
  *
- * @param className  The object class
- * @param attributes The object properties
- * @param properties The object children (complex properties)
+ * @param children The objects in this define
  */
 public record ParsedDefineImpl(List<ParsedObject> children) implements ParsedDefine {
 
+    /**
+     * Instantiates the define
+     * @param children The children
+     * @throws NullPointerException If the children are null
+     */
     public ParsedDefineImpl {
         children = List.copyOf(children);
     }

@@ -1,11 +1,11 @@
 package com.github.gtache.fxml.compiler.maven;
 
+import com.github.gtache.fxml.compiler.ControllerFieldInjectionType;
+import com.github.gtache.fxml.compiler.ControllerInjectionType;
+import com.github.gtache.fxml.compiler.ControllerMethodsInjectionType;
+import com.github.gtache.fxml.compiler.ResourceBundleInjectionType;
 import com.github.gtache.fxml.compiler.compatibility.impl.GenerationCompatibilityImpl;
-import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
-import com.github.gtache.fxml.compiler.impl.ControllerInjectionTypes;
-import com.github.gtache.fxml.compiler.impl.ControllerMethodsInjectionType;
 import com.github.gtache.fxml.compiler.impl.GenerationParametersImpl;
-import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionTypes;
 import com.github.gtache.fxml.compiler.maven.internal.CompilationInfo;
 import com.github.gtache.fxml.compiler.maven.internal.CompilationInfoProvider;
 import com.github.gtache.fxml.compiler.maven.internal.Compiler;
@@ -21,6 +21,9 @@ import org.apache.maven.project.MavenProject;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Main mojo for FXML compiler
@@ -41,31 +44,45 @@ public class FXMLCompilerMojo extends AbstractMojo {
     private boolean useImageInputStreamConstructor;
 
     @Parameter(property = "controller-injection", defaultValue = "INSTANCE", required = true)
-    private ControllerInjectionTypes controllerInjectionType;
+    private ControllerInjectionType controllerInjectionType;
 
     @Parameter(property = "field-injection", defaultValue = "REFLECTION", required = true)
-    private ControllerFieldInjectionTypes fieldInjectionType;
+    private ControllerFieldInjectionType fieldInjectionType;
 
     @Parameter(property = "method-injection", defaultValue = "REFLECTION", required = true)
     private ControllerMethodsInjectionType methodInjectionType;
 
     @Parameter(property = "resource-injection", defaultValue = "CONSTRUCTOR", required = true)
-    private ResourceBundleInjectionTypes resourceInjectionType;
+    private ResourceBundleInjectionType resourceInjectionType;
 
     @Parameter(property = "resource-map")
     private Map<String, String> resourceMap;
 
+    @Parameter(property = "parallelism", defaultValue = "1", required = true)
+    private int parallelism;
+
 
     @Override
     public void execute() throws MojoExecutionException {
-        if (fieldInjectionType == ControllerFieldInjectionTypes.FACTORY && controllerInjectionType != ControllerInjectionTypes.FACTORY) {
+        if (fieldInjectionType == ControllerFieldInjectionType.FACTORY && controllerInjectionType != ControllerInjectionType.FACTORY) {
             getLog().warn("Field injection is set to FACTORY : Forcing controller injection to FACTORY");
-            controllerInjectionType = ControllerInjectionTypes.FACTORY;
+            controllerInjectionType = ControllerInjectionType.FACTORY;
         }
         final var fxmls = FXMLProvider.getFXMLs(project);
-        final var controllerMapping = createControllerMapping(fxmls);
-        final var compilationInfoMapping = createCompilationInfoMapping(fxmls, controllerMapping);
-        compile(compilationInfoMapping);
+        if (parallelism < 1) {
+            parallelism = Runtime.getRuntime().availableProcessors();
+        }
+        if (parallelism > 1) {
+            try (final var executor = Executors.newFixedThreadPool(parallelism)) {
+                final var controllerMapping = createControllerMapping(fxmls, executor);
+                final var compilationInfoMapping = createCompilationInfoMapping(fxmls, controllerMapping, executor);
+                compile(compilationInfoMapping, executor);
+            }
+        } else {
+            final var controllerMapping = createControllerMapping(fxmls);
+            final var compilationInfoMapping = createCompilationInfoMapping(fxmls, controllerMapping);
+            compile(compilationInfoMapping);
+        }
     }
 
     private static Map<Path, String> createControllerMapping(final Map<? extends Path, ? extends Path> fxmls) throws MojoExecutionException {
@@ -76,7 +93,8 @@ public class FXMLCompilerMojo extends AbstractMojo {
         return mapping;
     }
 
-    private Map<Path, CompilationInfo> createCompilationInfoMapping(final Map<? extends Path, ? extends Path> fxmls, final Map<? extends Path, String> controllerMapping) throws MojoExecutionException {
+    private Map<Path, CompilationInfo> createCompilationInfoMapping(final Map<? extends Path, ? extends Path> fxmls,
+                                                                    final Map<? extends Path, String> controllerMapping) throws MojoExecutionException {
         final var mapping = new HashMap<Path, CompilationInfo>();
         for (final var entry : fxmls.entrySet()) {
             final var info = CompilationInfoProvider.getCompilationInfo(entry.getValue(), entry.getKey(), controllerMapping, outputDirectory, project);
@@ -89,6 +107,50 @@ public class FXMLCompilerMojo extends AbstractMojo {
         final var parameters = new GenerationParametersImpl(new GenerationCompatibilityImpl(targetVersion), useImageInputStreamConstructor, resourceMap,
                 controllerInjectionType, fieldInjectionType, methodInjectionType, resourceInjectionType);
         Compiler.compile(mapping, parameters);
+        project.addCompileSourceRoot(outputDirectory.toAbsolutePath().toString());
+    }
+
+    private static Map<Path, String> createControllerMapping(final Map<? extends Path, ? extends Path> fxmls,
+                                                             final ExecutorService executor) {
+        final var mapping = new ConcurrentHashMap<Path, String>();
+        for (final var fxml : fxmls.keySet()) {
+            executor.submit(() -> {
+                try {
+                    mapping.put(fxml, ControllerProvider.getController(fxml));
+                } catch (final MojoExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+        return mapping;
+    }
+
+    private Map<Path, CompilationInfo> createCompilationInfoMapping(final Map<? extends Path, ? extends Path> fxmls,
+                                                                    final Map<? extends Path, String> controllerMapping, final ExecutorService executor) {
+        final var mapping = new ConcurrentHashMap<Path, CompilationInfo>();
+        for (final var entry : fxmls.entrySet()) {
+            executor.submit(() -> {
+                try {
+                    final var info = CompilationInfoProvider.getCompilationInfo(entry.getValue(), entry.getKey(), controllerMapping, outputDirectory, project);
+                    mapping.put(entry.getKey(), info);
+                } catch (final MojoExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+        return mapping;
+    }
+
+    private void compile(final Map<Path, CompilationInfo> mapping, final ExecutorService executor) throws MojoExecutionException {
+        final var parameters = new GenerationParametersImpl(new GenerationCompatibilityImpl(targetVersion), useImageInputStreamConstructor, resourceMap,
+                controllerInjectionType, fieldInjectionType, methodInjectionType, resourceInjectionType);
+        mapping.forEach((p, i) -> executor.submit(() -> {
+            try {
+                Compiler.compile(p, i, mapping, parameters);
+            } catch (final MojoExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }));
         project.addCompileSourceRoot(outputDirectory.toAbsolutePath().toString());
     }
 }

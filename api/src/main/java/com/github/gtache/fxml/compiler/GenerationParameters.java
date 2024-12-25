@@ -36,26 +36,26 @@ public interface GenerationParameters {
      *
      * @return The injection
      */
-    InjectionType controllerInjectionType();
+    ControllerInjectionType controllerInjectionType();
 
     /**
      * Returns the field injection to use
      *
      * @return The injection
      */
-    InjectionType fieldInjectionType();
+    ControllerFieldInjectionType fieldInjectionType();
 
     /**
      * Returns the method injection to use
      *
      * @return The injection
      */
-    InjectionType methodInjectionType();
+    ControllerMethodsInjectionType methodInjectionType();
 
     /**
      * Returns the resource injection to use
      *
      * @return The injection
      */
-    InjectionType resourceInjectionType();
+    ResourceBundleInjectionType resourceInjectionType();
 }

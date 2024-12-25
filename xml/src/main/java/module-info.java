@@ -1,5 +1,5 @@
 /**
- * XML parsing module for FXML compiler (not implemented yet)
+ * XML parsing module for FXML compiler
  */
 module com.github.gtache.fxml.compiler.xml {
     requires transitive com.github.gtache.fxml.compiler.core;

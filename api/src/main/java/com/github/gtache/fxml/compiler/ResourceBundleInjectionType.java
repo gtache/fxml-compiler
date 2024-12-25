@@ -1,11 +1,9 @@
-package com.github.gtache.fxml.compiler.impl;
-
-import com.github.gtache.fxml.compiler.InjectionType;
+package com.github.gtache.fxml.compiler;
 
 /**
  * Base {@link InjectionType}s for resource bundles
  */
-public enum ResourceBundleInjectionTypes implements InjectionType {
+public enum ResourceBundleInjectionType implements InjectionType {
     /**
      * Resource bundle is injected in the constructor
      */

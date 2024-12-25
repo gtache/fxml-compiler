@@ -17,7 +17,7 @@ class TestParsedValueImpl {
 
     TestParsedValueImpl() {
         this.className = "test";
-        this.attributes = new HashMap<>(Map.of("fx:value", new ParsedPropertyImpl("fx:value", String.class.getName(), "value")));
+        this.attributes = new HashMap<>(Map.of("fx:value", new ParsedPropertyImpl("fx:value", null, "value")));
         this.value = new ParsedValueImpl(className, attributes);
     }
 
@@ -44,8 +44,18 @@ class TestParsedValueImpl {
     }
 
     @Test
+    void testOtherConstructor() {
+        final var otherValue = new ParsedValueImpl(className, "value");
+        assertEquals(className, otherValue.className());
+        assertEquals(attributes, otherValue.attributes());
+        assertEquals("value", otherValue.value());
+    }
+
+    @Test
     void testIllegal() {
         assertThrows(NullPointerException.class, () -> new ParsedValueImpl(null, attributes));
-        assertThrows(NullPointerException.class, () -> new ParsedValueImpl(className, null));
+        assertThrows(NullPointerException.class, () -> new ParsedValueImpl(className, (Map<String, ParsedProperty>) null));
+        final var emptyMap = Map.<String, ParsedProperty>of();
+        assertThrows(IllegalArgumentException.class, () -> new ParsedValueImpl(className, emptyMap));
     }
 }

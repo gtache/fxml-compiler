@@ -1,10 +1,8 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
+import com.github.gtache.fxml.compiler.ControllerFieldInjectionType;
 import com.github.gtache.fxml.compiler.ControllerInfo;
-import com.github.gtache.fxml.compiler.GenerationException;
-import com.github.gtache.fxml.compiler.InjectionType;
-import com.github.gtache.fxml.compiler.impl.ControllerFieldInjectionTypes;
-import com.github.gtache.fxml.compiler.impl.ControllerMethodsInjectionType;
+import com.github.gtache.fxml.compiler.ControllerMethodsInjectionType;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +15,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,8 +46,8 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectControllerFieldFactory() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.FACTORY, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
+    void testInjectControllerFieldFactory() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.FACTORY, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
         injector.injectControllerField(id, variable);
         final var expected = "        fieldMap.put(\"" + id + "\", " + variable + ");\n";
         assertEquals(expected, sb.toString());
@@ -58,8 +55,8 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectControllerFieldAssign() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.ASSIGN, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
+    void testInjectControllerFieldAssign() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.ASSIGN, com.github.gtache.fxml.compiler.ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
         injector.injectControllerField(id, variable);
         final var expected = "        controller." + id + " = " + variable + ";\n";
         assertEquals(expected, sb.toString());
@@ -67,8 +64,8 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectControllerFieldSetters() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.SETTERS, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
+    void testInjectControllerFieldSetters() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.SETTERS, com.github.gtache.fxml.compiler.ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
         injector.injectControllerField(id, variable);
         final var expected = "        controller." + GenerationHelper.getSetMethod(id) + "(" + variable + ");\n";
         assertEquals(expected, sb.toString());
@@ -76,8 +73,8 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectControllerFieldReflection() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.REFLECTION, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
+    void testInjectControllerFieldReflection() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.REFLECTION, com.github.gtache.fxml.compiler.ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
         injector.injectControllerField(id, variable);
         final var expected = "        injectField(\"" + id + "\", " + variable + ");\n";
         assertEquals(expected, sb.toString());
@@ -85,14 +82,8 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectControllerFieldUnknown() {
-        final var injector = new ControllerInjector(controllerInfo, mock(InjectionType.class), ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
-        assertThrows(GenerationException.class, () -> injector.injectControllerField(id, variable));
-    }
-
-    @Test
-    void testInjectEventHandlerReferenceFactoryNoArgument() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.FACTORY, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
+    void testInjectEventHandlerReferenceFactoryNoArgument() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.FACTORY, com.github.gtache.fxml.compiler.ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
         injector.injectEventHandlerControllerMethod(property, variable);
         final var expected = "        " + variable + "." + GenerationHelper.getSetMethod(property.name()) + "(e -> controller." + property.value().replace("#", "") + "());\n";
         assertEquals(1, controllerFactoryPostAction.size());
@@ -101,8 +92,8 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectEventHandlerReferenceFactoryWithArgument() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.FACTORY, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
+    void testInjectEventHandlerReferenceFactoryWithArgument() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.FACTORY, com.github.gtache.fxml.compiler.ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
         when(controllerInfo.handlerHasArgument(propertyValue.replace("#", ""))).thenReturn(true);
         injector.injectEventHandlerControllerMethod(property, variable);
         final var expected = "        " + variable + "." + GenerationHelper.getSetMethod(property.name()) + "(controller::" + propertyValue.replace("#", "") + ");\n";
@@ -112,8 +103,8 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectEventHandlerReflectionAssign() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.ASSIGN, ControllerMethodsInjectionType.REFLECTION, sb, controllerFactoryPostAction);
+    void testInjectEventHandlerReflectionAssign() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.ASSIGN, com.github.gtache.fxml.compiler.ControllerMethodsInjectionType.REFLECTION, sb, controllerFactoryPostAction);
         injector.injectEventHandlerControllerMethod(property, variable);
         final var expected = "        " + variable + "." + GenerationHelper.getSetMethod(property.name()) + "(e -> callEventHandlerMethod(\"" + propertyValue.replace("#", "") + "\", e));\n";
         assertEquals(expected, sb.toString());
@@ -121,20 +112,8 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectEventHandlerUnknownMethod() {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.ASSIGN, mock(InjectionType.class), sb, controllerFactoryPostAction);
-        assertThrows(GenerationException.class, () -> injector.injectEventHandlerControllerMethod(property, variable));
-    }
-
-    @Test
-    void testInjectEventHandlerUnknownField() {
-        final var injector = new ControllerInjector(controllerInfo, mock(InjectionType.class), ControllerMethodsInjectionType.REFLECTION, sb, controllerFactoryPostAction);
-        assertThrows(GenerationException.class, () -> injector.injectEventHandlerControllerMethod(property, variable));
-    }
-
-    @Test
-    void testInjectCallbackReflectionSetters() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.ASSIGN, ControllerMethodsInjectionType.REFLECTION, sb, controllerFactoryPostAction);
+    void testInjectCallbackReflectionSetters() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.ASSIGN, com.github.gtache.fxml.compiler.ControllerMethodsInjectionType.REFLECTION, sb, controllerFactoryPostAction);
         injector.injectCallbackControllerMethod(property, variable, "clazz");
         final var expected = "        " + variable + "." + GenerationHelper.getSetMethod(property.name()) + "(e -> callCallbackMethod(\"" + propertyValue.replace("#", "") + "\", e, clazz));\n";
         assertEquals(expected, sb.toString());
@@ -142,12 +121,21 @@ class TestControllerInjector {
     }
 
     @Test
-    void testInjectCallbackReferenceFactory() throws GenerationException {
-        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionTypes.FACTORY, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
+    void testInjectCallbackReferenceFactory() {
+        final var injector = new ControllerInjector(controllerInfo, ControllerFieldInjectionType.FACTORY, com.github.gtache.fxml.compiler.ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction);
         injector.injectCallbackControllerMethod(property, variable, "clazz");
         final var expected = "        " + variable + "." + GenerationHelper.getSetMethod(property.name()) + "(controller::" + propertyValue.replace("#", "") + ");\n";
         assertEquals(1, controllerFactoryPostAction.size());
         assertEquals(expected, controllerFactoryPostAction.getFirst());
         assertEquals("", sb.toString());
+    }
+
+    @Test
+    void testIllegal() {
+        assertThrows(NullPointerException.class, () -> new ControllerInjector(null, ControllerFieldInjectionType.ASSIGN, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction));
+        assertThrows(NullPointerException.class, () -> new ControllerInjector(controllerInfo, null, ControllerMethodsInjectionType.REFERENCE, sb, controllerFactoryPostAction));
+        assertThrows(NullPointerException.class, () -> new ControllerInjector(controllerInfo, ControllerFieldInjectionType.ASSIGN, null, sb, controllerFactoryPostAction));
+        assertThrows(NullPointerException.class, () -> new ControllerInjector(controllerInfo, ControllerFieldInjectionType.ASSIGN, ControllerMethodsInjectionType.REFERENCE, null, controllerFactoryPostAction));
+        assertThrows(NullPointerException.class, () -> new ControllerInjector(controllerInfo, ControllerFieldInjectionType.ASSIGN, ControllerMethodsInjectionType.REFERENCE, sb, null));
     }
 }

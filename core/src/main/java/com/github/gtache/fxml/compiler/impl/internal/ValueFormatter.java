@@ -1,11 +1,9 @@
 package com.github.gtache.fxml.compiler.impl.internal;
 
 import com.github.gtache.fxml.compiler.GenerationException;
-import com.github.gtache.fxml.compiler.InjectionType;
+import com.github.gtache.fxml.compiler.ResourceBundleInjectionType;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
-import com.github.gtache.fxml.compiler.impl.ResourceBundleInjectionTypes;
 
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
@@ -20,12 +18,12 @@ final class ValueFormatter {
     private static final Pattern DECIMAL_PATTERN = Pattern.compile("\\d+(?:\\.\\d+)?");
     private static final Pattern START_BACKSLASH_PATTERN = Pattern.compile("^\\\\");
 
-    private final InjectionType resourceInjectionType;
-    private final Map<String, VariableInfo> idToVariableInfo;
+    private final HelperProvider helperProvider;
+    private final ResourceBundleInjectionType resourceInjectionType;
 
-    ValueFormatter(final InjectionType resourceInjectionType, final Map<String, VariableInfo> idToVariableInfo) {
+    ValueFormatter(final HelperProvider helperProvider, final ResourceBundleInjectionType resourceInjectionType) {
+        this.helperProvider = requireNonNull(helperProvider);
         this.resourceInjectionType = requireNonNull(resourceInjectionType);
-        this.idToVariableInfo = requireNonNull(idToVariableInfo);
     }
 
     /**
@@ -45,7 +43,7 @@ final class ValueFormatter {
         } else if (value.startsWith(BINDING_EXPRESSION_PREFIX)) {
             throw new GenerationException("Not implemented yet");
         } else if (value.startsWith(EXPRESSION_PREFIX)) {
-            final var variable = idToVariableInfo.get(value.substring(1));
+            final var variable = helperProvider.getVariableProvider().getVariableInfo(value.substring(1));
             if (variable == null) {
                 throw new GenerationException("Unknown variable : " + value.substring(1));
             }
@@ -62,20 +60,15 @@ final class ValueFormatter {
     /**
      * Gets the resource bundle value for the given value
      *
-     * @param value    The value
+     * @param value The value
      * @return The resource bundle value
-     * @throws GenerationException if an error occurs
      */
-    private String getBundleValue(final String value) throws GenerationException {
-        if (resourceInjectionType instanceof final ResourceBundleInjectionTypes types) {
-            return switch (types) {
-                case CONSTRUCTOR, GET_BUNDLE, CONSTRUCTOR_NAME -> "resourceBundle.getString(\"" + value + "\")";
-                case GETTER -> "controller.resources().getString(\"" + value + "\")";
-                case CONSTRUCTOR_FUNCTION -> "resourceBundleFunction.apply(\"" + value + "\")";
-            };
-        } else {
-            throw new GenerationException("Unknown resource bundle injection type : " + resourceInjectionType);
-        }
+    private String getBundleValue(final String value) {
+        return switch (resourceInjectionType) {
+            case CONSTRUCTOR, GET_BUNDLE, CONSTRUCTOR_NAME -> "resourceBundle.getString(\"" + value + "\")";
+            case GETTER -> "controller.resources().getString(\"" + value + "\")";
+            case CONSTRUCTOR_FUNCTION -> "resourceBundleFunction.apply(\"" + value + "\")";
+        };
     }
 
 
@@ -86,7 +79,7 @@ final class ValueFormatter {
      * @param clazz The value class
      * @return The computed string value
      */
-    String toString(final String value, final Class<?> clazz) {
+    static String toString(final String value, final Class<?> clazz) {
         if (clazz == String.class) {
             return "\"" + START_BACKSLASH_PATTERN.matcher(value).replaceAll("").replace("\\", "\\\\")
                     .replace("\"", "\\\"") + "\"";

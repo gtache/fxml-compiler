@@ -15,13 +15,22 @@ import java.util.SequencedMap;
  * Implementation of {@link ParsedObject}
  *
  * @param className  The object class
- * @param attributes The object properties
- * @param properties The object children (complex properties)
+ * @param attributes The object attributes
+ * @param properties The object properties
+ * @param children   The object children
  */
 public record ParsedObjectImpl(String className, Map<String, ParsedProperty> attributes,
                                SequencedMap<ParsedProperty, SequencedCollection<ParsedObject>> properties,
                                SequencedCollection<ParsedObject> children) implements ParsedObject {
 
+    /**
+     * Instantiates a new object
+     * @param className  The object class
+     * @param attributes The object attributes
+     * @param properties The object properties
+     * @param children   The object children
+     * @throws NullPointerException if any parameter is null
+     */
     public ParsedObjectImpl {
         Objects.requireNonNull(className);
         attributes = Map.copyOf(attributes);

@@ -1,11 +1,9 @@
-package com.github.gtache.fxml.compiler.impl;
-
-import com.github.gtache.fxml.compiler.InjectionType;
+package com.github.gtache.fxml.compiler;
 
 /**
  * Base field {@link InjectionType}s
  */
-public enum ControllerFieldInjectionTypes implements InjectionType {
+public enum ControllerFieldInjectionType implements InjectionType {
     /**
      * Inject using variable assignment
      */

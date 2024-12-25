@@ -2,7 +2,7 @@ package com.github.gtache.fxml.compiler.parsing.impl;
 
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Implementation of {@link ParsedProperty}
@@ -10,11 +10,18 @@ import java.util.Objects;
  * @param name       The property name
  * @param sourceType The property source type
  * @param value      The property value
- * @param defines    The property defines
  */
 public record ParsedPropertyImpl(String name, String sourceType, String value) implements ParsedProperty {
 
+    /**
+     * Instantiates a property
+     * @param name       The property name
+     * @param sourceType The property source type
+     * @param value      The property value
+     * @throws NullPointerException If the name or value is null
+     */
     public ParsedPropertyImpl {
-        Objects.requireNonNull(name);
+        requireNonNull(name);
+        requireNonNull(value);
     }
 }

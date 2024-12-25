@@ -41,14 +41,17 @@ final class FontFormatter {
             final var fp = value.fontPosture();
             final var size = value.size();
             final var name = value.name();
-            if (url != null) {
-                formatURL(url, size, variableName);
-            } else if (fw == null && fp == null) {
-                formatNoStyle(name, size, variableName);
+            if (url == null) {
+                if (name == null) {
+                    throw new GenerationException("Font must have a name or url : " + parsedObject);
+                } else if (fw == null && fp == null) {
+                    formatNoStyle(name, size, variableName);
+                } else {
+                    formatStyle(fw, fp, size, name, variableName);
+                }
             } else {
-                formatStyle(fw, fp, size, name, variableName);
+                formatURL(url, size, variableName);
             }
-            helperProvider.getGenerationHelper().handleId(parsedObject, variableName);
         } else {
             throw new GenerationException("Font cannot have children or properties : " + parsedObject);
         }
@@ -57,7 +60,7 @@ final class FontFormatter {
     private void formatURL(final URL url, final double size, final String variableName) {
         final var urlVariableName = helperProvider.getURLFormatter().formatURL(url.toString());
         sb.append("        final javafx.scene.text.Font ").append(variableName).append(";\n");
-        sb.append("        try (").append(helperProvider.getCompatibilityHelper().getStartVar("java.io.InputStream", 0)).append(" in = ").append(urlVariableName).append(".openStream()) {\n");
+        sb.append("        try (").append(helperProvider.getCompatibilityHelper().getStartVar("java.io.InputStream", 0)).append("in = ").append(urlVariableName).append(".openStream()) {\n");
         sb.append("            ").append(variableName).append(" = javafx.scene.text.Font.loadFont(in, ").append(size).append(");\n");
         sb.append("        } catch (final java.io.IOException e) {\n");
         sb.append("            throw new RuntimeException(e);\n");

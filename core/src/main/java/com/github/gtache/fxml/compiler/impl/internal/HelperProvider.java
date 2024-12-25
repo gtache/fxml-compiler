@@ -14,6 +14,7 @@ public class HelperProvider {
 
     /**
      * Instantiates a new helper provider
+     *
      * @param progress The generation progress
      */
     public HelperProvider(final GenerationProgress progress) {
@@ -21,58 +22,66 @@ public class HelperProvider {
         this.helpers = new HashMap<>();
     }
 
-    ConstructorHelper getConstructorHelper() {
-        return (ConstructorHelper) helpers.computeIfAbsent(ConstructorHelper.class, c -> new ConstructorHelper(this));
-    }
-
     ControllerInjector getControllerInjector() {
-        final var request = progress.request();
-        final var controllerInfo = request.controllerInfo();
-        final var parameters = request.parameters();
-        final var fieldInjectionType = parameters.fieldInjectionType();
-        final var methodInjectionType = parameters.methodInjectionType();
-        final var sb = progress.stringBuilder();
-        final var controllerFactoryPostAction = progress.controllerFactoryPostAction();
-        return (ControllerInjector) helpers.computeIfAbsent(ControllerInjector.class, c -> new ControllerInjector(controllerInfo, fieldInjectionType, methodInjectionType, sb, controllerFactoryPostAction));
+        return (ControllerInjector) helpers.computeIfAbsent(ControllerInjector.class, c -> {
+            final var request = progress.request();
+            final var controllerInfo = request.controllerInfo();
+            final var parameters = request.parameters();
+            final var fieldInjectionType = parameters.fieldInjectionType();
+            final var methodInjectionType = parameters.methodInjectionType();
+            final var sb = progress.stringBuilder();
+            final var controllerFactoryPostAction = progress.controllerFactoryPostAction();
+            return new ControllerInjector(controllerInfo, fieldInjectionType, methodInjectionType, sb, controllerFactoryPostAction);
+        });
     }
 
     FieldSetter getFieldSetter() {
-        final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
-        final var sb = progress.stringBuilder();
-        final var controllerFactoryPostAction = progress.controllerFactoryPostAction();
-        return (FieldSetter) helpers.computeIfAbsent(FieldSetter.class, c -> new FieldSetter(this, fieldInjectionType, sb, controllerFactoryPostAction));
+        return (FieldSetter) helpers.computeIfAbsent(FieldSetter.class, c -> {
+            final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
+            final var sb = progress.stringBuilder();
+            final var controllerFactoryPostAction = progress.controllerFactoryPostAction();
+            return new FieldSetter(this, fieldInjectionType, sb, controllerFactoryPostAction);
+        });
     }
 
     FontFormatter getFontFormatter() {
-        final var sb = progress.stringBuilder();
-        return (FontFormatter) helpers.computeIfAbsent(FontFormatter.class, c -> new FontFormatter(this, sb));
+        return (FontFormatter) helpers.computeIfAbsent(FontFormatter.class, c -> {
+            final var sb = progress.stringBuilder();
+            return new FontFormatter(this, sb);
+        });
     }
 
     GenerationCompatibilityHelper getCompatibilityHelper() {
-        final var compatibility = progress.request().parameters().compatibility();
-        return (GenerationCompatibilityHelper) helpers.computeIfAbsent(GenerationCompatibilityHelper.class, c -> new GenerationCompatibilityHelper(this, compatibility));
-    }
-
-    GenerationHelper getGenerationHelper() {
-        final var controllerInfo = progress.request().controllerInfo();
-        final var idToVariableInfo = progress.idToVariableInfo();
-        return (GenerationHelper) helpers.computeIfAbsent(GenerationHelper.class, c -> new GenerationHelper(this, controllerInfo, idToVariableInfo));
+        return (GenerationCompatibilityHelper) helpers.computeIfAbsent(GenerationCompatibilityHelper.class, c -> {
+            final var compatibility = progress.request().parameters().compatibility();
+            return new GenerationCompatibilityHelper(this, compatibility);
+        });
     }
 
     public HelperMethodsFormatter getHelperMethodsFormatter() {
-        final var parameters = progress.request().parameters();
-        final var fieldInjectionType = parameters.fieldInjectionType();
-        final var methodInjectionType = parameters.methodInjectionType();
-        final var sb = progress.stringBuilder();
-        return (HelperMethodsFormatter) helpers.computeIfAbsent(HelperMethodsFormatter.class, c -> new HelperMethodsFormatter(this, fieldInjectionType, methodInjectionType, sb));
+        return (HelperMethodsFormatter) helpers.computeIfAbsent(HelperMethodsFormatter.class, c -> {
+            final var parameters = progress.request().parameters();
+            final var fieldInjectionType = parameters.fieldInjectionType();
+            final var methodInjectionType = parameters.methodInjectionType();
+            final var sb = progress.stringBuilder();
+            return new HelperMethodsFormatter(this, fieldInjectionType, methodInjectionType, sb);
+        });
     }
 
     ImageFormatter getImageFormatter() {
-        return (ImageFormatter) helpers.computeIfAbsent(ImageFormatter.class, c -> new ImageFormatter(this, progress));
+        return (ImageFormatter) helpers.computeIfAbsent(ImageFormatter.class, c -> {
+            final var sb = progress.stringBuilder();
+            final var useImageInputStreamConstructor = progress.request().parameters().useImageInputStreamConstructor();
+            return new ImageFormatter(this, sb, useImageInputStreamConstructor);
+        });
     }
 
     public InitializationFormatter getInitializationFormatter() {
-        return (InitializationFormatter) helpers.computeIfAbsent(InitializationFormatter.class, c -> new InitializationFormatter(this, progress));
+        return (InitializationFormatter) helpers.computeIfAbsent(InitializationFormatter.class, c -> {
+            final var request = progress.request();
+            final var sb = progress.stringBuilder();
+            return new InitializationFormatter(this, request, sb);
+        });
     }
 
     public LoadMethodFormatter getLoadMethodFormatter() {
@@ -80,7 +89,11 @@ public class HelperProvider {
     }
 
     ObjectFormatter getObjectFormatter() {
-        return (ObjectFormatter) helpers.computeIfAbsent(ObjectFormatter.class, c -> new ObjectFormatter(this, progress));
+        return (ObjectFormatter) helpers.computeIfAbsent(ObjectFormatter.class, c -> {
+            final var request = progress.request();
+            final var sb = progress.stringBuilder();
+            return new ObjectFormatter(this, request, sb);
+        });
     }
 
     PropertyFormatter getPropertyFormatter() {
@@ -88,30 +101,48 @@ public class HelperProvider {
     }
 
     ReflectionHelper getReflectionHelper() {
-        final var controllerInfo = progress.request().controllerInfo();
-        return (ReflectionHelper) helpers.computeIfAbsent(ReflectionHelper.class, c -> new ReflectionHelper(controllerInfo));
+        return (ReflectionHelper) helpers.computeIfAbsent(ReflectionHelper.class, c -> {
+            final var controllerInfo = progress.request().controllerInfo();
+            return new ReflectionHelper(controllerInfo);
+        });
     }
 
     SceneFormatter getSceneFormatter() {
-        return (SceneFormatter) helpers.computeIfAbsent(SceneFormatter.class, c -> new SceneFormatter(this, progress));
+        return (SceneFormatter) helpers.computeIfAbsent(SceneFormatter.class, c -> {
+            final var sb = progress.stringBuilder();
+            return new SceneFormatter(this, sb);
+        });
     }
 
     TriangleMeshFormatter getTriangleMeshFormatter() {
-        final var sb = progress.stringBuilder();
-        return (TriangleMeshFormatter) helpers.computeIfAbsent(TriangleMeshFormatter.class, c -> new TriangleMeshFormatter(this, sb));
+        return (TriangleMeshFormatter) helpers.computeIfAbsent(TriangleMeshFormatter.class, c -> {
+            final var sb = progress.stringBuilder();
+            return new TriangleMeshFormatter(this, sb);
+        });
     }
 
     URLFormatter getURLFormatter() {
-        return (URLFormatter) helpers.computeIfAbsent(URLFormatter.class, c -> new URLFormatter(this, progress));
+        return (URLFormatter) helpers.computeIfAbsent(URLFormatter.class, c -> {
+            final var sb = progress.stringBuilder();
+            return new URLFormatter(this, sb);
+        });
     }
 
     ValueFormatter getValueFormatter() {
-        final var resourceInjectionType = progress.request().parameters().resourceInjectionType();
-        final var idToVariableInfo = progress.idToVariableInfo();
-        return (ValueFormatter) helpers.computeIfAbsent(ValueFormatter.class, c -> new ValueFormatter(resourceInjectionType, idToVariableInfo));
+        return (ValueFormatter) helpers.computeIfAbsent(ValueFormatter.class, c -> {
+            final var resourceInjectionType = progress.request().parameters().resourceInjectionType();
+            return new ValueFormatter(this, resourceInjectionType);
+        });
+    }
+
+    VariableProvider getVariableProvider() {
+        return (VariableProvider) helpers.computeIfAbsent(VariableProvider.class, c -> new VariableProvider());
     }
 
     WebViewFormatter getWebViewFormatter() {
-        return (WebViewFormatter) helpers.computeIfAbsent(WebViewFormatter.class, c -> new WebViewFormatter(this, progress));
+        return (WebViewFormatter) helpers.computeIfAbsent(WebViewFormatter.class, c -> {
+            final var sb = progress.stringBuilder();
+            return new WebViewFormatter(this, sb);
+        });
     }
 }

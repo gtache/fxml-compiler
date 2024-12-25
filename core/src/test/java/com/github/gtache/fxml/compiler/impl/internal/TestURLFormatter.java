@@ -18,55 +18,53 @@ import java.util.SequencedCollection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TestURLFormatter {
 
     private final HelperProvider helperProvider;
-    private final GenerationHelper generationHelper;
     private final GenerationCompatibilityHelper compatibilityHelper;
+    private final VariableProvider variableProvider;
     private final ParsedObject parsedObject;
     private final String variableName;
     private final StringBuilder sb;
-    private final GenerationProgress progress;
     private final URLFormatter urlFormatter;
 
-    TestURLFormatter(@Mock final HelperProvider helperProvider, @Mock final GenerationHelper generationHelper,
-                     @Mock final GenerationCompatibilityHelper compatibilityHelper, @Mock final ParsedObject parsedObject,
-                     @Mock final GenerationProgress progress) {
+    TestURLFormatter(@Mock final HelperProvider helperProvider, @Mock final VariableProvider variableProvider,
+                     @Mock final GenerationCompatibilityHelper compatibilityHelper, @Mock final ParsedObject parsedObject) {
         this.helperProvider = Objects.requireNonNull(helperProvider);
-        this.generationHelper = Objects.requireNonNull(generationHelper);
+        this.variableProvider = Objects.requireNonNull(variableProvider);
         this.compatibilityHelper = Objects.requireNonNull(compatibilityHelper);
         this.parsedObject = Objects.requireNonNull(parsedObject);
-        this.progress = Objects.requireNonNull(progress);
         this.sb = new StringBuilder();
         this.variableName = "variable";
-        this.urlFormatter = new URLFormatter(helperProvider, progress);
+        this.urlFormatter = new URLFormatter(helperProvider, sb);
     }
 
     @BeforeEach
     void beforeEach() throws GenerationException {
         when(helperProvider.getCompatibilityHelper()).thenReturn(compatibilityHelper);
-        when(helperProvider.getGenerationHelper()).thenReturn(generationHelper);
-        when(progress.stringBuilder()).thenReturn(sb);
-        when(progress.getNextVariableName("url")).thenReturn("url1", "url2");
+        when(helperProvider.getVariableProvider()).thenReturn(variableProvider);
+        when(variableProvider.getNextVariableName("url")).thenReturn("url1", "url2");
         when(compatibilityHelper.getStartVar(anyString())).then(i -> i.getArgument(0));
         when(parsedObject.children()).thenReturn(List.of());
         when(parsedObject.properties()).thenReturn(new LinkedHashMap<>());
-        doAnswer(i -> sb.append("handleId")).when(generationHelper).handleId(any(), anyString());
     }
 
     @Test
     void testFormatURLSheets() {
         final var styleSheets = List.of("style1.css", "@style2.css");
-        final var expected = "        final java.net.URL url1;\n" +
-                "        try {\n" +
-                "            url1 = new java.net.URI(\"style1.css\").toURL();\n" +
-                "        } catch (final java.net.MalformedURLException | java.net.URISyntaxException e) {\n" +
-                "            throw new RuntimeException(\"Couldn't parse url : style1.css\", e);\n" +
-                "        }\njava.net.URLurl2 = getClass().getResource(\"style2.css\");\n";
+        final var expected = """
+                        final java.net.URL url1;
+                        try {
+                            url1 = new java.net.URI("style1.css").toURL();
+                        } catch (final java.net.MalformedURLException | java.net.URISyntaxException e) {
+                            throw new RuntimeException("Couldn't parse url : style1.css", e);
+                        }
+                java.net.URLurl2 = getClass().getResource("style2.css");
+                """;
         assertEquals(List.of("url1", "url2"), urlFormatter.formatURL(styleSheets));
         assertEquals(expected, sb.toString());
     }
@@ -80,7 +78,7 @@ class TestURLFormatter {
     @Test
     void testFormatURLObjectProperties() {
         final var map = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        map.put(mock(ParsedProperty.class), List.of());
+        map.put(new ParsedPropertyImpl("str", null, ""), List.of());
         when(parsedObject.properties()).thenReturn(map);
         assertThrows(GenerationException.class, () -> urlFormatter.formatURL(parsedObject, variableName));
     }
@@ -101,8 +99,13 @@ class TestURLFormatter {
         when(parsedObject.attributes()).thenReturn(attributes);
 
         urlFormatter.formatURL(parsedObject, variableName);
-        final var expected = "java.net.URL" + variableName + " = getClass().getResource(\"key\");\nhandleId";
+        final var expected = "java.net.URL" + variableName + " = getClass().getResource(\"key\");\n";
         assertEquals(expected, sb.toString());
-        verify(generationHelper).handleId(parsedObject, variableName);
+    }
+
+    @Test
+    void testIllegal() {
+        assertThrows(NullPointerException.class, () -> new URLFormatter(null, sb));
+        assertThrows(NullPointerException.class, () -> new URLFormatter(helperProvider, null));
     }
 }

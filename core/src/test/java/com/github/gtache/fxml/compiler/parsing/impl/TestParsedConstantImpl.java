@@ -17,7 +17,7 @@ class TestParsedConstantImpl {
 
     TestParsedConstantImpl() {
         this.className = "test";
-        this.attributes = new HashMap<>(Map.of("fx:constant", new ParsedPropertyImpl("fx:constant", String.class.getName(), "value")));
+        this.attributes = new HashMap<>(Map.of("fx:constant", new ParsedPropertyImpl("fx:constant", null, "value")));
         this.constant = new ParsedConstantImpl(className, attributes);
     }
 
@@ -44,8 +44,18 @@ class TestParsedConstantImpl {
     }
 
     @Test
+    void testOtherConstructor() {
+        final var otherConstant = new ParsedConstantImpl(className, "value");
+        assertEquals(className, otherConstant.className());
+        assertEquals(attributes, otherConstant.attributes());
+        assertEquals("value", otherConstant.constant());
+    }
+
+    @Test
     void testIllegal() {
+        final var emptyMap = Map.<String, ParsedProperty>of();
         assertThrows(NullPointerException.class, () -> new ParsedConstantImpl(null, attributes));
-        assertThrows(NullPointerException.class, () -> new ParsedConstantImpl(className, null));
+        assertThrows(NullPointerException.class, () -> new ParsedConstantImpl(className, (Map<String, ParsedProperty>) null));
+        assertThrows(IllegalArgumentException.class, () -> new ParsedConstantImpl(className, emptyMap));
     }
 }

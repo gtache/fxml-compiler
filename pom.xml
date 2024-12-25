@@ -26,7 +26,7 @@
     </organization>
 
     <properties>
-        <maven.min-version>3.8.0</maven.min-version>
+        <maven.min-version>3.6.3</maven.min-version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -93,8 +93,6 @@
                     <version>${plugin.deploy.version}</version>
                     <executions>
                         <execution>
-                            <id>deploy</id>
-                            <phase>deploy</phase>
                             <goals>
                                 <goal>deploy</goal>
                             </goals>
@@ -107,7 +105,6 @@
                     <version>${plugin.enforcer.version}</version>
                     <executions>
                         <execution>
-                            <id>enforce-versions</id>
                             <goals>
                                 <goal>enforce</goal>
                             </goals>
@@ -137,16 +134,8 @@
                     <version>${plugin.failsafe.version}</version>
                     <executions>
                         <execution>
-                            <id>integration-test</id>
-                            <phase>test</phase>
                             <goals>
                                 <goal>integration-test</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>verify</id>
-                            <phase>verify</phase>
-                            <goals>
                                 <goal>verify</goal>
                             </goals>
                         </execution>
@@ -158,26 +147,10 @@
                     <version>${plugin.jacoco.version}</version>
                     <executions>
                         <execution>
-                            <id>default-prepare-agent</id>
                             <goals>
                                 <goal>prepare-agent</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>default-prepare-agent-integration</id>
-                            <goals>
                                 <goal>prepare-agent-integration</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>default-report</id>
-                            <goals>
                                 <goal>report</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>default-report-integration</id>
-                            <goals>
                                 <goal>report-integration</goal>
                             </goals>
                         </execution>
@@ -189,8 +162,6 @@
                     <version>${plugin.javadoc.version}</version>
                     <executions>
                         <execution>
-                            <id>attach-javadocs</id>
-                            <phase>install</phase>
                             <goals>
                                 <goal>jar</goal>
                             </goals>
@@ -221,8 +192,6 @@
                     <version>${plugin.source.version}</version>
                     <executions>
                         <execution>
-                            <id>attach-sources</id>
-                            <phase>package</phase>
                             <goals>
                                 <goal>jar-no-fork</goal>
                             </goals>

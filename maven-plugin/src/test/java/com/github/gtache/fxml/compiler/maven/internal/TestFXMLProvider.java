@@ -22,11 +22,9 @@ import static org.mockito.Mockito.when;
 class TestFXMLProvider {
 
     private final MavenProject project;
-    private final FXMLProvider provider;
 
     TestFXMLProvider(@Mock final MavenProject project) {
         this.project = Objects.requireNonNull(project);
-        this.provider = new FXMLProvider();
     }
 
     @Test

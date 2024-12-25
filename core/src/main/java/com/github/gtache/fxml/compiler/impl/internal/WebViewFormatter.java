@@ -15,11 +15,11 @@ import static java.util.Objects.requireNonNull;
 final class WebViewFormatter {
 
     private final HelperProvider helperProvider;
-    private final GenerationProgress progress;
+    private final StringBuilder sb;
 
-    WebViewFormatter(final HelperProvider helperProvider, final GenerationProgress progress) {
+    WebViewFormatter(final HelperProvider helperProvider, final StringBuilder sb) {
         this.helperProvider = requireNonNull(helperProvider);
-        this.progress = requireNonNull(progress);
+        this.sb = requireNonNull(sb);
     }
 
     /**
@@ -32,15 +32,13 @@ final class WebViewFormatter {
     void formatWebView(final ParsedObject parsedObject, final String variableName) throws GenerationException {
         if (parsedObject.children().isEmpty() && parsedObject.properties().isEmpty()) {
             final var sortedAttributes = getSortedAttributes(parsedObject);
-            final var sb = progress.stringBuilder();
             final var compatibilityHelper = helperProvider.getCompatibilityHelper();
             sb.append(compatibilityHelper.getStartVar("javafx.scene.web.WebView")).append(variableName).append(" = new javafx.scene.web.WebView();\n");
-            final var engineVariable = progress.getNextVariableName("engine");
+            final var engineVariable = helperProvider.getVariableProvider().getNextVariableName("engine");
             sb.append(compatibilityHelper.getStartVar("javafx.scene.web.WebEngine")).append(engineVariable).append(" = ").append(variableName).append(".getEngine();\n");
             for (final var value : sortedAttributes) {
                 formatAttribute(value, parsedObject, variableName, engineVariable);
             }
-            helperProvider.getGenerationHelper().handleId(parsedObject, variableName);
         } else {
             throw new GenerationException("WebView cannot have children or properties : " + parsedObject);
         }
@@ -95,7 +93,7 @@ final class WebViewFormatter {
     }
 
     private void injectLocation(final ParsedProperty value, final String engineVariable) {
-        progress.stringBuilder().append("        ").append(engineVariable).append(".load(\"").append(value.value()).append("\");\n");
+        sb.append("        ").append(engineVariable).append(".load(\"").append(value.value()).append("\");\n");
 
     }
 
