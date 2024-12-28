@@ -16,6 +16,7 @@ record VariableInfo(String id, ParsedObject parsedObject, String variableName, S
 
     /**
      * Instantiates a new variable info
+     *
      * @param id           The fx:id of the variable
      * @param parsedObject The parsed object of the variable
      * @param variableName The variable name

@@ -28,8 +28,6 @@ import java.util.SequencedCollection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -146,49 +144,49 @@ class TestObjectFormatter {
     }
 
     @Test
-    void testHandleIdPropertyTooManyChildren(@Mock final ControllerFieldInfo fieldInfo, @Mock PropertyFormatter propertyFormatter) {
+    void testHandleIdPropertyTooManyChildren(@Mock final ControllerFieldInfo fieldInfo, @Mock final PropertyFormatter propertyFormatter) {
         when(helperProvider.getPropertyFormatter()).thenReturn(propertyFormatter);
         final var className = "javafx.scene.control.Label";
         final var value = "id";
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        properties.put(new ParsedPropertyImpl("fx:id", null, ""), List.of(new ParsedTextImpl("value"), new ParsedTextImpl("value2")));
+        properties.put(new ParsedPropertyImpl("fx:id", null, null), List.of(new ParsedTextImpl("value"), new ParsedTextImpl("value2")));
         final var parsedObject = new ParsedObjectImpl(className, Map.of(), properties, List.of());
         when(controllerInfo.fieldInfo(value)).thenReturn(fieldInfo);
         assertThrows(GenerationException.class, () -> objectFormatter.format(parsedObject, variableName));
     }
 
     @Test
-    void testHandleIdPropertyNoChildren(@Mock final ControllerFieldInfo fieldInfo, @Mock PropertyFormatter propertyFormatter) {
+    void testHandleIdPropertyNoChildren(@Mock final ControllerFieldInfo fieldInfo, @Mock final PropertyFormatter propertyFormatter) {
         when(helperProvider.getPropertyFormatter()).thenReturn(propertyFormatter);
         final var className = "javafx.scene.control.Label";
         final var value = "id";
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        properties.put(new ParsedPropertyImpl("fx:id", null, ""), List.of());
+        properties.put(new ParsedPropertyImpl("fx:id", null, null), List.of());
         final var parsedObject = new ParsedObjectImpl(className, Map.of(), properties, List.of());
         when(controllerInfo.fieldInfo(value)).thenReturn(fieldInfo);
         assertThrows(GenerationException.class, () -> objectFormatter.format(parsedObject, variableName));
     }
 
     @Test
-    void testHandleIdPropertyNotText(@Mock final ControllerFieldInfo fieldInfo, @Mock PropertyFormatter propertyFormatter) {
+    void testHandleIdPropertyNotText(@Mock final ControllerFieldInfo fieldInfo, @Mock final PropertyFormatter propertyFormatter) {
         when(helperProvider.getPropertyFormatter()).thenReturn(propertyFormatter);
         final var className = "javafx.scene.control.Label";
         final var value = "id";
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        properties.put(new ParsedPropertyImpl("fx:id", null, ""), List.of(mock(ParsedObject.class)));
+        properties.put(new ParsedPropertyImpl("fx:id", null, null), List.of(mock(ParsedObject.class)));
         final var parsedObject = new ParsedObjectImpl(className, Map.of(), properties, List.of());
         when(controllerInfo.fieldInfo(value)).thenReturn(fieldInfo);
         assertThrows(GenerationException.class, () -> objectFormatter.format(parsedObject, variableName));
     }
 
     @Test
-    void testHandleIdProperty(@Mock final ControllerFieldInfo fieldInfo, @Mock PropertyFormatter propertyFormatter) throws GenerationException {
+    void testHandleIdProperty(@Mock final ControllerFieldInfo fieldInfo, @Mock final PropertyFormatter propertyFormatter) throws GenerationException {
         when(helperProvider.getPropertyFormatter()).thenReturn(propertyFormatter);
         final var className = "javafx.scene.control.Label";
         final var value = "id";
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
         final var define = mock(ParsedDefine.class);
-        properties.put(new ParsedPropertyImpl("fx:id", null, ""), List.of(define, new ParsedTextImpl(value)));
+        properties.put(new ParsedPropertyImpl("fx:id", null, null), List.of(define, new ParsedTextImpl(value)));
         final var parsedObject = new ParsedObjectImpl(className, Map.of(), properties, List.of());
         when(controllerInfo.fieldInfo(value)).thenReturn(fieldInfo);
         doNothing().when(objectFormatter).format(define, "define");
@@ -317,8 +315,10 @@ class TestObjectFormatter {
         when(sourceInfo.sourceToSourceInfo()).thenReturn(sourceToSourceInfo);
         final var include = new ParsedIncludeImpl("source", "resources", "id");
         objectFormatter.format(include, variableName);
-        final var expected = "include(source, resources)    final javafx.scene.Parent variable = view.load();\n" +
-                "controllerClassNamecontroller = view.controller();\n";
+        final var expected = """
+                include(source, resources)    final javafx.scene.Parent variable = view.load();
+                controllerClassNamecontroller = view.controller();
+                """;
         assertEquals(expected, sb.toString());
         verify(initializationFormatter).formatSubViewConstructorCall(include);
     }
@@ -334,8 +334,10 @@ class TestObjectFormatter {
         when(sourceInfo.sourceToSourceInfo()).thenReturn(sourceToSourceInfo);
         final var include = new ParsedIncludeImpl(source, "resources", "id");
         objectFormatter.format(include, variableName);
-        final var expected = "include(source, resources)    final javafx.scene.Parent variable = view.load();\n" +
-                "controllerClassNamecontroller = view.controller();\ninject(idController, controller)inject(id, variable)";
+        final var expected = """
+                include(source, resources)    final javafx.scene.Parent variable = view.load();
+                controllerClassNamecontroller = view.controller();
+                inject(idController, controller)inject(id, variable)""";
         assertEquals(expected, sb.toString());
         verify(initializationFormatter).formatSubViewConstructorCall(include);
         verify(controllerInjector).injectControllerField("id", "variable");
@@ -441,7 +443,7 @@ class TestObjectFormatter {
     @Test
     void testFormatSimpleClassProperties() {
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        properties.put(new ParsedPropertyImpl("str", null, ""), List.of(mock(ParsedObject.class)));
+        properties.put(new ParsedPropertyImpl("str", null, null), List.of(mock(ParsedObject.class)));
         final var parsedObject = new ParsedObjectImpl("java.lang.String", Map.of(), properties, List.of());
         assertThrows(GenerationException.class, () -> objectFormatter.format(parsedObject, variableName));
     }
@@ -568,7 +570,7 @@ class TestObjectFormatter {
                 "initialValue", new ParsedPropertyImpl("initialValue", null, "3"));
         final var label = new ParsedObjectImpl("javafx.scene.control.Label", Map.of(), new LinkedHashMap<>(), List.of());
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        properties.put(new ParsedPropertyImpl("childrenUnmodifiable", null, ""), List.of(label));
+        properties.put(new ParsedPropertyImpl("childrenUnmodifiable", null, null), List.of(label));
         final var define = mock(ParsedDefine.class);
         doAnswer(i -> sb.append("define")).when(objectFormatter).format(define, "define");
         final var parsedObject = new ParsedObjectImpl(className, attributes, properties, List.of(define));
@@ -577,7 +579,7 @@ class TestObjectFormatter {
         final var expected = "definestartVarvariable = new javafx.scene.control.Spinner<bla>(1, 2, 3);\nproperty";
         assertEquals(expected, sb.toString());
         verify(propertyFormatter).formatProperty(new ParsedPropertyImpl("editable", null, "false"), parsedObject, variableName);
-        verify(propertyFormatter).formatProperty(new ParsedPropertyImpl("childrenUnmodifiable", null, ""), List.of(label), parsedObject, variableName);
+        verify(propertyFormatter).formatProperty(new ParsedPropertyImpl("childrenUnmodifiable", null, null), List.of(label), parsedObject, variableName);
         verify(objectFormatter).format(define, "define");
         verify(compatibilityHelper).getStartVar(parsedObject);
         verify(reflectionHelper).getGenericTypes(parsedObject);
@@ -591,7 +593,7 @@ class TestObjectFormatter {
         final var className = "javafx.scene.control.Spinner";
         final var attributes = Map.<String, ParsedProperty>of();
         final var label = new ParsedObjectImpl("javafx.scene.control.Label", Map.of(), new LinkedHashMap<>(), List.of());
-        final var property = new ParsedPropertyImpl("childrenUnmodifiable", null, "");
+        final var property = new ParsedPropertyImpl("childrenUnmodifiable", null, null);
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
         properties.put(property, List.of(label, label));
         final var parsedObject = new ParsedObjectImpl(className, attributes, properties, List.of());
@@ -617,7 +619,7 @@ class TestObjectFormatter {
         objectFormatter.format(parsedObject, variableName);
         final var expected = "startVarvariable = new javafx.scene.layout.StackPane();\nproperty";
         assertEquals(expected, sb.toString());
-        verify(propertyFormatter).formatProperty(new ParsedPropertyImpl("children", null, ""), children, parsedObject, variableName);
+        verify(propertyFormatter).formatProperty(new ParsedPropertyImpl("children", null, null), children, parsedObject, variableName);
         verify(compatibilityHelper).getStartVar(parsedObject);
         verify(reflectionHelper).getGenericTypes(parsedObject);
     }

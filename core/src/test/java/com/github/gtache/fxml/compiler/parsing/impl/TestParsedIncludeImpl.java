@@ -58,7 +58,7 @@ class TestParsedIncludeImpl {
     @Test
     void testIllegal() {
         assertThrows(NullPointerException.class, () -> new ParsedIncludeImpl(null));
-        assertThrows(NullPointerException.class, () -> new ParsedIncludeImpl(null, "", ""));
+        assertThrows(NullPointerException.class, () -> new ParsedIncludeImpl(null, "", null));
         assertDoesNotThrow(() -> new ParsedIncludeImpl("", null, null));
         final var emptyMap = Map.<String, ParsedProperty>of();
         assertThrows(IllegalArgumentException.class, () -> new ParsedIncludeImpl(emptyMap));

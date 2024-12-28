@@ -22,7 +22,7 @@ import static java.util.Objects.requireNonNull;
  */
 final class SceneFormatter {
 
-    private static final ParsedProperty ROOT_PROPERTY = new ParsedPropertyImpl("root", null, "");
+    private static final ParsedProperty ROOT_PROPERTY = new ParsedPropertyImpl("root", null, null);
 
     private final HelperProvider helperProvider;
     private final StringBuilder sb;

@@ -24,6 +24,7 @@ public record SourceInfoImpl(String generatedClassName, String controllerClassNa
 
     /**
      * Instantiates a new source info
+     *
      * @param generatedClassName     The generated class name
      * @param controllerClassName    The controller class name
      * @param sourceFile             The source file

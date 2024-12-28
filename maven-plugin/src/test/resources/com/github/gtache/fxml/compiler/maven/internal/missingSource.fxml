@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<BorderPane xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.github.gtache.fxml.compiler.maven.internal.InfoController">
+    <bottom>
+        <HBox>
+            <children>
+                <fx:include fx:id="includeView"/>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

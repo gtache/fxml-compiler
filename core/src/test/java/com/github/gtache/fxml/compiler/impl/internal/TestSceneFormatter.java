@@ -22,8 +22,6 @@ import java.util.SequencedMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -81,33 +79,33 @@ class TestSceneFormatter {
 
     @Test
     void testUnknownAttribute() {
-        properties.put(new ParsedPropertyImpl("root", null, ""), List.of(parsedObject));
+        properties.put(new ParsedPropertyImpl("root", null, null), List.of(parsedObject));
         attributes.put("unknown", new ParsedPropertyImpl("unknown", null, "value"));
         assertThrows(GenerationException.class, () -> sceneFormatter.formatScene(parsedObject, variableName));
     }
 
     @Test
     void testNonRootProperty() {
-        properties.put(new ParsedPropertyImpl("property", null, ""), List.of(parsedObject));
+        properties.put(new ParsedPropertyImpl("property", null, null), List.of(parsedObject));
         assertThrows(GenerationException.class, () -> sceneFormatter.formatScene(parsedObject, variableName));
     }
 
     @Test
     void testRootPropertyNonEmptyChildren() {
-        properties.put(new ParsedPropertyImpl("root", null, ""), List.of(parsedObject));
+        properties.put(new ParsedPropertyImpl("root", null, null), List.of(parsedObject));
         children.add(parsedObject);
         assertThrows(GenerationException.class, () -> sceneFormatter.formatScene(parsedObject, variableName));
     }
 
     @Test
     void testRootPropertyEmptyChild() {
-        properties.put(new ParsedPropertyImpl("root", null, ""), List.of());
+        properties.put(new ParsedPropertyImpl("root", null, null), List.of());
         assertThrows(GenerationException.class, () -> sceneFormatter.formatScene(parsedObject, variableName));
     }
 
     @Test
     void testRootPropertyNonOneChild() {
-        properties.put(new ParsedPropertyImpl("root", null, ""), List.of(parsedObject, parsedObject));
+        properties.put(new ParsedPropertyImpl("root", null, null), List.of(parsedObject, parsedObject));
         assertThrows(GenerationException.class, () -> sceneFormatter.formatScene(parsedObject, variableName));
     }
 
@@ -127,7 +125,7 @@ class TestSceneFormatter {
     void testDefaultAttributesProperty() throws GenerationException {
         final var rootObject = mock(ParsedObject.class);
         final var define = mock(ParsedDefine.class);
-        properties.put(new ParsedPropertyImpl("root", null, ""), List.of(define, rootObject));
+        properties.put(new ParsedPropertyImpl("root", null, null), List.of(define, rootObject));
         sceneFormatter.formatScene(parsedObject, variableName);
         final var expected = "definerootjavafx.scene.Scenevariable = new javafx.scene.Scene(root, -1.0, -1.0, javafx.scene.paint.Color.valueOf(\"0xffffffff\"));\n";
         assertEquals(expected, sb.toString());
@@ -151,15 +149,17 @@ class TestSceneFormatter {
     @Test
     void testAllAttributesProperty() throws GenerationException {
         final var rootObject = mock(ParsedObject.class);
-        properties.put(new ParsedPropertyImpl("root", null, ""), List.of(rootObject));
+        properties.put(new ParsedPropertyImpl("root", null, null), List.of(rootObject));
         attributes.put("width", new ParsedPropertyImpl("width", null, "100"));
         attributes.put("height", new ParsedPropertyImpl("height", null, "200"));
         attributes.put("fill", new ParsedPropertyImpl("fill", null, "#FF0000"));
         attributes.put("stylesheets", new ParsedPropertyImpl("stylesheets", null, "style.css"));
         sceneFormatter.formatScene(parsedObject, variableName);
-        final var expected = "rootjavafx.scene.Scenevariable = new javafx.scene.Scene(root, 100.0, 200.0, javafx.scene.paint.Color.valueOf(\"#FF0000\"));\n" +
-                "style.cssjava.util.List<String>stylesheets = variable.getStyleSheets();\n" +
-                "        stylesheets.addAll(listof(1, 2));\n";
+        final var expected = """
+                rootjavafx.scene.Scenevariable = new javafx.scene.Scene(root, 100.0, 200.0, javafx.scene.paint.Color.valueOf("#FF0000"));
+                style.cssjava.util.List<String>stylesheets = variable.getStyleSheets();
+                        stylesheets.addAll(listof(1, 2));
+                """;
         assertEquals(expected, sb.toString());
         verify(objectFormatter).format(rootObject, "root");
     }

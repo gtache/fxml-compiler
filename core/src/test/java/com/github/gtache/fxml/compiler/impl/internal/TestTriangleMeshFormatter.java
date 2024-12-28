@@ -45,7 +45,7 @@ class TestTriangleMeshFormatter {
     }
 
     @BeforeEach
-    void beforeEach() throws GenerationException {
+    void beforeEach() {
         when(helperProvider.getCompatibilityHelper()).thenReturn(compatibilityHelper);
         when(parsedObject.attributes()).thenReturn(attributes);
         when(parsedObject.children()).thenReturn(List.of());
@@ -62,7 +62,7 @@ class TestTriangleMeshFormatter {
     @Test
     void testFormatProperties() {
         final var map = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        map.put(new ParsedPropertyImpl("str", null, ""), List.of());
+        map.put(new ParsedPropertyImpl("str", null, null), List.of());
         when(parsedObject.properties()).thenReturn(map);
         assertThrows(GenerationException.class, () -> triangleMeshFormatter.formatTriangleMesh(parsedObject, variableName));
     }

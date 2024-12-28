@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Extracts FXML paths from Maven project
@@ -19,20 +19,28 @@ import java.util.Map;
 public final class FXMLProvider {
     private static final Logger logger = LogManager.getLogger(FXMLProvider.class);
 
-    private FXMLProvider() {
+    private final MavenProject project;
+
+    /**
+     * Instantiates a new provider
+     *
+     * @param project The Maven project
+     * @throws NullPointerException If the project is null
+     */
+    public FXMLProvider(final MavenProject project) {
+        this.project = Objects.requireNonNull(project);
     }
 
     /**
      * Returns all the FXML files in the project's resources
      *
-     * @param project The Maven project
      * @return A mapping of file to resource directory
      * @throws MojoExecutionException If an error occurs
      */
-    public static Map<Path, Path> getFXMLs(final MavenProject project) throws MojoExecutionException {
+    public Map<Path, Path> getFXMLs() throws MojoExecutionException {
         final var map = new HashMap<Path, Path>();
         for (final var resource : project.getResources()) {
-            final var path = Paths.get(resource.getDirectory());
+            final var path = Path.of(resource.getDirectory());
             if (Files.isDirectory(path)) {
                 try (final var stream = Files.find(path, Integer.MAX_VALUE, (p, a) -> p.toString().endsWith(".fxml"), FileVisitOption.FOLLOW_LINKS)) {
                     final var curList = stream.toList();
@@ -48,5 +56,19 @@ public final class FXMLProvider {
             }
         }
         return map;
+    }
+
+    /**
+     * Factory for {@link FXMLProvider}
+     */
+    @FunctionalInterface
+    public interface Factory {
+        /**
+         * Creates a new provider
+         *
+         * @param project The Maven project
+         * @return The provider
+         */
+        FXMLProvider create(final MavenProject project);
     }
 }

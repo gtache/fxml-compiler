@@ -6,8 +6,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -24,7 +22,6 @@ class TestCompilationInfoBuilder {
     private final Set<FieldInfo> injectedFields;
     private final Set<String> injectedMethods;
     private final Map<String, Path> includes;
-    private final boolean requiresResourceBundle;
     private final CompilationInfo info;
 
     TestCompilationInfoBuilder(@Mock final Path inputFile, @Mock final Path outputFile, @Mock final Path controllerFile, @Mock final FieldInfo fieldInfo) {
@@ -33,11 +30,10 @@ class TestCompilationInfoBuilder {
         this.outputClass = "outputClass";
         this.controllerFile = Objects.requireNonNull(controllerFile);
         this.controllerClass = "controllerClass";
-        this.injectedFields = new HashSet<>(Set.of(fieldInfo));
-        this.injectedMethods = new HashSet<>(Set.of("one", "two"));
-        this.includes = new HashMap<>(Map.of("one", Objects.requireNonNull(inputFile)));
-        this.requiresResourceBundle = true;
-        this.info = new CompilationInfo(inputFile, outputFile, outputClass, controllerFile, controllerClass, injectedFields, injectedMethods, includes, requiresResourceBundle);
+        this.injectedFields = Set.of(new FieldInfo("type", "name"));
+        this.injectedMethods = Set.of("one", "two");
+        this.includes = Map.of("one", Objects.requireNonNull(inputFile));
+        this.info = new CompilationInfo(inputFile, outputFile, outputClass, controllerFile, controllerClass, injectedFields, injectedMethods, includes, true);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.github.gtache.fxml.compiler.parsing.xml;
 
+import com.github.gtache.fxml.compiler.parsing.ParseException;
 import com.github.gtache.fxml.compiler.parsing.impl.*;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
@@ -12,14 +13,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SequencedMap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class TestDOMFXMLParser {
 
@@ -74,13 +75,64 @@ class TestDOMFXMLParser {
                                         )),
                                         new ParsedFactoryImpl(FXCollections.class.getName(), Map.of("fx:id", new ParsedPropertyImpl("fx:id", null, "define6"), "fx:factory", new ParsedPropertyImpl("fx:factory", null, "emptyObservableMap")), List.of(), List.of())))))),
                         new ParsedPropertyImpl("center", null, null),
-                        List.of(new ParsedObjectImpl(VBox.class.getName(), newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "vbox")), newLinkedHashMap(), List.of()))
+                        List.of(new ParsedObjectImpl(VBox.class.getName(), newLinkedHashMap("fx:id", new ParsedPropertyImpl("fx:id", null, "vbox"), "alignment", new ParsedPropertyImpl("alignment", null, "TOP_RIGHT")),
+                                newLinkedHashMap(
+                                        new ParsedPropertyImpl("accessibleText", null, null), List.of(
+                                                new ParsedDefineImpl(List.of(
+                                                        new ParsedObjectImpl(String.class.getName(), Map.of("value",
+                                                                new ParsedPropertyImpl("value", null, "3")), newLinkedHashMap(), List.of())
+                                                )), new ParsedTextImpl("text"))), List.of()))
                 ), List.of());
         try (final var in = getClass().getResourceAsStream("loadView.fxml")) {
             assertNotNull(in);
             final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             final var actual = parser.parse(content);
             assertEquals(expected, actual);
+        }
+    }
+
+    @Test
+    void testInvalidDefine() throws IOException {
+        try (final var in = getClass().getResourceAsStream("invalidDefine.fxml")) {
+            assertNotNull(in);
+            final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            assertThrows(ParseException.class, () -> parser.parse(content));
+        }
+    }
+
+    @Test
+    void testInvalidFactory() throws IOException {
+        try (final var in = getClass().getResourceAsStream("invalidFactory.fxml")) {
+            assertNotNull(in);
+            final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            assertThrows(ParseException.class, () -> parser.parse(content));
+        }
+    }
+
+    @Test
+    void testLoadRoot() throws IOException {
+        try (final var in = getClass().getResourceAsStream("loadRoot.fxml")) {
+            assertNotNull(in);
+            final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            assertThrows(ParseException.class, () -> parser.parse(content));
+        }
+    }
+
+    @Test
+    void testLoadScript() throws IOException {
+        try (final var in = getClass().getResourceAsStream("loadScript.fxml")) {
+            assertNotNull(in);
+            final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            assertThrows(ParseException.class, () -> parser.parse(content));
+        }
+    }
+
+    @Test
+    void testUnknownClass() throws IOException {
+        try (final var in = getClass().getResourceAsStream("unknownClass.fxml")) {
+            assertNotNull(in);
+            final var content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            assertThrows(ParseException.class, () -> parser.parse(content));
         }
     }
 
@@ -98,14 +150,6 @@ class TestDOMFXMLParser {
         final var map = new LinkedHashMap<K, V>();
         map.put(k1, v1);
         map.put(k2, v2);
-        return map;
-    }
-
-    private static <K, V> SequencedMap<K, V> newLinkedHashMap(final K k1, final V v1, final K k2, final V v2, final K k3, final V v3) {
-        final var map = new LinkedHashMap<K, V>();
-        map.put(k1, v1);
-        map.put(k2, v2);
-        map.put(k3, v3);
         return map;
     }
 }

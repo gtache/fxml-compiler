@@ -22,6 +22,7 @@ public record GenerationRequestImpl(GenerationParameters parameters, ControllerI
                                     String outputClassName) implements GenerationRequest {
     /**
      * Instantiates a new request
+     *
      * @param parameters      The generation parameters
      * @param controllerInfo  The controller info
      * @param sourceInfo      The source info

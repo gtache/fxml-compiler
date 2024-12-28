@@ -15,9 +15,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Helper class for {@link FXMLCompilerMojo} to provides {@link CompilationInfo}
@@ -28,22 +29,31 @@ public final class CompilationInfoProvider {
     private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
     private static final Pattern START_DOT_PATTERN = Pattern.compile("^\\.");
 
-    private CompilationInfoProvider() {
+    private final MavenProject project;
+    private final Path outputDirectory;
+
+    /**
+     * Instantiates the provider
+     *
+     * @param project         The Maven project
+     * @param outputDirectory The output directory
+     * @throws NullPointerException If any parameter is null
+     */
+    public CompilationInfoProvider(final MavenProject project, final Path outputDirectory) {
+        this.project = requireNonNull(project);
+        this.outputDirectory = requireNonNull(outputDirectory);
     }
 
     /**
      * Gets the compilation info for the given input
      *
-     * @param root              The root path
+     * @param root              The root path for the input
      * @param inputPath         The input path
      * @param controllerMapping The controller mapping
-     * @param outputDirectory   The output directory
-     * @param project           The Maven project
      * @return The compilation info
      * @throws MojoExecutionException If an error occurs
      */
-    public static CompilationInfo getCompilationInfo(final Path root, final Path inputPath, final Map<? extends Path, String> controllerMapping,
-                                                     final Path outputDirectory, final MavenProject project) throws MojoExecutionException {
+    public CompilationInfo getCompilationInfo(final Path root, final Path inputPath, final Map<? extends Path, String> controllerMapping) throws MojoExecutionException {
         logger.info("Parsing {}", inputPath);
         try {
             final var documentBuilder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
@@ -55,7 +65,7 @@ public final class CompilationInfoProvider {
             final var outputFilename = getOutputFilename(inputFilename);
             final var outputClass = getOutputClass(root, inputPath, outputFilename);
             final var replacedPrefixPath = inputPath.toString().replace(root.toString(), outputDirectory.toString());
-            final var targetPath = Paths.get(replacedPrefixPath.replace(inputFilename, outputFilename));
+            final var targetPath = Path.of(replacedPrefixPath.replace(inputFilename, outputFilename));
             builder.outputFile(targetPath);
             builder.outputClass(outputClass);
             handleNode(document.getDocumentElement(), builder, controllerMapping, project);
@@ -170,12 +180,28 @@ public final class CompilationInfoProvider {
     private static void handleController(final String controllerClass, final CompilationInfo.Builder builder, final MavenProject project) throws MojoExecutionException {
         final var subPath = controllerClass.replace(".", "/") + ".java";
         final var path = project.getCompileSourceRoots().stream()
-                .map(s -> Paths.get(s).resolve(subPath))
+                .map(s -> Path.of(s).resolve(subPath))
                 .filter(Files::exists)
                 .findFirst()
                 .orElseThrow(() -> new MojoExecutionException("Cannot find controller " + controllerClass));
         logger.info("Found controller {}", controllerClass);
         builder.controllerFile(path);
         builder.controllerClass(controllerClass);
+    }
+
+    /**
+     * Factory for {@link CompilationInfoProvider}
+     */
+    @FunctionalInterface
+    public interface Factory {
+
+        /**
+         * Creates a new compilation info provider
+         *
+         * @param project         The Maven project
+         * @param outputDirectory The output directory
+         * @return The compilation info provider
+         */
+        CompilationInfoProvider create(final MavenProject project, final Path outputDirectory);
     }
 }

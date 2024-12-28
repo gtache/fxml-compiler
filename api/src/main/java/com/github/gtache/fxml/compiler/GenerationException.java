@@ -3,6 +3,7 @@ package com.github.gtache.fxml.compiler;
 /**
  * Exception thrown when a generation error occurs
  */
+@SuppressWarnings("serial")
 public class GenerationException extends Exception {
 
     /**

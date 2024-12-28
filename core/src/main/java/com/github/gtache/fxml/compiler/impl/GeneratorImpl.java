@@ -9,8 +9,6 @@ import com.github.gtache.fxml.compiler.impl.internal.HelperProvider;
 import java.util.Objects;
 import java.util.function.Function;
 
-//TODO handle binding (${})
-
 /**
  * Implementation of {@link Generator}
  */
@@ -28,6 +26,7 @@ public class GeneratorImpl implements Generator {
 
     /**
      * Used for testing
+     *
      * @param helperProviderFactory The helper provider factory
      */
     GeneratorImpl(final Function<GenerationProgress, HelperProvider> helperProviderFactory) {

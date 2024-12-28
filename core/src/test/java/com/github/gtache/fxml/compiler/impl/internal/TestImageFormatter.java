@@ -19,7 +19,6 @@ import java.util.SequencedCollection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,7 +49,7 @@ class TestImageFormatter {
     }
 
     @BeforeEach
-    void beforeEach() throws GenerationException {
+    void beforeEach() {
         when(helperProvider.getCompatibilityHelper()).thenReturn(compatibilityHelper);
         when(helperProvider.getURLFormatter()).thenReturn(urlFormatter);
         when(helperProvider.getVariableProvider()).thenReturn(variableProvider);
@@ -72,7 +71,7 @@ class TestImageFormatter {
     @Test
     void testHasProperties() {
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        properties.put(new ParsedPropertyImpl("str", null, ""), List.of(parsedObject));
+        properties.put(new ParsedPropertyImpl("str", null, null), List.of(parsedObject));
         when(parsedObject.properties()).thenReturn(properties);
         assertThrows(GenerationException.class, () -> imageFormatter.formatImage(parsedObject, variableName));
     }

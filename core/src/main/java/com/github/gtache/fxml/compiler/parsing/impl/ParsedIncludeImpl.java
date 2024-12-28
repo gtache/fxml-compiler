@@ -6,6 +6,8 @@ import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Implementation of {@link ParsedInclude}
  *
@@ -42,6 +44,7 @@ public record ParsedIncludeImpl(Map<String, ParsedProperty> attributes) implemen
     }
 
     private static Map<String, ParsedProperty> createAttributes(final String source, final String resources, final String fxId) {
+        requireNonNull(source);
         final var map = HashMap.<String, ParsedProperty>newHashMap(3);
         map.put(SOURCE, new ParsedPropertyImpl(SOURCE, null, source));
         if (resources != null) {

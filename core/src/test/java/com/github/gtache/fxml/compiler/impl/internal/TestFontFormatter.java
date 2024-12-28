@@ -50,7 +50,7 @@ class TestFontFormatter {
     }
 
     @BeforeEach
-    void beforeEach() throws GenerationException {
+    void beforeEach() {
         when(helperProvider.getCompatibilityHelper()).thenReturn(compatibilityHelper);
         when(helperProvider.getURLFormatter()).thenReturn(urlFormatter);
         when(parsedObject.attributes()).thenReturn(attributes);
@@ -70,7 +70,7 @@ class TestFontFormatter {
     @Test
     void testHasProperties() {
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        properties.put(new ParsedPropertyImpl("str", null, ""), List.of(parsedObject));
+        properties.put(new ParsedPropertyImpl("str", null, null), List.of(parsedObject));
         when(parsedObject.properties()).thenReturn(properties);
         assertThrows(GenerationException.class, () -> fontFormatter.formatFont(parsedObject, variableName));
     }

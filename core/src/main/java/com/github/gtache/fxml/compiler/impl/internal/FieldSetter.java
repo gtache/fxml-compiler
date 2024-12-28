@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.SequencedCollection;
 
 import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.EXPRESSION_PREFIX;
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.INDENT_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -16,6 +17,7 @@ import static java.util.Objects.requireNonNull;
  */
 final class FieldSetter {
 
+    private static final String CONTROLLER = "controller";
     private final HelperProvider helperProvider;
     private final ControllerFieldInjectionType fieldInjectionType;
     private final StringBuilder sb;
@@ -63,10 +65,10 @@ final class FieldSetter {
         final var value = property.value().replace(EXPRESSION_PREFIX, "");
         final var split = value.split("\\.");
         final var holderName = split[0];
-        if (Objects.equals(holderName, "controller")) {
-            sb.append("        ").append(parentVariable).append(".").append(methodName).append("(").append(value).append(");\n");
+        if (Objects.equals(holderName, CONTROLLER)) {
+            sb.append(INDENT_8).append(parentVariable).append(".").append(methodName).append("(").append(value).append(");\n");
         } else {
-            throw new GenerationException("Unexpected variable holder : " + holderName + " ; expected : controller");
+            throw unexpectedHolderException(holderName);
         }
     }
 
@@ -83,11 +85,11 @@ final class FieldSetter {
         final var value = property.value().replace(EXPRESSION_PREFIX, "");
         final var split = value.split("\\.");
         final var holderName = split[0];
-        if (Objects.equals(holderName, "controller")) {
+        if (Objects.equals(holderName, CONTROLLER)) {
             final var getterName = GenerationHelper.getGetMethod(split[1]);
-            return "        " + parentVariable + "." + methodName + "(controller." + getterName + "());\n";
+            return INDENT_8 + parentVariable + "." + methodName + "(" + CONTROLLER + "." + getterName + "());\n";
         } else {
-            throw new GenerationException("Unexpected variable holder : " + holderName + " ; expected : controller");
+            throw unexpectedHolderException(holderName);
         }
     }
 
@@ -96,20 +98,24 @@ final class FieldSetter {
         final var value = property.value().replace(EXPRESSION_PREFIX, "");
         final var split = value.split("\\.");
         final var holderName = split[0];
-        if (Objects.equals(holderName, "controller")) {
+        if (Objects.equals(holderName, CONTROLLER)) {
             final var fieldName = split[1];
             sb.append("        try {\n");
             sb.append("            ").append(helperProvider.getCompatibilityHelper().getStartVar("java.lang.reflect.Field", 0))
-                    .append("field = controller.getClass().getDeclaredField(\"").append(fieldName).append("\");\n");
+                    .append("field = ").append(CONTROLLER).append(".getClass().getDeclaredField(\"").append(fieldName).append("\");\n");
             sb.append("            field.setAccessible(true);\n");
-            sb.append("            final var value = (").append(fieldType).append(") field.get(controller);\n");
+            sb.append("            final var value = (").append(fieldType).append(") field.get(").append(CONTROLLER).append(");\n");
             sb.append("            ").append(parentVariable).append(".").append(methodName).append("(value);\n");
             sb.append("        } catch (final NoSuchFieldException | IllegalAccessException e) {\n");
             sb.append("            throw new RuntimeException(e);\n");
             sb.append("        }\n");
         } else {
-            throw new GenerationException("Unexpected variable holder : " + holderName + " ; expected : controller");
+            throw unexpectedHolderException(holderName);
         }
+    }
+
+    private static GenerationException unexpectedHolderException(final String holderName) {
+        return new GenerationException("Unexpected variable holder : " + holderName + " ; expected : " + CONTROLLER);
     }
 
 }

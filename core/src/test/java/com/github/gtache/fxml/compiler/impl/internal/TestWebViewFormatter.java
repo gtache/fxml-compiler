@@ -84,7 +84,7 @@ class TestWebViewFormatter {
     @Test
     void testFormatHasProperty() {
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        properties.put(new ParsedPropertyImpl("str", null, ""), List.of(parsedObject));
+        properties.put(new ParsedPropertyImpl("str", null, null), List.of(parsedObject));
         when(parsedObject.properties()).thenReturn(properties);
         assertThrows(GenerationException.class, () -> webViewFormatter.formatWebView(parsedObject, variableName));
     }

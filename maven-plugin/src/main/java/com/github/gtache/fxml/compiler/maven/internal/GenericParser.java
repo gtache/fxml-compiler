@@ -38,10 +38,17 @@ final class GenericParser {
     }
 
     List<GenericTypes> parse() throws MojoExecutionException {
-        return parseGenericTypes();
+        final var parsed = parseGenericTypes();
+        if (index < content.length()) {
+            throw new MojoExecutionException("Expected EOF at " + index + " in " + content);
+        }
+        return parsed;
     }
 
     private List<GenericTypes> parseGenericTypes() throws MojoExecutionException {
+        if (content.isEmpty()) {
+            throw new MojoExecutionException("Empty generic types");
+        }
         final var ret = new ArrayList<GenericTypes>();
         eatSpaces();
         eat('<');
@@ -52,12 +59,16 @@ final class GenericParser {
             if (peek() == '<') {
                 final var genericTypes = parseGenericTypes();
                 ret.add(new GenericTypesImpl(type, genericTypes));
+            } else {
+                ret.add(new GenericTypesImpl(type, List.of()));
+            }
+            eatSpaces();
+            if (peek() == ',') {
+                eat(',');
             } else if (peek() == '>') {
                 eat('>');
+                eatSpaces();
                 return ret;
-            } else if (peek() == ',') {
-                eat(',');
-                ret.add(new GenericTypesImpl(type, List.of()));
             }
         } while (index < content.length());
         return ret;
@@ -72,17 +83,17 @@ final class GenericParser {
     }
 
     private void eatSpaces() {
-        while (peek() == ' ') {
+        while (index < content.length() && peek() == ' ') {
             read();
         }
     }
 
     private String parseType() throws MojoExecutionException {
         final var sb = new StringBuilder();
-        while (peek() != '<' && index < content.length()) {
+        while (peek() != '<' && peek() != '>' && peek() != ',' && index < content.length()) {
             sb.append(read());
         }
-        final var type = sb.toString();
+        final var type = sb.toString().trim();
         if (type.contains(".") || JAVA_LANG_CLASSES.contains(type)) {
             return type;
         } else if (imports.containsKey(type)) {

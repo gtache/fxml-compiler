@@ -3,6 +3,7 @@ package com.github.gtache.fxml.compiler.parsing;
 /**
  * Exception thrown when a parsing error occurs
  */
+@SuppressWarnings("serial")
 public class ParseException extends Exception {
 
     /**

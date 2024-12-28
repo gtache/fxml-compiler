@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +29,7 @@ class TestSourceInfoImpl {
     TestSourceInfoImpl(@Mock final SourceInfo subInfo) {
         this.generatedClassName = "class";
         this.controllerClassName = "controller";
-        this.sourceFile = Paths.get("path");
+        this.sourceFile = Path.of("path");
         this.includedSources = new ArrayList<>(List.of(subInfo));
         this.sourceToSourceInfo = new HashMap<>(Map.of("source", subInfo));
         this.requiresResourceBundle = false;

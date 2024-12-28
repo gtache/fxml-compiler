@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Creates compiled Java code
@@ -24,10 +25,26 @@ public final class Compiler {
 
     private static final Logger logger = LogManager.getLogger(Compiler.class);
 
-    private static final FXMLParser PARSER = new DOMFXMLParser();
-    private static final Generator GENERATOR = new GeneratorImpl();
+    private final FXMLParser parser;
+    private final Generator generator;
 
-    private Compiler() {
+    /**
+     * Instantiates a new compiler
+     *
+     * @param parser    The parser to use
+     * @param generator The generator to use
+     * @throws NullPointerException If any parameter is null
+     */
+    Compiler(final FXMLParser parser, final Generator generator) {
+        this.parser = Objects.requireNonNull(parser);
+        this.generator = Objects.requireNonNull(generator);
+    }
+
+    /**
+     * Instantiates a new compiler
+     */
+    public Compiler() {
+        this(new DOMFXMLParser(), new GeneratorImpl());
     }
 
     /**
@@ -37,22 +54,31 @@ public final class Compiler {
      * @param parameters The generation parameters
      * @throws MojoExecutionException If an error occurs
      */
-    public static void compile(final Map<Path, CompilationInfo> mapping, final GenerationParameters parameters) throws MojoExecutionException {
+    public void compile(final Map<Path, CompilationInfo> mapping, final GenerationParameters parameters) throws MojoExecutionException {
         for (final var entry : mapping.entrySet()) {
             compile(entry.getKey(), entry.getValue(), mapping, parameters);
         }
     }
 
-    public static void compile(final Path inputPath, final CompilationInfo info, final Map<Path, CompilationInfo> mapping, final GenerationParameters parameters) throws MojoExecutionException {
+    /**
+     * Compiles the given file
+     *
+     * @param inputPath  The input path
+     * @param info       The compilation info
+     * @param mapping    The mapping of file to compile to compilation info
+     * @param parameters The generation parameters
+     * @throws MojoExecutionException If an error occurs
+     */
+    public void compile(final Path inputPath, final CompilationInfo info, final Map<Path, CompilationInfo> mapping, final GenerationParameters parameters) throws MojoExecutionException {
         try {
-            logger.info("Parsing {} with {}", inputPath, PARSER.getClass().getSimpleName());
-            final var root = PARSER.parse(inputPath);
+            logger.info("Parsing {} with {}", inputPath, parser.getClass().getSimpleName());
+            final var root = parser.parse(inputPath);
             final var controllerInfo = ControllerInfoProvider.getControllerInfo(info);
             final var output = info.outputFile();
             final var sourceInfo = SourceInfoProvider.getSourceInfo(info, mapping);
             final var request = new GenerationRequestImpl(parameters, controllerInfo, sourceInfo, root, info.outputClass());
             logger.info("Compiling {}", inputPath);
-            final var content = GENERATOR.generate(request);
+            final var content = generator.generate(request);
             final var outputDir = output.getParent();
             Files.createDirectories(outputDir);
             Files.writeString(output, content);

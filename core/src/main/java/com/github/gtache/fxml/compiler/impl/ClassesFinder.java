@@ -5,7 +5,6 @@ import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -43,12 +42,12 @@ public final class ClassesFinder {
             final var file = resource.getFile();
             if (file.contains(".jar!")) {
                 final var jarFile = file.substring(0, file.indexOf(".jar!") + 4);
-                try (final var fs = FileSystems.newFileSystem(Paths.get(URI.create(jarFile)), classLoader)) {
+                try (final var fs = FileSystems.newFileSystem(Path.of(URI.create(jarFile)), classLoader)) {
                     classes.addAll(findClasses(fs.getPath(path), packageName));
                 }
             } else {
                 final var filepath = START_FILE_PATTERN.matcher(file).replaceAll("");
-                classes.addAll(findClasses(Paths.get(filepath), packageName));
+                classes.addAll(findClasses(Path.of(filepath), packageName));
             }
         }
         return classes;

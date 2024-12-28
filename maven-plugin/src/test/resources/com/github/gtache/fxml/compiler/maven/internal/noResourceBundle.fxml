@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<BorderPane xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.github.gtache.fxml.compiler.maven.internal.InfoController">
+    <bottom>
+        <HBox>
+            <children>
+                <Button fx:id="button" onAction="#onAction" onContextMenuRequested="$controller.onContextMenuRequested"
+                        text="text"/>
+                <fx:include fx:id="includeView" source="includeView.fxml"/>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

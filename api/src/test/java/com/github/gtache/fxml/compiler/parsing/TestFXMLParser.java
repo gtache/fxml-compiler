@@ -7,7 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,7 +46,7 @@ class TestFXMLParser {
 
     @Test
     void testParseIOException() throws Exception {
-        final var file = Paths.get("whatever");
+        final var file = Path.of("whatever");
         assertThrows(ParseException.class, () -> parser.parse(file));
         verify(parser, never()).parse(content);
     }

@@ -21,6 +21,9 @@ import static java.util.Objects.requireNonNull;
  */
 public final class InitializationFormatter {
 
+    private static final String RESOURCE_BUNDLE_TYPE = "java.util.ResourceBundle";
+    private static final String RESOURCE_BUNDLE = "resourceBundle";
+
     private final HelperProvider helperProvider;
     private final GenerationRequest request;
     private final StringBuilder sb;
@@ -106,7 +109,7 @@ public final class InitializationFormatter {
     private ResourceBundleInfo getResourceBundleInfo() {
         final var injectionType = request.parameters().resourceInjectionType();
         return switch (injectionType) {
-            case CONSTRUCTOR -> new ResourceBundleInfo("java.util.ResourceBundle", "resourceBundle");
+            case CONSTRUCTOR -> new ResourceBundleInfo(RESOURCE_BUNDLE_TYPE, RESOURCE_BUNDLE);
             case CONSTRUCTOR_FUNCTION ->
                     new ResourceBundleInfo("java.util.function.Function<String, String>", "resourceBundleFunction");
             case CONSTRUCTOR_NAME -> new ResourceBundleInfo("String", "resourceBundleName");
@@ -140,7 +143,7 @@ public final class InitializationFormatter {
         return hasDuplicateControllerClass(request.sourceInfo(), set);
     }
 
-    private static boolean hasDuplicateControllerClass(final SourceInfo info, final Set<String> controllers) {
+    private static boolean hasDuplicateControllerClass(final SourceInfo info, final Set<? super String> controllers) {
         final var controllerClass = info.controllerClassName();
         if (controllers.contains(controllerClass)) {
             return true;
@@ -202,15 +205,15 @@ public final class InitializationFormatter {
                     yield bundleVariable;
                 }
                 case CONSTRUCTOR_FUNCTION -> {
-                    final var bundleVariable = variableProvider.getNextVariableName("resourceBundle");
-                    sb.append(compatibilityHelper.getStartVar("java.util.ResourceBundle")).append(bundleVariable).append(" = java.util.ResourceBundle.getBundle(\"").append(include.resources()).append("\");\n");
+                    final var bundleVariable = variableProvider.getNextVariableName(RESOURCE_BUNDLE);
+                    sb.append(compatibilityHelper.getStartVar(RESOURCE_BUNDLE_TYPE)).append(bundleVariable).append(" = java.util.ResourceBundle.getBundle(\"").append(include.resources()).append("\");\n");
                     final var bundleFunctionVariable = variableProvider.getNextVariableName("resourceBundleFunction");
                     sb.append(compatibilityHelper.getStartVar("java.util.function.Function<String, String>")).append(bundleFunctionVariable).append(" = (java.util.function.Function<String, String>) s -> ").append(bundleVariable).append(".getString(s);\n");
                     yield bundleFunctionVariable;
                 }
                 case CONSTRUCTOR -> {
-                    final var bundleVariable = variableProvider.getNextVariableName("resourceBundle");
-                    sb.append(compatibilityHelper.getStartVar("java.util.ResourceBundle")).append(bundleVariable).append(" = java.util.ResourceBundle.getBundle(\"").append(include.resources()).append("\");\n");
+                    final var bundleVariable = variableProvider.getNextVariableName(RESOURCE_BUNDLE);
+                    sb.append(compatibilityHelper.getStartVar(RESOURCE_BUNDLE_TYPE)).append(bundleVariable).append(" = java.util.ResourceBundle.getBundle(\"").append(include.resources()).append("\");\n");
                     yield bundleVariable;
                 }
             };

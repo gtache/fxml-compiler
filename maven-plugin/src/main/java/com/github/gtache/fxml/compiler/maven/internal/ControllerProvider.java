@@ -13,17 +13,19 @@ import java.nio.file.Path;
  * Extracts controller class from FXMLs
  */
 public final class ControllerProvider {
-    private static final DocumentBuilder DOCUMENT_BUILDER;
 
-    static {
+    private final DocumentBuilder documentBuilder;
+
+    /**
+     * Instantiates a new provider
+     */
+    public ControllerProvider() {
+        final var factory = DocumentBuilderFactory.newInstance();
         try {
-            DOCUMENT_BUILDER = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            this.documentBuilder = factory.newDocumentBuilder();
         } catch (final ParserConfigurationException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private ControllerProvider() {
     }
 
     /**
@@ -33,9 +35,9 @@ public final class ControllerProvider {
      * @return The controller class
      * @throws MojoExecutionException If an error occurs
      */
-    public static String getController(final Path fxml) throws MojoExecutionException {
+    public String getController(final Path fxml) throws MojoExecutionException {
         try {
-            final var document = DOCUMENT_BUILDER.parse(fxml.toFile());
+            final var document = documentBuilder.parse(fxml.toFile());
             document.getDocumentElement().normalize();
 
             final var controller = document.getDocumentElement().getAttribute("fx:controller");

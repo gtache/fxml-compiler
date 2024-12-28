@@ -15,13 +15,13 @@ public record ParsedPropertyImpl(String name, String sourceType, String value) i
 
     /**
      * Instantiates a property
+     *
      * @param name       The property name
      * @param sourceType The property source type
      * @param value      The property value
-     * @throws NullPointerException If the name or value is null
+     * @throws NullPointerException If the name is null
      */
     public ParsedPropertyImpl {
         requireNonNull(name);
-        requireNonNull(value);
     }
 }

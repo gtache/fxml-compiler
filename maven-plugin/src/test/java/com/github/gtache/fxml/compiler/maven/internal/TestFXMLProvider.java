@@ -22,20 +22,24 @@ import static org.mockito.Mockito.when;
 class TestFXMLProvider {
 
     private final MavenProject project;
+    private final FXMLProvider provider;
 
     TestFXMLProvider(@Mock final MavenProject project) {
         this.project = Objects.requireNonNull(project);
+        this.provider = new FXMLProvider(project);
     }
 
     @Test
     void testGetFXMLs(@TempDir final Path tempDir, @TempDir final Path otherTempDir) throws Exception {
         final var subFolder = tempDir.resolve("subFolder");
+        Files.createDirectories(subFolder);
         Files.createFile(subFolder.resolve("subfxml1.fxml"));
         Files.createFile(subFolder.resolve("subfxml2.fxml"));
         Files.createFile(tempDir.resolve("fxml1.fxml"));
         Files.createFile(tempDir.resolve("fxml2.fxml"));
 
         final var otherSubFolder = otherTempDir.resolve("subFolder");
+        Files.createDirectories(otherSubFolder);
         Files.createFile(otherSubFolder.resolve("subfxml1.fxml"));
         Files.createFile(otherSubFolder.resolve("subfxml2.fxml"));
         Files.createFile(otherTempDir.resolve("fxml1.fxml"));
@@ -57,7 +61,7 @@ class TestFXMLProvider {
                 otherTempDir.resolve("fxml1.fxml"), otherTempDir,
                 otherTempDir.resolve("fxml2.fxml"), otherTempDir
         );
-        final var map = FXMLProvider.getFXMLs(project);
+        final var map = provider.getFXMLs();
         assertEquals(expected, map);
     }
 }

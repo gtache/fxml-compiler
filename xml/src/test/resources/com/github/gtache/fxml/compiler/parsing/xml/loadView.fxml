@@ -60,6 +60,13 @@
     </bottom>
     <center>
         <VBox fx:id="vbox">
+            <alignment>TOP_RIGHT</alignment>
+            <accessibleText>
+                <fx:define>
+                    <String value="3"/>
+                </fx:define>
+                text
+            </accessibleText>
         </VBox>
     </center>
 </BorderPane>

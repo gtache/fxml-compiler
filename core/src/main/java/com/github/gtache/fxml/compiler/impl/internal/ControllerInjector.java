@@ -8,6 +8,7 @@ import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 
 import java.util.SequencedCollection;
 
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.INDENT_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -40,14 +41,15 @@ final class ControllerInjector {
     void injectControllerField(final String id, final String variable) {
         switch (fieldInjectionType) {
             case FACTORY ->
-                    sb.append("        fieldMap.put(\"").append(id).append("\", ").append(variable).append(");\n");
-            case ASSIGN -> sb.append("        controller.").append(id).append(" = ").append(variable).append(";\n");
+                    sb.append(INDENT_8).append("fieldMap.put(\"").append(id).append("\", ").append(variable).append(");\n");
+            case ASSIGN ->
+                    sb.append(INDENT_8).append("controller.").append(id).append(" = ").append(variable).append(";\n");
             case SETTERS -> {
                 final var setMethod = GenerationHelper.getSetMethod(id);
-                sb.append("        controller.").append(setMethod).append("(").append(variable).append(");\n");
+                sb.append(INDENT_8).append("controller.").append(setMethod).append("(").append(variable).append(");\n");
             }
             case REFLECTION ->
-                    sb.append("        injectField(\"").append(id).append("\", ").append(variable).append(");\n");
+                    sb.append(INDENT_8).append("injectField(\"").append(id).append("\", ").append(variable).append(");\n");
         }
     }
 
@@ -98,13 +100,13 @@ final class ControllerInjector {
             case REFERENCE -> {
                 final var hasArgument = controllerInfo.handlerHasArgument(controllerMethod);
                 if (hasArgument) {
-                    yield "        " + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
+                    yield INDENT_8 + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
                 } else {
-                    yield "        " + parentVariable + "." + setMethod + "(e -> controller." + controllerMethod + "());\n";
+                    yield INDENT_8 + parentVariable + "." + setMethod + "(e -> controller." + controllerMethod + "());\n";
                 }
             }
             case REFLECTION ->
-                    "        " + parentVariable + "." + setMethod + "(e -> callEventHandlerMethod(\"" + controllerMethod + "\", e));\n";
+                    INDENT_8 + parentVariable + "." + setMethod + "(e -> callEventHandlerMethod(\"" + controllerMethod + "\", e));\n";
         };
     }
 
@@ -120,10 +122,9 @@ final class ControllerInjector {
         final var setMethod = GenerationHelper.getSetMethod(property.name());
         final var controllerMethod = property.value().replace("#", "");
         return switch (methodInjectionType) {
-            case REFERENCE ->
-                    "        " + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
+            case REFERENCE -> INDENT_8 + parentVariable + "." + setMethod + "(controller::" + controllerMethod + ");\n";
             case REFLECTION ->
-                    "        " + parentVariable + "." + setMethod + "(e -> callCallbackMethod(\"" + controllerMethod + "\", e, " + argumentClazz + "));\n";
+                    INDENT_8 + parentVariable + "." + setMethod + "(e -> callCallbackMethod(\"" + controllerMethod + "\", e, " + argumentClazz + "));\n";
         };
     }
 }

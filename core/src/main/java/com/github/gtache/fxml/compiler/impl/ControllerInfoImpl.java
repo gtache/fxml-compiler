@@ -20,6 +20,7 @@ public record ControllerInfoImpl(String className, Map<String, Boolean> handlerH
 
     /**
      * Instantiates a new controller info
+     *
      * @param className          The controller class name
      * @param handlerHasArgument The mapping of method name to true if the method has an argument
      * @param fieldInfo          The mapping of property name to controller field info

@@ -8,13 +8,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 class TestControllerProvider {
+
+    private final ControllerProvider controllerProvider;
+
+    TestControllerProvider() {
+        this.controllerProvider = new ControllerProvider();
+    }
 
     @Test
     void testGetController(@TempDir final Path tempDir) throws Exception {
@@ -23,7 +28,7 @@ class TestControllerProvider {
                 "<BorderPane xmlns=\"http://javafx.com/javafx/22\" xmlns:fx=\"http://javafx.com/fxml/1\"" +
                 "            fx:controller=\"LoadController\">" +
                 "</BorderPane>\n");
-        assertEquals("LoadController", ControllerProvider.getController(fxml));
+        assertEquals("LoadController", controllerProvider.getController(fxml));
     }
 
     @Test
@@ -32,11 +37,11 @@ class TestControllerProvider {
         Files.writeString(fxml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<BorderPane xmlns=\"http://javafx.com/javafx/22\" xmlns:fx=\"http://javafx.com/fxml/1\">" +
                 "</BorderPane>\n");
-        assertThrows(MojoExecutionException.class, () -> ControllerProvider.getController(fxml));
+        assertThrows(MojoExecutionException.class, () -> controllerProvider.getController(fxml));
     }
 
     @Test
     void testGetControllerError() {
-        assertThrows(MojoExecutionException.class, () -> ControllerProvider.getController(Paths.get("fxml.fxml")));
+        assertThrows(MojoExecutionException.class, () -> controllerProvider.getController(Path.of("fxml.fxml")));
     }
 }

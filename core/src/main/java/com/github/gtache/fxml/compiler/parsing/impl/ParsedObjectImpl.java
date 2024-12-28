@@ -25,6 +25,7 @@ public record ParsedObjectImpl(String className, Map<String, ParsedProperty> att
 
     /**
      * Instantiates a new object
+     *
      * @param className  The object class
      * @param attributes The object attributes
      * @param properties The object properties

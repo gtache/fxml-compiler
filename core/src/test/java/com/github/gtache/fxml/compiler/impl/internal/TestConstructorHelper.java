@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TestConstructorHelper {
 
+    private static final Annotation[][] EMPTY_ANNOTATIONS = new Annotation[0][];
     private final ConstructorArgs args;
     private final Constructor<Object>[] constructors;
     private final ParsedObject parsedObject;
@@ -83,7 +84,7 @@ class TestConstructorHelper {
         namedArgs.put("p1", new Parameter("p1", int.class, "0"));
         namedArgs.put("p2", new Parameter("p2", String.class, "value2"));
 
-        when(constructors[0].getParameterAnnotations()).thenReturn(new Annotation[0][]);
+        when(constructors[0].getParameterAnnotations()).thenReturn(EMPTY_ANNOTATIONS);
         when(constructors[1].getParameterAnnotations()).thenReturn(new Annotation[][]{{new NamedArgImpl("p1", "")}, {
                 new NamedArgImpl("p2", "value2")}});
         when(constructors[1].getParameterTypes()).thenReturn(new Class[]{int.class, String.class});
@@ -95,8 +96,8 @@ class TestConstructorHelper {
     void testGetMatchingConstructorArgsEmpty() {
         final var namedArgs = new LinkedHashMap<String, Parameter>();
 
-        when(constructors[0].getParameterAnnotations()).thenReturn(new Annotation[0][]);
-        when(constructors[1].getParameterAnnotations()).thenReturn(new Annotation[0][]);
+        when(constructors[0].getParameterAnnotations()).thenReturn(EMPTY_ANNOTATIONS);
+        when(constructors[1].getParameterAnnotations()).thenReturn(EMPTY_ANNOTATIONS);
         when(constructors[0].getParameterCount()).thenReturn(0);
         when(constructors[1].getParameterCount()).thenReturn(1);
         final var expectedArgs = new ConstructorArgs(constructors[0], namedArgs);
@@ -105,8 +106,8 @@ class TestConstructorHelper {
 
     @Test
     void testGetMatchingConstructorArgsNull() {
-        when(constructors[0].getParameterAnnotations()).thenReturn(new Annotation[0][]);
-        when(constructors[1].getParameterAnnotations()).thenReturn(new Annotation[0][]);
+        when(constructors[0].getParameterAnnotations()).thenReturn(EMPTY_ANNOTATIONS);
+        when(constructors[1].getParameterAnnotations()).thenReturn(EMPTY_ANNOTATIONS);
         when(constructors[0].getParameterCount()).thenReturn(1);
         when(constructors[1].getParameterCount()).thenReturn(1);
         assertNull(ConstructorHelper.getMatchingConstructorArgs(constructors, propertyNames));

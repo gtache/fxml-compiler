@@ -82,8 +82,9 @@ Optionally add dependencies to the plugin (e.g. when using MediaView and control
 
 - `fx:script` is not supported
 - Possible bugs (file an issue if you see one)
-- Expression binding is limited
+- Expression binding is (very) limited
 - Probably not fully compatible with all FXML features (file an issue if you need one in specific)
+- All fxml files must have a `fx:controller` attribute
 
 ## Parameters
 
@@ -119,7 +120,7 @@ There are four ways to inject fields into a controller:
     - This allows the controller to have final fields.
     - This also forces the `controller-injection` method to be `FACTORY`.
 
-### Method injections
+### Method injection
 
 There are two ways to inject methods (meaning use them as event handlers) into a controller:
 
@@ -133,26 +134,27 @@ There are two ways to inject methods (meaning use them as event handlers) into a
 
 ### Resource bundle injection
 
-There are three ways to inject resource bundles into a controller:
+There are five ways to inject resource bundles into a controller:
 
 - `CONSTRUCTOR`: Inject resource bundle in the view constructor
-    - ```java
-      view = new View(controller, resourceBundle);
-      ```
-    - This is the default injection method because it is the most similar to FXMLLoader (
-      `FXMLLoader.setResources(resourceBundle)`).
+    - `view = new View(controller, resourceBundle)`
+    - This is the default injection method.
 - `CONSTRUCTOR_FUNCTION`: Injects a function in the view constructor
     - `bundleFunction.apply(key)`
-    - The function takes a string (the key) and returns a string (the value)
-    - This allows using another object than a resource bundle for example
+    - The function takes a string (the key) and returns a string (the value).
+    - This allows using another object than a resource bundle for example.
 - `CONSTRUCTOR_NAME`: Injects the resource bundle name in the view constructor
     - `ResourceBundle.getBundle(bundleName)`
+    - Just for the convenience of not having to create the resource bundle instance outside the view.
 - `GETTER`: Retrieves the resource bundle using a controller getter method
     - `controller.resources()`
     - The method name (resources) was chosen because it matches the name of the field injected by FXMLLoader.
     - The method must be accessible from the view (e.g. package-private).
+    - **This ignores the `resources` attribute of fx:include.**
 - `GET-BUNDLE`: Retrieves the resource bundle using a resource path
     - The resource path is passed to the generator (see [Maven Plugin](#maven-plugin)).
+    - The resource path will therefore be a constant in the view class.
+    - **This ignores the `resources` attribute of fx:include.**
 
 ## View creation
 
@@ -160,15 +162,13 @@ The views are generated in the same packages as the FXML files.
 The name of the class is generated from the name of the FXML file.
 
 The constructor of the view is generated depending on the parameters of the plugin.    
-The constructor will have as many arguments as the number of controllers in the FXML tree (recursive fx:include) +
+The constructor will have as many arguments as the number of controllers in the FXML tree (recursive fx:include) plus
 potentially the resource bundle if necessary. If no resource reference (`%key.to.resource`) is found in the FXML tree or
-if all the includes using references specify a resources attribute, the argument is not created.
+if all the fx:includes using references specify a `resources` attribute, the argument is not created.
 
-The type of the constructor arguments will either be the controller instance or the controller factory (a function of
-fields map -> controller).     
+The type of the constructor arguments will either be the controller instance or the controller factory.     
 The resource bundle argument will either be the resource bundle instance, the resource bundle name or a function of
-string ->
-string.
+string -> string.
 
 The smallest constructor will have only one argument: The controller (or controller factory).
 
@@ -206,8 +206,8 @@ The smallest constructor will have only one argument: The controller (or control
     - default: `{}`
 - parallelism
     - The number of threads to use for compilation
-    - default: `1`
-    - if `<1`, the number of cores will be used
+    - default: `1` (no multithreading)
+    - if `<1`, the number of available cores will be used
 
 ### Limitations
 
@@ -216,4 +216,5 @@ The smallest constructor will have only one argument: The controller (or control
     - The controller info (fields, methods) is obtained from the source file and may therefore be inaccurate.
     - Custom classes instantiated in the FXML files are not available during generation and may therefore cause it to
       fail.
+        - These classes must therefore be in a separate dependency.
 - If the application uses e.g. WebView, the javafx-web dependency must be added to the plugin dependencies.

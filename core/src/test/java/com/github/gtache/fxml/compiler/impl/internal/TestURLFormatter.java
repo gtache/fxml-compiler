@@ -44,7 +44,7 @@ class TestURLFormatter {
     }
 
     @BeforeEach
-    void beforeEach() throws GenerationException {
+    void beforeEach() {
         when(helperProvider.getCompatibilityHelper()).thenReturn(compatibilityHelper);
         when(helperProvider.getVariableProvider()).thenReturn(variableProvider);
         when(variableProvider.getNextVariableName("url")).thenReturn("url1", "url2");
@@ -78,7 +78,7 @@ class TestURLFormatter {
     @Test
     void testFormatURLObjectProperties() {
         final var map = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
-        map.put(new ParsedPropertyImpl("str", null, ""), List.of());
+        map.put(new ParsedPropertyImpl("str", null, null), List.of());
         when(parsedObject.properties()).thenReturn(map);
         assertThrows(GenerationException.class, () -> urlFormatter.formatURL(parsedObject, variableName));
     }

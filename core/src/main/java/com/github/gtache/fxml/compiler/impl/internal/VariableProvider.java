@@ -33,7 +33,8 @@ class VariableProvider {
 
     /**
      * Adds a variable info
-     * @param id The variable id
+     *
+     * @param id           The variable id
      * @param variableInfo The variable info
      */
     void addVariableInfo(final String id, final VariableInfo variableInfo) {
@@ -42,6 +43,7 @@ class VariableProvider {
 
     /**
      * Gets the variable info
+     *
      * @param id The variable id
      * @return The variable info
      */

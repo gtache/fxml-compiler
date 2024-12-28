@@ -30,6 +30,6 @@ class TestParsedPropertyImpl {
     void testIllegal() {
         assertThrows(NullPointerException.class, () -> new ParsedPropertyImpl(null, sourceType, value));
         assertDoesNotThrow(() -> new ParsedPropertyImpl(name, null, value));
-        assertThrows(NullPointerException.class, () -> new ParsedPropertyImpl(name, sourceType, null));
+        assertDoesNotThrow(() -> new ParsedPropertyImpl(name, sourceType, null));
     }
 }

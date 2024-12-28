@@ -325,7 +325,7 @@ final class ObjectFormatter {
         if (!notDefinedChildren.isEmpty()) {
             final var defaultProperty = ReflectionHelper.getDefaultProperty(parsedObject.className());
             if (!constructorArgs.namedArgs().containsKey(defaultProperty)) {
-                final var property = new ParsedPropertyImpl(defaultProperty, null, "");
+                final var property = new ParsedPropertyImpl(defaultProperty, null, null);
                 helperProvider.getPropertyFormatter().formatProperty(property, notDefinedChildren, parsedObject, variableName);
             }
         }

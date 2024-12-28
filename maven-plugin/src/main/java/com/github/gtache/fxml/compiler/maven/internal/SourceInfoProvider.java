@@ -32,7 +32,7 @@ final class SourceInfoProvider {
         final var requiresResourceBundle = info.requiresResourceBundle();
         final var includesMapping = new HashMap<String, SourceInfo>();
         includes.forEach((k, v) -> includesMapping.put(k, getSourceInfo(mapping.get(v), mapping)));
-        //FIXME mutliple includes
+        //FIXME mutliple same includes
         return new SourceInfoImpl(outputClass, controllerClass, inputFile, List.copyOf(includesMapping.values()), includesMapping, requiresResourceBundle);
     }
 }

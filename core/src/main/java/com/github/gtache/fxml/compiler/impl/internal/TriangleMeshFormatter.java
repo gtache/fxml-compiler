@@ -14,8 +14,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.FX_ID;
-import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.getSortedAttributes;
+import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -93,37 +92,37 @@ final class TriangleMeshFormatter {
 
     private void setPoints(final String variableName, final Collection<Float> points) {
         if (!points.isEmpty()) {
-            sb.append("        ").append(variableName).append(".getPoints().setAll(new float[]{").append(formatList(points)).append("});\n");
+            sb.append(INDENT_8).append(variableName).append(".getPoints().setAll(new float[]{").append(formatList(points)).append("});\n");
         }
     }
 
     private void setTexCoords(final String variableName, final Collection<Float> texCoords) {
         if (!texCoords.isEmpty()) {
-            sb.append("        ").append(variableName).append(".getTexCoords().setAll(new float[]{").append(formatList(texCoords)).append("});\n");
+            sb.append(INDENT_8).append(variableName).append(".getTexCoords().setAll(new float[]{").append(formatList(texCoords)).append("});\n");
         }
     }
 
     private void setNormals(final String variableName, final Collection<Float> normals) {
         if (!normals.isEmpty()) {
-            sb.append("        ").append(variableName).append(".getNormals().setAll(new float[]{").append(formatList(normals)).append("});\n");
+            sb.append(INDENT_8).append(variableName).append(".getNormals().setAll(new float[]{").append(formatList(normals)).append("});\n");
         }
     }
 
     private void setFaces(final String variableName, final Collection<Integer> faces) {
         if (!faces.isEmpty()) {
-            sb.append("        ").append(variableName).append(".getFaces().setAll(new int[]{").append(formatList(faces)).append("});\n");
+            sb.append(INDENT_8).append(variableName).append(".getFaces().setAll(new int[]{").append(formatList(faces)).append("});\n");
         }
     }
 
     private void setFaceSmoothingGroups(final String variableName, final Collection<Integer> faceSmoothingGroups) {
         if (!faceSmoothingGroups.isEmpty()) {
-            sb.append("        ").append(variableName).append(".getFaceSmoothingGroups().setAll(new int[]{").append(formatList(faceSmoothingGroups)).append("});\n");
+            sb.append(INDENT_8).append(variableName).append(".getFaceSmoothingGroups().setAll(new int[]{").append(formatList(faceSmoothingGroups)).append("});\n");
         }
     }
 
     private void setVertexFormat(final String variableName, final VertexFormat vertexFormat) {
         if (vertexFormat != null) {
-            sb.append("        ").append(variableName).append(".setVertexFormat(javafx.scene.shape.VertexFormat.").append(vertexFormat).append(");\n");
+            sb.append(INDENT_8).append(variableName).append(".setVertexFormat(javafx.scene.shape.VertexFormat.").append(vertexFormat).append(");\n");
         }
     }
 

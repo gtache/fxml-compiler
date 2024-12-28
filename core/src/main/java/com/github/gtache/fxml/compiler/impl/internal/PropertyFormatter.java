@@ -60,7 +60,7 @@ final class PropertyFormatter {
      * The values should not contain any ParsedDefine
      *
      * @param property       The property to format
-     * @param  values         The property's values
+     * @param values         The property's values
      * @param parent         The property's parent object
      * @param parentVariable The parent variable
      * @throws GenerationException if an error occurs or if the values contain a ParsedDefine

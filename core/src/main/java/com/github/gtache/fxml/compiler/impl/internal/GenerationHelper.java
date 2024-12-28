@@ -3,8 +3,6 @@ package com.github.gtache.fxml.compiler.impl.internal;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +12,8 @@ import java.util.Map;
  */
 final class GenerationHelper {
 
-    private static final Logger logger = LogManager.getLogger(GenerationHelper.class);
+    static final String INDENT_8 = "        ";
+    static final String INDENT_12 = "            ";
     static final String FX_ID = "fx:id";
     static final String FX_VALUE = "fx:value";
     static final String VALUE = "value";

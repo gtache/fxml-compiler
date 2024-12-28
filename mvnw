@@ -208,7 +208,7 @@ elif set_java_home; then
 	  public static void main( String[] args ) throws Exception
 	  {
 	    setDefault( new Downloader() );
-	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
+	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Path.of( args[1] ).toAbsolutePath().normalize() );
 	  }
 	}
 	END

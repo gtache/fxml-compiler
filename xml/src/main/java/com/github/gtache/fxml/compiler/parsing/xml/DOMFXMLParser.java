@@ -202,8 +202,11 @@ public class DOMFXMLParser implements FXMLParser {
         final var objects = new ArrayList<ParsedObject>();
         final var children = node.getChildNodes();
         for (var i = 0; i < children.getLength(); i++) {
-            if (children.item(i).getNodeType() == Node.ELEMENT_NODE) {
-                objects.add(parseObject(children.item(i), imports));
+            final var child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                objects.add(parseObject(child, imports));
+            } else if (child.getNodeType() == Node.TEXT_NODE && !child.getNodeValue().isBlank()) {
+                objects.add(new ParsedTextImpl(child.getNodeValue().trim()));
             }
         }
         return new ComplexProperty(new ParsedPropertyImpl(sourceTypeName.name(), sourceTypeName.sourceType(), null), objects);

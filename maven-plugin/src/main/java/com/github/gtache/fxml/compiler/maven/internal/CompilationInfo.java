@@ -24,10 +24,25 @@ public record CompilationInfo(Path inputFile, Path outputFile, String outputClas
                               String controllerClass, Set<FieldInfo> injectedFields, Set<String> injectedMethods,
                               Map<String, Path> includes, boolean requiresResourceBundle) {
 
+    /**
+     * Instantiates a new info
+     *
+     * @param inputFile              The input file
+     * @param outputFile             The output file
+     * @param outputClass            The output class name
+     * @param controllerFile         The controller file
+     * @param controllerClass        The controller class name
+     * @param injectedFields         The injected fields
+     * @param injectedMethods        The injected methods
+     * @param includes               The FXML inclusions
+     * @param requiresResourceBundle True if the file requires a resource bundle
+     * @throws NullPointerException if any parameter is null
+     */
     public CompilationInfo {
         Objects.requireNonNull(inputFile);
         Objects.requireNonNull(outputFile);
         Objects.requireNonNull(outputClass);
+        Objects.requireNonNull(controllerClass);
         Objects.requireNonNull(controllerFile);
         injectedFields = Set.copyOf(injectedFields);
         injectedMethods = Set.copyOf(injectedMethods);

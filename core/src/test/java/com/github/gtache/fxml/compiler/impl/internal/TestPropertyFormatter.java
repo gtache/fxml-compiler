@@ -28,8 +28,6 @@ import java.util.Objects;
 import java.util.SequencedCollection;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -211,7 +209,7 @@ class TestPropertyFormatter {
     void testFormatListSingleValue() throws GenerationException {
         final var text = new ParsedTextImpl("text");
         final var values = List.of(text);
-        final var emptyProperty = new ParsedPropertyImpl("name", null, "");
+        final var emptyProperty = new ParsedPropertyImpl("name", null, null);
         final var newProperty = new ParsedPropertyImpl("name", null, text.text());
         doNothing().when(propertyFormatter).formatProperty(newProperty, rootObject, variableName);
         propertyFormatter.formatProperty(emptyProperty, values, rootObject, variableName);
@@ -222,7 +220,7 @@ class TestPropertyFormatter {
     void testFormatListSingleValueStatic() throws GenerationException {
         final var text = new ParsedTextImpl("text");
         final var values = List.of(text);
-        final var emptyProperty = new ParsedPropertyImpl("name", String.class.getName(), "");
+        final var emptyProperty = new ParsedPropertyImpl("name", String.class.getName(), null);
         final var newProperty = new ParsedPropertyImpl("name", String.class.getName(), text.text());
         doNothing().when(propertyFormatter).formatProperty(newProperty, rootObject, variableName);
         propertyFormatter.formatProperty(emptyProperty, values, rootObject, variableName);
@@ -267,7 +265,7 @@ class TestPropertyFormatter {
         final var className = "javafx.scene.layout.BorderPane";
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
         final var parsedObject = new ParsedObjectImpl(className, Map.of(), properties, List.of());
-        when(property.name()).thenReturn("blabla");
+        when(property.name()).thenReturn("abc");
         final var child = new ParsedObjectImpl("javafx.scene.control.Label", Map.of(), new LinkedHashMap<>(), List.of());
         final var objects = List.of(child);
         assertThrows(GenerationException.class, () -> propertyFormatter.formatProperty(property, objects, parsedObject, variableName));
@@ -296,7 +294,7 @@ class TestPropertyFormatter {
         final var className = "javafx.scene.layout.HBox";
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
         final var parsedObject = new ParsedObjectImpl(className, Map.of(), properties, List.of());
-        when(property.name()).thenReturn("blabla");
+        when(property.name()).thenReturn("abc");
         final var child = new ParsedObjectImpl("javafx.scene.control.Label", Map.of(), new LinkedHashMap<>(), List.of());
         final var objects = List.of(child, child);
         assertThrows(GenerationException.class, () -> propertyFormatter.formatProperty(property, objects, parsedObject, variableName));
@@ -326,7 +324,7 @@ class TestPropertyFormatter {
         final var className = "javafx.scene.layout.BorderPane";
         final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
         final var parsedObject = new ParsedObjectImpl(className, Map.of(), properties, List.of());
-        when(property.name()).thenReturn("blabla");
+        when(property.name()).thenReturn("abc");
         when(property.sourceType()).thenReturn("javafx.scene.layout.GridPane");
         final var child = new ParsedObjectImpl("javafx.scene.control.Label", Map.of(), new LinkedHashMap<>(), List.of());
         final var objects = List.of(child);

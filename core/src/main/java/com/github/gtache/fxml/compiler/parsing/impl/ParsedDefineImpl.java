@@ -14,6 +14,7 @@ public record ParsedDefineImpl(List<ParsedObject> children) implements ParsedDef
 
     /**
      * Instantiates the define
+     *
      * @param children The children
      * @throws NullPointerException If the children are null
      */
