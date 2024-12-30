@@ -54,12 +54,12 @@ public final class LoadMethodFormatter {
         if (fieldInjectionType == ControllerFieldInjectionType.FACTORY) {
             sb.append(generationCompatibilityHelper.getStartVar("java.util.Map<String, Object>")).append("fieldMap = new java.util.HashMap<String, Object>();\n");
         } else if (controllerInjectionType == ControllerInjectionType.FACTORY) {
-            sb.append("        controller = controllerFactory.create();\n");
+            sb.append("        controller = controllerFactory.get();\n");
         }
         final var variableName = helperProvider.getVariableProvider().getNextVariableName(GenerationHelper.getVariablePrefix(rootObject));
         helperProvider.getObjectFormatter().format(rootObject, variableName);
         if (fieldInjectionType == ControllerFieldInjectionType.FACTORY) {
-            sb.append("        controller = controllerFactory.create(fieldMap);\n");
+            sb.append("        controller = controllerFactory.apply(fieldMap);\n");
             progress.controllerFactoryPostAction().forEach(sb::append);
         }
         if (request.controllerInfo().hasInitialize()) {

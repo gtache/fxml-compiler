@@ -24,11 +24,11 @@ class TestCompilationInfo {
     private final String controllerClass;
     private final Set<FieldInfo> injectedFields;
     private final Set<String> injectedMethods;
-    private final Map<String, Path> includes;
+    private final Map<String, Inclusion> includes;
     private final boolean requiresResourceBundle;
     private final CompilationInfo info;
 
-    TestCompilationInfo(@Mock final Path inputFile, @Mock final Path outputFile, @Mock final Path controllerFile, @Mock final FieldInfo fieldInfo) {
+    TestCompilationInfo(@Mock final Path inputFile, @Mock final Path outputFile, @Mock final Path controllerFile, @Mock final Inclusion inclusion, @Mock final FieldInfo fieldInfo) {
         this.inputFile = Objects.requireNonNull(inputFile);
         this.outputFile = Objects.requireNonNull(outputFile);
         this.outputClass = "outputClass";
@@ -36,7 +36,7 @@ class TestCompilationInfo {
         this.controllerClass = "controllerClass";
         this.injectedFields = new HashSet<>(Set.of(fieldInfo));
         this.injectedMethods = new HashSet<>(Set.of("one", "two"));
-        this.includes = new HashMap<>(Map.of("one", Objects.requireNonNull(inputFile)));
+        this.includes = new HashMap<>(Map.of("one", Objects.requireNonNull(inclusion)));
         this.requiresResourceBundle = true;
         this.info = new CompilationInfo(inputFile, outputFile, outputClass, controllerFile, controllerClass, injectedFields, injectedMethods, includes, requiresResourceBundle);
     }

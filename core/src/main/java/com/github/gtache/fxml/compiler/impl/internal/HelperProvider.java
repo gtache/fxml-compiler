@@ -22,6 +22,15 @@ public class HelperProvider {
         this.helpers = new HashMap<>();
     }
 
+    BindingFormatter getBindingFormatter() {
+        return (BindingFormatter) helpers.computeIfAbsent(BindingFormatter.class, c -> {
+            final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
+            final var sb = progress.stringBuilder();
+            final var controllerFactoryPostAction = progress.controllerFactoryPostAction();
+            return new BindingFormatter(this, fieldInjectionType, sb, controllerFactoryPostAction);
+        });
+    }
+
     ControllerInjector getControllerInjector() {
         return (ControllerInjector) helpers.computeIfAbsent(ControllerInjector.class, c -> {
             final var request = progress.request();
@@ -32,6 +41,14 @@ public class HelperProvider {
             final var sb = progress.stringBuilder();
             final var controllerFactoryPostAction = progress.controllerFactoryPostAction();
             return new ControllerInjector(controllerInfo, fieldInjectionType, methodInjectionType, sb, controllerFactoryPostAction);
+        });
+    }
+
+    ExpressionFormatter getExpressionFormatter() {
+        return (ExpressionFormatter) helpers.computeIfAbsent(ExpressionFormatter.class, c -> {
+            final var fieldInjectionType = progress.request().parameters().fieldInjectionType();
+            final var sb = progress.stringBuilder();
+            return new ExpressionFormatter(this, fieldInjectionType, sb);
         });
     }
 
@@ -133,6 +150,10 @@ public class HelperProvider {
             final var resourceInjectionType = progress.request().parameters().resourceInjectionType();
             return new ValueFormatter(this, resourceInjectionType);
         });
+    }
+
+    ValueClassGuesser getValueClassGuesser() {
+        return (ValueClassGuesser) helpers.computeIfAbsent(ValueClassGuesser.class, c -> new ValueClassGuesser(this));
     }
 
     VariableProvider getVariableProvider() {

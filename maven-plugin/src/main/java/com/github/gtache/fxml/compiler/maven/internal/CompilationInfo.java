@@ -22,7 +22,7 @@ import java.util.Set;
  */
 public record CompilationInfo(Path inputFile, Path outputFile, String outputClass, Path controllerFile,
                               String controllerClass, Set<FieldInfo> injectedFields, Set<String> injectedMethods,
-                              Map<String, Path> includes, boolean requiresResourceBundle) {
+                              Map<String, Inclusion> includes, boolean requiresResourceBundle) {
 
     /**
      * Instantiates a new info
@@ -62,7 +62,7 @@ public record CompilationInfo(Path inputFile, Path outputFile, String outputClas
         private boolean requiresResourceBundle;
         private final Set<FieldInfo> injectedFields;
         private final Set<String> injectedMethods;
-        private final Map<String, Path> includes;
+        private final Map<String, Inclusion> includes;
 
         Builder() {
             this.injectedFields = new HashSet<>();
@@ -110,7 +110,14 @@ public record CompilationInfo(Path inputFile, Path outputFile, String outputClas
         }
 
         Builder addInclude(final String key, final Path value) {
-            this.includes.put(key, value);
+            final var current = includes.get(key);
+            final Inclusion newInclusion;
+            if (current == null) {
+                newInclusion = new Inclusion(value, 1);
+            } else {
+                newInclusion = new Inclusion(value, current.count() + 1);
+            }
+            this.includes.put(key, newInclusion);
             return this;
         }
 

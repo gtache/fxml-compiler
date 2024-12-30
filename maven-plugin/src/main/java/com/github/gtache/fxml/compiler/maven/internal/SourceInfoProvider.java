@@ -5,8 +5,8 @@ import com.github.gtache.fxml.compiler.impl.SourceInfoImpl;
 import com.github.gtache.fxml.compiler.maven.FXMLCompilerMojo;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,8 +31,13 @@ final class SourceInfoProvider {
         final var includes = info.includes();
         final var requiresResourceBundle = info.requiresResourceBundle();
         final var includesMapping = new HashMap<String, SourceInfo>();
-        includes.forEach((k, v) -> includesMapping.put(k, getSourceInfo(mapping.get(v), mapping)));
-        //FIXME mutliple same includes
-        return new SourceInfoImpl(outputClass, controllerClass, inputFile, List.copyOf(includesMapping.values()), includesMapping, requiresResourceBundle);
+        includes.forEach((k, v) -> includesMapping.put(k, getSourceInfo(mapping.get(v.path()), mapping)));
+        final var includesSources = new ArrayList<SourceInfo>();
+        includes.forEach((key, value) -> {
+            for (var i = 0; i < value.count(); ++i) {
+                includesSources.add(includesMapping.get(key));
+            }
+        });
+        return new SourceInfoImpl(outputClass, controllerClass, inputFile, includesSources, includesMapping, requiresResourceBundle);
     }
 }

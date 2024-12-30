@@ -34,6 +34,7 @@ import static org.mockito.Mockito.*;
 class TestPropertyFormatter {
 
     private final HelperProvider helperProvider;
+    private final BindingFormatter bindingFormatter;
     private final VariableProvider variableProvider;
     private final GenerationCompatibilityHelper compatibilityHelper;
     private final ControllerInjector controllerInjector;
@@ -49,12 +50,13 @@ class TestPropertyFormatter {
     private final List<String> controllerFactoryPostAction;
     private final PropertyFormatter propertyFormatter;
 
-    TestPropertyFormatter(@Mock final HelperProvider helperProvider, @Mock final VariableProvider variableProvider,
+    TestPropertyFormatter(@Mock final HelperProvider helperProvider, @Mock final BindingFormatter bindingFormatter, @Mock final VariableProvider variableProvider,
                           @Mock final GenerationCompatibilityHelper compatibilityHelper, @Mock final ControllerInjector controllerInjector,
                           @Mock final FieldSetter fieldSetter, @Mock final ValueFormatter valueFormatter, @Mock final GenerationProgress progress,
                           @Mock final GenerationRequest request, @Mock final GenerationParameters parameters,
                           @Mock final ParsedObject rootObject, @Mock final ParsedProperty property) {
         this.helperProvider = Objects.requireNonNull(helperProvider);
+        this.bindingFormatter = Objects.requireNonNull(bindingFormatter);
         this.variableProvider = Objects.requireNonNull(variableProvider);
         this.compatibilityHelper = Objects.requireNonNull(compatibilityHelper);
         this.controllerInjector = Objects.requireNonNull(controllerInjector);
@@ -73,6 +75,7 @@ class TestPropertyFormatter {
 
     @BeforeEach
     void beforeEach() throws GenerationException {
+        when(helperProvider.getBindingFormatter()).thenReturn(bindingFormatter);
         when(helperProvider.getCompatibilityHelper()).thenReturn(compatibilityHelper);
         when(helperProvider.getControllerInjector()).thenReturn(controllerInjector);
         when(helperProvider.getFieldSetter()).thenReturn(fieldSetter);
@@ -86,13 +89,35 @@ class TestPropertyFormatter {
         when(progress.controllerFactoryPostAction()).thenReturn(controllerFactoryPostAction);
         when(compatibilityHelper.getListOf()).thenReturn("listof(");
         when(valueFormatter.getArg(anyString(), any())).then(i -> i.getArgument(0) + "-" + i.getArgument(1));
+        doAnswer(i -> sb.append(i.getArgument(0) + "-" + i.getArgument(2))).when(bindingFormatter).formatBinding(any(), any(), anyString());
         doAnswer(i -> sb.append(i.getArgument(0) + "-" + i.getArgument(1))).when(controllerInjector).injectEventHandlerControllerMethod(any(), anyString());
         doAnswer(i -> sb.append(i.getArgument(0) + "-" + i.getArgument(1))).when(fieldSetter).setEventHandler(any(), anyString());
     }
 
     @Test
+    void testFormatSimpleBinding() throws GenerationException {
+        when(property.name()).thenReturn("text");
+        when(property.value()).thenReturn("${value}");
+        propertyFormatter.formatProperty(property, rootObject, variableName);
+        final var expected = property + "-" + variableName;
+        assertEquals(expected, sb.toString());
+        verify(bindingFormatter).formatBinding(property, rootObject, variableName);
+    }
+
+    @Test
+    void testFormatBidirectionalBinding() throws GenerationException {
+        when(property.name()).thenReturn("text");
+        when(property.value()).thenReturn("#{value}");
+        propertyFormatter.formatProperty(property, rootObject, variableName);
+        final var expected = property + "-" + variableName;
+        assertEquals(expected, sb.toString());
+        verify(bindingFormatter).formatBinding(property, rootObject, variableName);
+    }
+
+    @Test
     void testFormatPropertyId() throws GenerationException {
         when(property.name()).thenReturn("fx:id");
+        when(property.value()).thenReturn("value");
         propertyFormatter.formatProperty(property, rootObject, variableName);
         assertEquals("", sb.toString());
     }
@@ -100,12 +125,14 @@ class TestPropertyFormatter {
     @Test
     void testFormatControllerSame() {
         when(property.name()).thenReturn("fx:controller");
+        when(property.value()).thenReturn(variableName);
         assertDoesNotThrow(() -> propertyFormatter.formatProperty(property, rootObject, variableName));
     }
 
     @Test
     void testFormatControllerDifferent() {
         when(property.name()).thenReturn("fx:controller");
+        when(property.value()).thenReturn("value");
         assertThrows(GenerationException.class, () -> propertyFormatter.formatProperty(property, mock(ParsedObject.class), variableName));
     }
 

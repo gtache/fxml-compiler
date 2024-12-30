@@ -38,6 +38,7 @@ class TestObjectFormatter {
     private final GenerationCompatibilityHelper compatibilityHelper;
     private final InitializationFormatter initializationFormatter;
     private final ReflectionHelper reflectionHelper;
+    private final ValueClassGuesser valueClassGuesser;
     private final VariableProvider variableProvider;
     private final GenerationRequest request;
     private final ControllerInfo controllerInfo;
@@ -49,7 +50,7 @@ class TestObjectFormatter {
 
     TestObjectFormatter(@Mock final HelperProvider helperProvider, @Mock final GenerationCompatibilityHelper compatibilityHelper,
                         @Mock final InitializationFormatter initializationFormatter, @Mock final ReflectionHelper reflectionHelper,
-                        @Mock final VariableProvider variableProvider, @Mock final GenerationRequest request,
+                        @Mock final VariableProvider variableProvider, @Mock final ValueClassGuesser valueClassGuesser, @Mock final GenerationRequest request,
                         @Mock final ControllerInfo controllerInfo, @Mock final ControllerInjector controllerInjector,
                         @Mock final SourceInfo sourceInfo) {
         this.helperProvider = Objects.requireNonNull(helperProvider);
@@ -57,6 +58,7 @@ class TestObjectFormatter {
         this.compatibilityHelper = Objects.requireNonNull(compatibilityHelper);
         this.initializationFormatter = Objects.requireNonNull(initializationFormatter);
         this.reflectionHelper = Objects.requireNonNull(reflectionHelper);
+        this.valueClassGuesser = Objects.requireNonNull(valueClassGuesser);
         this.variableProvider = Objects.requireNonNull(variableProvider);
         this.request = Objects.requireNonNull(request);
         this.controllerInfo = Objects.requireNonNull(controllerInfo);
@@ -72,6 +74,7 @@ class TestObjectFormatter {
         when(helperProvider.getControllerInjector()).thenReturn(controllerInjector);
         when(helperProvider.getInitializationFormatter()).thenReturn(initializationFormatter);
         when(helperProvider.getReflectionHelper()).thenReturn(reflectionHelper);
+        when(helperProvider.getValueClassGuesser()).thenReturn(valueClassGuesser);
         when(helperProvider.getVariableProvider()).thenReturn(variableProvider);
         when(compatibilityHelper.getStartVar(anyString())).then(i -> i.getArgument(0));
         when(compatibilityHelper.getStartVar(anyString(), anyInt())).then(i -> i.getArgument(0));
@@ -301,7 +304,7 @@ class TestObjectFormatter {
     void testFormatIncludeOnlySource() throws GenerationException {
         final var include = new ParsedIncludeImpl("source", null, null);
         objectFormatter.format(include, variableName);
-        final var expected = "include(source, null)    final javafx.scene.Parent variable = view.load();\n";
+        final var expected = "include(source, null)        final javafx.scene.Parent variable = view.load();\n";
         assertEquals(expected, sb.toString());
         verify(initializationFormatter).formatSubViewConstructorCall(include);
     }
@@ -316,7 +319,7 @@ class TestObjectFormatter {
         final var include = new ParsedIncludeImpl("source", "resources", "id");
         objectFormatter.format(include, variableName);
         final var expected = """
-                include(source, resources)    final javafx.scene.Parent variable = view.load();
+                include(source, resources)        final javafx.scene.Parent variable = view.load();
                 controllerClassNamecontroller = view.controller();
                 """;
         assertEquals(expected, sb.toString());
@@ -335,7 +338,7 @@ class TestObjectFormatter {
         final var include = new ParsedIncludeImpl(source, "resources", "id");
         objectFormatter.format(include, variableName);
         final var expected = """
-                include(source, resources)    final javafx.scene.Parent variable = view.load();
+                include(source, resources)        final javafx.scene.Parent variable = view.load();
                 controllerClassNamecontroller = view.controller();
                 inject(idController, controller)inject(id, variable)""";
         assertEquals(expected, sb.toString());
@@ -563,6 +566,10 @@ class TestObjectFormatter {
     @Test
     void testFormatConstructorNamedArgs(@Mock final PropertyFormatter propertyFormatter) throws GenerationException {
         when(helperProvider.getPropertyFormatter()).thenReturn(propertyFormatter);
+        when(valueClassGuesser.guess("1")).thenReturn(List.of(int.class));
+        when(valueClassGuesser.guess("2")).thenReturn(List.of(int.class));
+        when(valueClassGuesser.guess("3")).thenReturn(List.of(int.class));
+        when(valueClassGuesser.guess("false")).thenReturn(List.of(boolean.class));
         doAnswer(i -> sb.append("property")).when(propertyFormatter).formatProperty(any(ParsedProperty.class), any(), any());
         final var className = "javafx.scene.control.Spinner";
         final var attributes = Map.<String, ParsedProperty>of("min", new ParsedPropertyImpl("min", null, "1"),
@@ -585,6 +592,21 @@ class TestObjectFormatter {
         verify(reflectionHelper).getGenericTypes(parsedObject);
     }
 
+    @Test
+    void testFormatConstructorNamedArgsPartial(@Mock final PropertyFormatter propertyFormatter) throws GenerationException {
+        when(helperProvider.getPropertyFormatter()).thenReturn(propertyFormatter);
+        when(valueClassGuesser.guess("2")).thenReturn(List.of(double.class));
+        final var className = "javafx.geometry.Insets";
+        final var attributes = Map.<String, ParsedProperty>of("left", new ParsedPropertyImpl("left", null, "2"));
+        final var properties = new LinkedHashMap<ParsedProperty, SequencedCollection<ParsedObject>>();
+        final var parsedObject = new ParsedObjectImpl(className, attributes, properties, List.of());
+        when(reflectionHelper.getGenericTypes(parsedObject)).thenReturn("");
+        objectFormatter.format(parsedObject, variableName);
+        final var expected = "startVarvariable = new javafx.geometry.Insets(0, 0, 0, 2);\n";
+        assertEquals(expected, sb.toString());
+        verify(compatibilityHelper).getStartVar(parsedObject);
+        verify(reflectionHelper).getGenericTypes(parsedObject);
+    }
 
     @Test
     void testFormatConstructorDefault(@Mock final PropertyFormatter propertyFormatter) throws GenerationException {

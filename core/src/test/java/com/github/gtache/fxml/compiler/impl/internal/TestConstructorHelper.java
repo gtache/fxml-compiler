@@ -5,6 +5,7 @@ import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 import com.github.gtache.fxml.compiler.parsing.impl.ParsedPropertyImpl;
 import javafx.beans.NamedArg;
+import javafx.scene.control.Spinner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -12,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -89,7 +91,93 @@ class TestConstructorHelper {
                 new NamedArgImpl("p2", "value2")}});
         when(constructors[1].getParameterTypes()).thenReturn(new Class[]{int.class, String.class});
         final var expectedArgs = new ConstructorArgs(constructors[1], namedArgs);
-        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(constructors, propertyNames));
+        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(constructors, Map.of("p1", List.of(double.class, int.class), "p2", List.of(String.class))));
+    }
+
+    @Test
+    void testGetMatchingConstructorArgsSpinnerIntFull() throws NoSuchMethodException {
+        final var spinnerProperties = Map.of("min", List.<Class<?>>of(int.class, double.class, LocalDate.class),
+                "max", List.<Class<?>>of(int.class, double.class, LocalDate.class), "initialValue",
+                List.<Class<?>>of(int.class, double.class, LocalDate.class), "amountToStepBy", List.<Class<?>>of(int.class, double.class, LocalDate.class));
+        final var namedArgs = new LinkedHashMap<String, Parameter>();
+        namedArgs.put("min", new Parameter("min", int.class, "0"));
+        namedArgs.put("max", new Parameter("max", int.class, "0"));
+        namedArgs.put("initialValue", new Parameter("initialValue", int.class, "0"));
+        namedArgs.put("amountToStepBy", new Parameter("amountToStepBy", int.class, "0"));
+        final var spinnerConstructors = Spinner.class.getConstructors();
+        final var constructor = Spinner.class.getConstructor(int.class, int.class, int.class, int.class);
+        final var expectedArgs = new ConstructorArgs(constructor, namedArgs);
+        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(spinnerConstructors, spinnerProperties));
+    }
+
+    @Test
+    void testGetMatchingConstructorArgsSpinnerMismatch() throws NoSuchMethodException {
+        final var spinnerProperties = Map.of("min", List.<Class<?>>of(double.class),
+                "max", List.<Class<?>>of(int.class), "initialValue",
+                List.<Class<?>>of(double.class, LocalDate.class));
+        final var spinnerConstructors = Spinner.class.getConstructors();
+        final var constructor = Spinner.class.getConstructor();
+        final var expectedArgs = new ConstructorArgs(constructor, new LinkedHashMap<>());
+        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(spinnerConstructors, spinnerProperties));
+    }
+
+
+    @Test
+    void testGetMatchingConstructorArgsSpinnerDouble2() throws NoSuchMethodException {
+        final var spinnerProperties = Map.of("min", List.<Class<?>>of(int.class, double.class, LocalDate.class),
+                "max", List.<Class<?>>of(int.class, double.class), "initialValue",
+                List.<Class<?>>of(double.class, LocalDate.class));
+        final var namedArgs = new LinkedHashMap<String, Parameter>();
+        namedArgs.put("min", new Parameter("min", double.class, "0"));
+        namedArgs.put("max", new Parameter("max", double.class, "0"));
+        namedArgs.put("initialValue", new Parameter("initialValue", double.class, "0"));
+        final var spinnerConstructors = Spinner.class.getConstructors();
+        final var constructor = Spinner.class.getConstructor(double.class, double.class, double.class);
+        final var expectedArgs = new ConstructorArgs(constructor, namedArgs);
+        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(spinnerConstructors, spinnerProperties));
+    }
+
+    @Test
+    void testGetMatchingConstructorArgsSpinnerInt() throws NoSuchMethodException {
+        final var spinnerProperties = Map.of("min", List.<Class<?>>of(int.class, double.class, LocalDate.class),
+                "max", List.<Class<?>>of(int.class, double.class, LocalDate.class), "initialValue",
+                List.<Class<?>>of(int.class, double.class, LocalDate.class));
+        final var namedArgs = new LinkedHashMap<String, Parameter>();
+        namedArgs.put("min", new Parameter("min", int.class, "0"));
+        namedArgs.put("max", new Parameter("max", int.class, "0"));
+        namedArgs.put("initialValue", new Parameter("initialValue", int.class, "0"));
+        final var spinnerConstructors = Spinner.class.getConstructors();
+        final var constructor = Spinner.class.getConstructor(int.class, int.class, int.class);
+        final var expectedArgs = new ConstructorArgs(constructor, namedArgs);
+        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(spinnerConstructors, spinnerProperties));
+    }
+
+    @Test
+    void testGetMatchingConstructorArgsSpinnerDouble() throws NoSuchMethodException {
+        final var spinnerProperties = Map.of("min", List.<Class<?>>of(double.class, LocalDate.class),
+                "max", List.<Class<?>>of(double.class, LocalDate.class), "initialValue",
+                List.<Class<?>>of(double.class, LocalDate.class));
+        final var namedArgs = new LinkedHashMap<String, Parameter>();
+        namedArgs.put("min", new Parameter("min", double.class, "0"));
+        namedArgs.put("max", new Parameter("max", double.class, "0"));
+        namedArgs.put("initialValue", new Parameter("initialValue", double.class, "0"));
+        final var spinnerConstructors = Spinner.class.getConstructors();
+        final var constructor = Spinner.class.getConstructor(double.class, double.class, double.class);
+        final var expectedArgs = new ConstructorArgs(constructor, namedArgs);
+        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(spinnerConstructors, spinnerProperties));
+    }
+
+    @Test
+    void testGetMatchingConstructorArgsSpinnerPartial() throws NoSuchMethodException {
+        final var spinnerProperties = Map.of("min", List.<Class<?>>of(int.class, double.class, LocalDate.class));
+        final var namedArgs = new LinkedHashMap<String, Parameter>();
+        namedArgs.put("min", new Parameter("min", int.class, "0"));
+        namedArgs.put("max", new Parameter("max", int.class, "0"));
+        namedArgs.put("initialValue", new Parameter("initialValue", int.class, "0"));
+        final var spinnerConstructors = Spinner.class.getConstructors();
+        final var constructor = Spinner.class.getConstructor(int.class, int.class, int.class);
+        final var expectedArgs = new ConstructorArgs(constructor, namedArgs);
+        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(spinnerConstructors, spinnerProperties));
     }
 
     @Test
@@ -101,7 +189,7 @@ class TestConstructorHelper {
         when(constructors[0].getParameterCount()).thenReturn(0);
         when(constructors[1].getParameterCount()).thenReturn(1);
         final var expectedArgs = new ConstructorArgs(constructors[0], namedArgs);
-        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(constructors, propertyNames));
+        assertEquals(expectedArgs, ConstructorHelper.getMatchingConstructorArgs(constructors, Map.of("p1", List.of(int.class), "p2", List.of(int.class))));
     }
 
     @Test
@@ -110,9 +198,8 @@ class TestConstructorHelper {
         when(constructors[1].getParameterAnnotations()).thenReturn(EMPTY_ANNOTATIONS);
         when(constructors[0].getParameterCount()).thenReturn(1);
         when(constructors[1].getParameterCount()).thenReturn(1);
-        assertNull(ConstructorHelper.getMatchingConstructorArgs(constructors, propertyNames));
+        assertNull(ConstructorHelper.getMatchingConstructorArgs(constructors, Map.of("p1", List.of(int.class), "p2", List.of(int.class))));
     }
-
 
     private record NamedArgImpl(String value, String defaultValue) implements NamedArg {
 

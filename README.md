@@ -73,6 +73,7 @@ Optionally add dependencies to the plugin (e.g. when using MediaView and control
 - Compile-time validation
 - Faster startup speed for the application
 - Possibility to use controller factories to instantiate controllers with final fields
+- Very basic support for bidirectional bindings
 - Easier time with JPMS
     - No need to open the controllers packages to javafx.fxml
     - No need to open the resources packages when using use-image-inputstream-constructor (if images or resource bundles
@@ -81,8 +82,8 @@ Optionally add dependencies to the plugin (e.g. when using MediaView and control
 ## Disadvantages
 
 - `fx:script` is not supported
-- Possible bugs (file an issue if you see one)
-- Expression binding is (very) limited
+- Expect some bugs (file an issue if you see one)
+- Expression binding support is very basic
 - Probably not fully compatible with all FXML features (file an issue if you need one in specific)
 - All fxml files must have a `fx:controller` attribute
 

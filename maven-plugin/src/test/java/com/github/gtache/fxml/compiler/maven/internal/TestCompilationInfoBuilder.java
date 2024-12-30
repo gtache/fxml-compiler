@@ -21,10 +21,10 @@ class TestCompilationInfoBuilder {
     private final String controllerClass;
     private final Set<FieldInfo> injectedFields;
     private final Set<String> injectedMethods;
-    private final Map<String, Path> includes;
+    private final Map<String, Inclusion> includes;
     private final CompilationInfo info;
 
-    TestCompilationInfoBuilder(@Mock final Path inputFile, @Mock final Path outputFile, @Mock final Path controllerFile, @Mock final FieldInfo fieldInfo) {
+    TestCompilationInfoBuilder(@Mock final Path inputFile, @Mock final Path outputFile, @Mock final Path controllerFile) {
         this.inputFile = Objects.requireNonNull(inputFile);
         this.outputFile = Objects.requireNonNull(outputFile);
         this.outputClass = "outputClass";
@@ -32,7 +32,7 @@ class TestCompilationInfoBuilder {
         this.controllerClass = "controllerClass";
         this.injectedFields = Set.of(new FieldInfo("type", "name"));
         this.injectedMethods = Set.of("one", "two");
-        this.includes = Map.of("one", Objects.requireNonNull(inputFile));
+        this.includes = Map.of("one", new Inclusion(inputFile, 1));
         this.info = new CompilationInfo(inputFile, outputFile, outputClass, controllerFile, controllerClass, injectedFields, injectedMethods, includes, true);
     }
 
@@ -47,9 +47,14 @@ class TestCompilationInfoBuilder {
         builder.controllerClass(controllerClass);
         injectedFields.forEach(f -> builder.addInjectedField(f.name(), f.type()));
         injectedMethods.forEach(builder::addInjectedMethod);
-        includes.forEach(builder::addInclude);
+        builder.addInclude("one", inputFile);
         builder.requiresResourceBundle();
         final var actual = builder.build();
         assertEquals(info, actual);
+
+        builder.addInclude("one", inputFile);
+        final var newIncludes = Map.of("one", new Inclusion(inputFile, 2));
+        final var newInfo = new CompilationInfo(inputFile, outputFile, outputClass, controllerFile, controllerClass, injectedFields, injectedMethods, newIncludes, true);
+        assertEquals(newInfo, builder.build());
     }
 }

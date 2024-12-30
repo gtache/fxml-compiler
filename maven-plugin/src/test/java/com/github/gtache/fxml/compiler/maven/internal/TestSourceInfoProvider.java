@@ -23,7 +23,7 @@ class TestSourceInfoProvider {
         final var controllerClass = "controllerClass";
         final var inputFile = Path.of("inputFile");
         final var includeFile = Path.of("includeFile");
-        final var includes = Map.of("one", includeFile);
+        final var includes = Map.of("one", new Inclusion(includeFile, 3));
         when(compilationInfo.outputClass()).thenReturn(outputClass);
         when(compilationInfo.controllerClass()).thenReturn(controllerClass);
         when(compilationInfo.inputFile()).thenReturn(inputFile);
@@ -42,7 +42,7 @@ class TestSourceInfoProvider {
 
         final var expectedIncludeSourceInfo = new SourceInfoImpl(includeOutputClass, includeControllerClass, includeInputFile, List.of(), Map.of(), false);
         assertEquals(expectedIncludeSourceInfo, SourceInfoProvider.getSourceInfo(includeCompilationInfo, mapping));
-        final var expected = new SourceInfoImpl(outputClass, controllerClass, inputFile, List.of(expectedIncludeSourceInfo),
+        final var expected = new SourceInfoImpl(outputClass, controllerClass, inputFile, List.of(expectedIncludeSourceInfo, expectedIncludeSourceInfo, expectedIncludeSourceInfo),
                 Map.of("one", expectedIncludeSourceInfo), true);
         assertEquals(expected, SourceInfoProvider.getSourceInfo(compilationInfo, mapping));
     }

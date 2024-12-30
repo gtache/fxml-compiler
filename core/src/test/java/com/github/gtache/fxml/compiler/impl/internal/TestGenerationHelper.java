@@ -58,7 +58,17 @@ class TestGenerationHelper {
 
     @Test
     void testGetGetMethod() {
-        assertEquals("getSomething", GenerationHelper.getGetMethod("Something"));
+        assertEquals("getSomething", GenerationHelper.getGetMethod("something"));
+    }
+
+    @Test
+    void testGetIsMethodProperty() {
+        assertEquals("isProperty", GenerationHelper.getIsMethod(property));
+    }
+
+    @Test
+    void testGetIsMethod() {
+        assertEquals("isSomething", GenerationHelper.getIsMethod("something"));
     }
 
     @Test
@@ -68,7 +78,7 @@ class TestGenerationHelper {
 
     @Test
     void testGetSetMethod() {
-        assertEquals("setSomething", GenerationHelper.getSetMethod("Something"));
+        assertEquals("setSomething", GenerationHelper.getSetMethod("something"));
     }
 
     @Test

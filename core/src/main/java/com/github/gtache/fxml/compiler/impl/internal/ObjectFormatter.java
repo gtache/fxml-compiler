@@ -3,18 +3,27 @@ package com.github.gtache.fxml.compiler.impl.internal;
 import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.GenerationRequest;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
-import com.github.gtache.fxml.compiler.parsing.*;
+import com.github.gtache.fxml.compiler.parsing.ParsedConstant;
+import com.github.gtache.fxml.compiler.parsing.ParsedCopy;
+import com.github.gtache.fxml.compiler.parsing.ParsedDefine;
+import com.github.gtache.fxml.compiler.parsing.ParsedFactory;
+import com.github.gtache.fxml.compiler.parsing.ParsedInclude;
+import com.github.gtache.fxml.compiler.parsing.ParsedObject;
+import com.github.gtache.fxml.compiler.parsing.ParsedReference;
+import com.github.gtache.fxml.compiler.parsing.ParsedText;
+import com.github.gtache.fxml.compiler.parsing.ParsedValue;
 import com.github.gtache.fxml.compiler.parsing.impl.ParsedPropertyImpl;
+import javafx.scene.Node;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.SequencedCollection;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
 import static java.util.Objects.requireNonNull;
@@ -271,19 +280,26 @@ final class ObjectFormatter {
         final var clazz = ReflectionHelper.getClass(parsedObject.className());
         final var children = parsedObject.children();
         final var notDefinedChildren = getNotDefines(children);
-        final var constructors = clazz.getConstructors();
-        final var allAttributesNames = new HashSet<>(parsedObject.attributes().keySet());
-        allAttributesNames.addAll(parsedObject.properties().keySet().stream().map(ParsedProperty::name).collect(Collectors.toSet()));
+        final var allProperties = new HashMap<String, List<Class<?>>>();
+        for (final var entry : parsedObject.attributes().entrySet()) {
+            final var possibleTypes = helperProvider.getValueClassGuesser().guess(entry.getValue().value());
+            allProperties.put(entry.getKey(), possibleTypes);
+        }
+        for (final var entry : parsedObject.properties().entrySet()) {
+            allProperties.put(entry.getKey().name(), List.of(Node.class, Node[].class));
+        }
         formatDefines(children);
         if (!notDefinedChildren.isEmpty()) {
             final var defaultProperty = ReflectionHelper.getDefaultProperty(parsedObject.className());
             if (defaultProperty != null) {
-                allAttributesNames.add(defaultProperty);
+                allProperties.put(defaultProperty, List.of(Node.class, Node[].class));
             }
         }
-        final var constructorArgs = ConstructorHelper.getMatchingConstructorArgs(constructors, allAttributesNames);
+        final var constructors = clazz.getConstructors();
+        final var constructorArgs = ConstructorHelper.getMatchingConstructorArgs(constructors, allProperties);
         if (constructorArgs == null) {
-            formatNoConstructor(parsedObject, variableName, allAttributesNames);
+            logger.debug("No constructor found for {} with attributes {}", clazz.getCanonicalName(), allProperties);
+            formatNoConstructor(parsedObject, variableName, allProperties.keySet());
         } else {
             formatConstructor(parsedObject, variableName, constructorArgs);
         }
@@ -296,7 +312,7 @@ final class ObjectFormatter {
             final var property = parsedObject.attributes().get("fx:constant");
             sb.append(helperProvider.getCompatibilityHelper().getStartVar(parsedObject)).append(variableName).append(" = ").append(clazz.getCanonicalName()).append(".").append(property.value()).append(";\n");
         } else {
-            throw new GenerationException("Cannot find constructor for " + clazz.getCanonicalName());
+            throw new GenerationException("Cannot find empty constructor for " + clazz.getCanonicalName());
         }
     }
 
@@ -338,10 +354,9 @@ final class ObjectFormatter {
      * @param subNodeName The sub node name
      */
     private void formatInclude(final ParsedInclude include, final String subNodeName) throws GenerationException {
-        final var subViewVariable = helperProvider.getVariableProvider().getNextVariableName("view");
         final var viewVariable = helperProvider.getInitializationFormatter().formatSubViewConstructorCall(include);
-        sb.append("    final javafx.scene.Parent ").append(subNodeName).append(" = ").append(viewVariable).append(".load();\n");
-        injectSubController(include, subViewVariable);
+        sb.append("        final javafx.scene.Parent ").append(subNodeName).append(" = ").append(viewVariable).append(".load();\n");
+        injectSubController(include, viewVariable);
     }
 
     private void injectSubController(final ParsedInclude include, final String subViewVariable) {
@@ -449,7 +464,7 @@ final class ObjectFormatter {
             sb.append(compatibilityHelper.getStartVar(factory.className())).append(variableName).append(" = ").append(factory.className())
                     .append(".").append(factory.factory()).append("(").append(String.join(", ", variables)).append(");\n");
         } else {
-            final var returnType = ReflectionHelper.getReturnType(factory.className(), factory.factory());
+            final var returnType = ReflectionHelper.getStaticReturnType(factory.className(), factory.factory()).getName();
             sb.append(compatibilityHelper.getStartVar(returnType)).append(variableName).append(" = ").append(factory.className())
                     .append(".").append(factory.factory()).append("(").append(String.join(", ", variables)).append(");\n");
         }

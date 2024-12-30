@@ -119,7 +119,7 @@ class TestLoadMethodFormatter {
                             throw new IllegalStateException("Already loaded");
                         }
                 java.util.ResourceBundleresourceBundle = java.util.ResourceBundle.getBundle(resourceBundleName);
-                        controller = controllerFactory.create();
+                        controller = controllerFactory.get();
                 object-class        controller.initialize();
                         loaded = true;
                         return (T) class;
@@ -150,7 +150,7 @@ class TestLoadMethodFormatter {
                         }
                 java.util.ResourceBundleresourceBundle = java.util.ResourceBundle.getBundle("bundle");
                 java.util.Map<String, Object>fieldMap = new java.util.HashMap<String, Object>();
-                object-class        controller = controllerFactory.create(fieldMap);
+                object-class        controller = controllerFactory.apply(fieldMap);
                         try {
                             java.lang.reflect.Methodinitialize = controller.getClass().getDeclaredMethod("initialize");
                             initialize.setAccessible(true);
@@ -185,7 +185,7 @@ class TestLoadMethodFormatter {
                             throw new IllegalStateException("Already loaded");
                         }
                 java.util.Map<String, Object>fieldMap = new java.util.HashMap<String, Object>();
-                object-class        controller = controllerFactory.create(fieldMap);
+                object-class        controller = controllerFactory.apply(fieldMap);
                         loaded = true;
                         return (T) class;
                     }

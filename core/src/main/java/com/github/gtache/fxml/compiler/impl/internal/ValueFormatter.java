@@ -4,6 +4,8 @@ import com.github.gtache.fxml.compiler.GenerationException;
 import com.github.gtache.fxml.compiler.ResourceBundleInjectionType;
 import com.github.gtache.fxml.compiler.impl.GeneratorImpl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.regex.Pattern;
 
 import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.*;
@@ -41,7 +43,9 @@ final class ValueFormatter {
             final var subpath = value.substring(1);
             return getResourceValue(subpath);
         } else if (value.startsWith(BINDING_EXPRESSION_PREFIX)) {
-            throw new GenerationException("Not implemented yet");
+            throw new GenerationException("Should be handled by BindingFormatter");
+        } else if (value.startsWith(BIDIRECTIONAL_BINDING_PREFIX)) {
+            throw new GenerationException("Should be handled by BindingFormatter");
         } else if (value.startsWith(EXPRESSION_PREFIX)) {
             final var variable = helperProvider.getVariableProvider().getVariableInfo(value.substring(1));
             if (variable == null) {
@@ -92,6 +96,10 @@ final class ValueFormatter {
             return intToString(value, clazz);
         } else if (clazz == float.class || clazz == Float.class || clazz == double.class || clazz == Double.class) {
             return decimalToString(value, clazz);
+        } else if (clazz == LocalDate.class) {
+            return "LocalDate.parse(\"" + value + "\")";
+        } else if (clazz == LocalDateTime.class) {
+            return "LocalDateTime.parse(\"" + value + "\")";
         } else if (ReflectionHelper.hasValueOf(clazz)) {
             return valueOfToString(value, clazz);
         } else {

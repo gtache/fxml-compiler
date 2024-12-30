@@ -12,6 +12,7 @@ import com.github.gtache.fxml.compiler.parsing.impl.ParsedPropertyImpl;
 import javafx.event.EventHandler;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.SequencedCollection;
 
@@ -41,17 +42,22 @@ final class PropertyFormatter {
      * @throws GenerationException if an error occurs
      */
     void formatProperty(final ParsedProperty property, final ParsedObject parent, final String parentVariable) throws GenerationException {
-        final var propertyName = property.name();
-        if (propertyName.equals(FX_ID)) {
-            //Do nothing
-        } else if (propertyName.equals("fx:controller")) {
-            checkDuplicateController(parent);
-        } else if (Objects.equals(property.sourceType(), EventHandler.class.getName())) {
-            handleEventHandler(property, parentVariable);
-        } else if (property.sourceType() != null) {
-            handleStaticProperty(property, parentVariable, propertyName);
+        final var value = property.value();
+        if (value.endsWith("}") && (value.startsWith(BINDING_EXPRESSION_PREFIX) || value.startsWith(BIDIRECTIONAL_BINDING_PREFIX))) {
+            helperProvider.getBindingFormatter().formatBinding(property, parent, parentVariable);
         } else {
-            handleProperty(property, parent, parentVariable);
+            final var propertyName = property.name();
+            if (propertyName.equals(FX_ID)) {
+                //Do nothing
+            } else if (propertyName.equals("fx:controller")) {
+                checkDuplicateController(parent);
+            } else if (Objects.equals(property.sourceType(), EventHandler.class.getName())) {
+                handleEventHandler(property, parentVariable);
+            } else if (property.sourceType() != null) {
+                handleStaticProperty(property, parentVariable, propertyName);
+            } else {
+                handleProperty(property, parent, parentVariable);
+            }
         }
     }
 
@@ -93,8 +99,8 @@ final class PropertyFormatter {
     private void handleStaticProperty(final ParsedProperty property, final String parentVariable, final String propertyName) throws GenerationException {
         final var setMethod = getSetMethod(propertyName);
         final var propertySourceTypeClass = ReflectionHelper.getClass(property.sourceType());
-        if (ReflectionHelper.hasStaticMethod(propertySourceTypeClass, setMethod)) {
-            final var method = ReflectionHelper.getStaticMethod(propertySourceTypeClass, setMethod);
+        if (ReflectionHelper.hasStaticMethod(propertySourceTypeClass, setMethod, null, null)) {
+            final var method = ReflectionHelper.getStaticMethod(propertySourceTypeClass, setMethod, null, null);
             final var parameterType = method.getParameterTypes()[1];
             final var arg = helperProvider.getValueFormatter().getArg(property.value(), parameterType);
             setLaterIfNeeded(property, parameterType, "        " + property.sourceType() + "." + setMethod + "(" + parentVariable + ", " + arg + ");\n");
@@ -108,7 +114,7 @@ final class PropertyFormatter {
         final var setMethod = getSetMethod(propertyName);
         final var getMethod = getGetMethod(propertyName);
         final var parentClass = ReflectionHelper.getClass(parent.className());
-        if (ReflectionHelper.hasMethod(parentClass, setMethod)) {
+        if (ReflectionHelper.hasMethod(parentClass, setMethod, (Class<?>) null)) {
             handleSetProperty(property, parentClass, parentVariable);
         } else if (ReflectionHelper.hasMethod(parentClass, getMethod)) {
             handleGetProperty(property, parentClass, parentVariable);
@@ -119,7 +125,7 @@ final class PropertyFormatter {
 
     private void handleSetProperty(final ParsedProperty property, final Class<?> parentClass, final String parentVariable) throws GenerationException {
         final var setMethod = getSetMethod(property.name());
-        final var method = ReflectionHelper.getMethod(parentClass, setMethod);
+        final var method = ReflectionHelper.getMethod(parentClass, setMethod, (Class<?>) null);
         final var parameterType = method.getParameterTypes()[0];
         final var arg = helperProvider.getValueFormatter().getArg(property.value(), parameterType);
         setLaterIfNeeded(property, parameterType, "        " + parentVariable + "." + setMethod + "(" + arg + ");\n");
@@ -129,7 +135,7 @@ final class PropertyFormatter {
         final var getMethod = getGetMethod(property.name());
         final var method = ReflectionHelper.getMethod(parentClass, getMethod);
         final var returnType = method.getReturnType();
-        if (ReflectionHelper.hasMethod(returnType, "addAll")) {
+        if (ReflectionHelper.hasMethod(returnType, "addAll", List.class)) {
             final var arg = helperProvider.getValueFormatter().getArg(property.value(), String.class);
             setLaterIfNeeded(property, String.class, "        " + parentVariable + "." + getMethod + "().addAll(" +
                     helperProvider.getCompatibilityHelper().getListOf() + arg + "));\n");
@@ -154,7 +160,6 @@ final class PropertyFormatter {
             progress.stringBuilder().append(arg);
         }
     }
-
 
     /**
      * Formats the children objects of a property
@@ -231,7 +236,7 @@ final class PropertyFormatter {
         final var getMethod = getGetMethod(property);
         final var parentClass = ReflectionHelper.getClass(parent.className());
         final var sb = progress.stringBuilder();
-        if (ReflectionHelper.hasMethod(parentClass, setMethod)) {
+        if (ReflectionHelper.hasMethod(parentClass, setMethod, (Class<?>) null)) {
             sb.append("        ").append(parentVariable).append(".").append(setMethod).append("(").append(variableName).append(");\n");
         } else if (ReflectionHelper.hasMethod(parentClass, getMethod)) {
             //Probably a list method that has only one element
@@ -251,7 +256,8 @@ final class PropertyFormatter {
     private void formatSingleChildStatic(final String variableName,
                                          final ParsedProperty property, final String parentVariable) throws GenerationException {
         final var setMethod = getSetMethod(property);
-        if (ReflectionHelper.hasStaticMethod(ReflectionHelper.getClass(property.sourceType()), setMethod)) {
+        final var clazz = ReflectionHelper.getClass(property.sourceType());
+        if (ReflectionHelper.hasStaticMethod(clazz, setMethod, null, null)) {
             progress.stringBuilder().append("        ").append(property.sourceType()).append(".").append(setMethod)
                     .append("(").append(parentVariable).append(", ").append(variableName).append(");\n");
         } else {

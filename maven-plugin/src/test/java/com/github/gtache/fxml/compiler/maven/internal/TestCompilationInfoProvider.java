@@ -40,7 +40,7 @@ class TestCompilationInfoProvider {
                 "com.github.gtache.fxml.compiler.maven.internal.InfoView", controllerPath, controllerClass,
                 Set.of(new FieldInfo("javafx.event.EventHandler", "onContextMenuRequested"), new FieldInfo("Button", "button"),
                         new FieldInfo("com.github.gtache.fxml.compiler.maven.internal.IncludeController", "includeViewController")),
-                Set.of("onAction"), Map.of("includeView.fxml", path.getParent().resolve("includeView.fxml")), true);
+                Set.of("onAction"), Map.of("includeView.fxml", new Inclusion(path.getParent().resolve("includeView.fxml"), 1)), true);
         final var compilationInfoProvider = new CompilationInfoProvider(project, tempDir);
         final var actual = compilationInfoProvider.getCompilationInfo(tempDir, path, Map.of(includedPath, "com.github.gtache.fxml.compiler.maven.internal.IncludeController"));
         assertEquals(expected, actual);
@@ -115,7 +115,7 @@ class TestCompilationInfoProvider {
                 "com.github.gtache.fxml.compiler.maven.internal.NoResourceBundle", controllerPath, controllerClass,
                 Set.of(new FieldInfo("javafx.event.EventHandler", "onContextMenuRequested"), new FieldInfo("Button", "button"),
                         new FieldInfo("com.github.gtache.fxml.compiler.maven.internal.IncludeController", "includeViewController")),
-                Set.of("onAction"), Map.of("includeView.fxml", path.getParent().resolve("includeView.fxml")), false);
+                Set.of("onAction"), Map.of("includeView.fxml", new Inclusion(path.getParent().resolve("includeView.fxml"), 1)), false);
         final var compilationInfoProvider = new CompilationInfoProvider(project, tempDir);
         final var actual = compilationInfoProvider.getCompilationInfo(tempDir, path, Map.of(includedPath, "com.github.gtache.fxml.compiler.maven.internal.IncludeController"));
         assertEquals(expected, actual);

@@ -6,7 +6,6 @@ import com.github.gtache.fxml.compiler.GenericTypes;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import javafx.beans.DefaultProperty;
 import javafx.beans.NamedArg;
-import javafx.scene.Node;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,7 +14,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +28,13 @@ import static com.github.gtache.fxml.compiler.impl.internal.GenerationHelper.FX_
  */
 final class ReflectionHelper {
     private static final Logger logger = LogManager.getLogger(ReflectionHelper.class);
-    private static final Map<String, Class<?>> classMap = new HashMap<>();
-    private static final Map<Class<?>, Boolean> hasValueOf = new HashMap<>();
-    private static final Map<Class<?>, Boolean> isGeneric = new HashMap<>();
-    private static final Map<String, String> defaultProperty = new HashMap<>();
-    private static final Map<Class<?>, Map<String, Method>> methods = new HashMap<>();
-    private static final Map<Class<?>, Map<String, Method>> staticMethods = new HashMap<>();
+    private static final Map<String, Class<?>> classMap = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Boolean> hasValueOf = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Boolean> isGeneric = new ConcurrentHashMap<>();
+    private static final Map<String, String> defaultProperty = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<MethodKey, Method>> methods = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<MethodKey, Method>> staticMethods = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<MethodKey, Class<?>>> methodsReturnType = new ConcurrentHashMap<>();
 
     private static final Map<String, Class<?>> PRIMITIVE_TYPES = Map.of(
             "boolean", boolean.class,
@@ -65,60 +64,72 @@ final class ReflectionHelper {
     }
 
     /**
-     * Checks if the given class has a method with the given name
+     * Checks if the given class has a method with the given name.
      * The result is cached
      *
-     * @param clazz      The class
-     * @param methodName The method name
+     * @param clazz          The class
+     * @param methodName     The method name
+     * @param parameterTypes The method parameter types (null if any object is allowed)
      * @return True if the class has a method with the given name
      */
-    static boolean hasMethod(final Class<?> clazz, final String methodName) {
+    static boolean hasMethod(final Class<?> clazz, final String methodName, final Class<?>... parameterTypes) {
         final var methodMap = methods.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
-        final var method = methodMap.computeIfAbsent(methodName, m -> computeMethod(clazz, m));
+        final var methodKey = new MethodKey(methodName, Arrays.asList(parameterTypes));
+        final var method = methodMap.computeIfAbsent(methodKey, m -> {
+            try {
+                return computeMethod(clazz, m);
+            } catch (final GenerationException ignored) {
+                return null;
+            }
+        });
         return method != null;
     }
 
     /**
-     * Gets the method corresponding to the given class and name
+     * Gets the method corresponding to the given class and name.
      * The result is cached
      *
-     * @param clazz      The class
-     * @param methodName The method name
+     * @param clazz          The class
+     * @param methodName     The method name
+     * @param parameterTypes The method parameter types
      * @return The method
      */
-    static Method getMethod(final Class<?> clazz, final String methodName) {
+    static Method getMethod(final Class<?> clazz, final String methodName, final Class<?>... parameterTypes) throws GenerationException {
         final var methodMap = methods.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
-        return methodMap.computeIfAbsent(methodName, m -> computeMethod(clazz, m));
+        try {
+            final var methodKey = new MethodKey(methodName, Arrays.asList(parameterTypes));
+            return methodMap.computeIfAbsent(methodKey, m -> {
+                try {
+                    return computeMethod(clazz, m);
+                } catch (final GenerationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (final RuntimeException e) {
+            throw (GenerationException) e.getCause();
+        }
     }
 
     /**
      * Checks if the given class has a method with the given name
      *
-     * @param clazz      The class
-     * @param methodName The method name
+     * @param clazz     The class
+     * @param methodKey The method key
      * @return True if the class has a method with the given name
      */
-    private static Method computeMethod(final Class<?> clazz, final String methodName) {
-        final var matching = Arrays.stream(clazz.getMethods()).filter(m -> {
-            if (m.getName().equals(methodName) && !Modifier.isStatic(m.getModifiers())) {
-                final var parameterTypes = m.getParameterTypes();
-                return methodName.startsWith("get") ? parameterTypes.length == 0 : parameterTypes.length >= 1; //TODO not very clean
-            } else {
+    private static Method computeMethod(final Class<?> clazz, final MethodKey methodKey) throws GenerationException {
+        return computeMethod(clazz, methodKey, false);
+    }
+
+    private static boolean typesMatch(final Class<?>[] types, final List<Class<?>> parameterTypes) {
+        for (var i = 0; i < types.length; i++) {
+            final var type = types[i];
+            final var parameterType = parameterTypes.get(i);
+            if (parameterType != null && !type.isAssignableFrom(parameterType)) {
                 return false;
             }
-        }).toList();
-        if (matching.size() > 1) {
-            final var varargsFilter = matching.stream().filter(Method::isVarArgs).toList();
-            if (varargsFilter.size() == 1) {
-                return varargsFilter.getFirst();
-            } else {
-                throw new UnsupportedOperationException("Multiple matching methods not supported yet : " + clazz + " - " + methodName);
-            }
-        } else if (matching.size() == 1) {
-            return matching.getFirst();
-        } else {
-            return null;
         }
+        return true;
     }
 
     /**
@@ -129,9 +140,16 @@ final class ReflectionHelper {
      * @param methodName The method name
      * @return True if the class has a static method with the given name
      */
-    static boolean hasStaticMethod(final Class<?> clazz, final String methodName) {
+    static boolean hasStaticMethod(final Class<?> clazz, final String methodName, final Class<?>... parameterTypes) {
         final var methodMap = staticMethods.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
-        final var method = methodMap.computeIfAbsent(methodName, m -> computeStaticMethod(clazz, m));
+        final var methodKey = new MethodKey(methodName, Arrays.asList(parameterTypes));
+        final var method = methodMap.computeIfAbsent(methodKey, m -> {
+            try {
+                return computeStaticMethod(clazz, m);
+            } catch (final GenerationException ignored) {
+                return null;
+            }
+        });
         return method != null;
     }
 
@@ -143,33 +161,74 @@ final class ReflectionHelper {
      * @param methodName The method name
      * @return The method
      */
-    static Method getStaticMethod(final Class<?> clazz, final String methodName) {
+    static Method getStaticMethod(final Class<?> clazz, final String methodName, final Class<?>... parameterTypes) throws GenerationException {
         final var methodMap = staticMethods.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
-        return methodMap.computeIfAbsent(methodName, m -> computeStaticMethod(clazz, m));
+        final var methodKey = new MethodKey(methodName, Arrays.asList(parameterTypes));
+        try {
+            return methodMap.computeIfAbsent(methodKey, m -> {
+                try {
+                    return computeStaticMethod(clazz, m);
+                } catch (final GenerationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (final RuntimeException e) {
+            throw (GenerationException) e.getCause();
+        }
     }
 
     /**
      * Gets the static method corresponding to the given class and name
      *
-     * @param clazz      The class name
-     * @param methodName The method name
+     * @param clazz     The class name
+     * @param methodKey The method name
      * @return The method, or null if not found
      */
-    private static Method computeStaticMethod(final Class<?> clazz, final String methodName) {
+    private static Method computeStaticMethod(final Class<?> clazz, final MethodKey methodKey) throws GenerationException {
+        return computeMethod(clazz, methodKey, true);
+    }
+
+    private static Method computeMethod(final Class<?> clazz, final MethodKey methodKey, final boolean isStatic) throws GenerationException {
+        final var parameterTypes = methodKey.parameterTypes();
+        if (parameterTypes.stream().allMatch(Objects::nonNull)) {
+            return computeExactMethod(clazz, methodKey, isStatic);
+        } else {
+            return computeInexactMethod(clazz, methodKey, isStatic);
+        }
+    }
+
+    private static Method computeExactMethod(final Class<?> clazz, final MethodKey methodKey, final boolean isStatic) throws GenerationException {
+        final var parameterTypes = methodKey.parameterTypes();
+        final var methodName = methodKey.methodName();
+        try {
+            final var method = clazz.getMethod(methodName, parameterTypes.toArray(new Class<?>[0]));
+            if (isStatic == Modifier.isStatic(method.getModifiers())) {
+                return method;
+            } else {
+                throw new GenerationException("Method not found : " + clazz + " - " + methodKey + " (found static method)");
+            }
+        } catch (final NoSuchMethodException ignored) {
+            return computeInexactMethod(clazz, methodKey, isStatic);
+        }
+    }
+
+    private static Method computeInexactMethod(final Class<?> clazz, final MethodKey methodKey, final boolean isStatic) throws GenerationException {
+        final var parameterTypes = methodKey.parameterTypes();
+        final var methodName = methodKey.methodName();
         final var matching = Arrays.stream(clazz.getMethods()).filter(m -> {
-            if (m.getName().equals(methodName) && Modifier.isStatic(m.getModifiers())) {
-                final var parameterTypes = m.getParameterTypes();
-                return parameterTypes.length > 1 && parameterTypes[0] == Node.class;
+            if (m.getName().equals(methodName) && isStatic == Modifier.isStatic(m.getModifiers())) {
+                final var types = m.getParameterTypes();
+                return types.length == parameterTypes.size() && typesMatch(types, parameterTypes);
             } else {
                 return false;
             }
         }).toList();
-        if (matching.size() > 1) {
-            throw new UnsupportedOperationException("Multiple matching methods not supported yet : " + clazz + " - " + methodName);
-        } else if (matching.size() == 1) {
+        if (matching.size() == 1) {
             return matching.getFirst();
+        } else if (matching.isEmpty()) {
+            throw new GenerationException("Method not found : " + clazz + " - " + methodKey);
         } else {
-            return null;
+            throw new GenerationException("Multiple matching methods not supported yet : " + clazz + " - " + methodKey);
         }
     }
 
@@ -383,17 +442,50 @@ final class ReflectionHelper {
     }
 
     /**
-     * Gets the return type of the given method for the given class
+     * Gets the return type of the given instance method for the given class
      *
-     * @param className  The class
-     * @param methodName The method
+     * @param className      The class
+     * @param methodName     The method
+     * @param parameterTypes The method parameter types (null if any object is allowed)
      * @return The return type
      * @throws GenerationException if an error occurs
      */
-    static String getReturnType(final String className, final String methodName) throws GenerationException {
+    static Class<?> getReturnType(final String className, final String methodName, final Class<?>... parameterTypes) throws GenerationException {
         final var clazz = getClass(className);
-        final var method = Arrays.stream(clazz.getMethods()).filter(m -> m.getName().equals(methodName))
-                .findFirst().orElseThrow(() -> new GenerationException("Method " + methodName + " not found in class " + className));
-        return method.getReturnType().getName();
+        return getReturnType(clazz, methodName, parameterTypes, false);
+    }
+
+    /**
+     * Gets the return type of the given static method for the given class
+     *
+     * @param className      The class
+     * @param methodName     The method
+     * @param parameterTypes The method parameter types (null if any object is allowed)
+     * @return The return type
+     * @throws GenerationException if an error occurs
+     */
+    static Class<?> getStaticReturnType(final String className, final String methodName, final Class<?>... parameterTypes) throws GenerationException {
+        final var clazz = getClass(className);
+        return getReturnType(clazz, methodName, parameterTypes, true);
+    }
+
+    private static Class<?> getReturnType(final Class<?> clazz, final String methodName, final Class<?>[] parameterTypes, final boolean isStatic) throws GenerationException {
+        final var returnTypes = methodsReturnType.computeIfAbsent(clazz, c -> new ConcurrentHashMap<>());
+        try {
+            final var methodKey = new MethodKey(methodName, Arrays.asList(parameterTypes));
+            return returnTypes.computeIfAbsent(methodKey, m -> {
+                try {
+                    return isStatic ? getStaticMethod(clazz, methodName, parameterTypes).getReturnType() :
+                            getMethod(clazz, methodName, parameterTypes).getReturnType();
+                } catch (final GenerationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (final RuntimeException e) {
+            throw (GenerationException) e.getCause();
+        }
+    }
+
+    private record MethodKey(String methodName, List<Class<?>> parameterTypes) {
     }
 }

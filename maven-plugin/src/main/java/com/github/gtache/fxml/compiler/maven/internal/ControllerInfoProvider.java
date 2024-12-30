@@ -48,11 +48,11 @@ final class ControllerInfoProvider {
                 final var name = fieldInfo.name();
                 final var type = fieldInfo.type();
                 if (fillFieldInfo(type, name, content, imports, propertyGenericTypes)) {
-                    logger.debug("Found injected field {} of type {} with generic types {} in controller {}", name, type, propertyGenericTypes.get(name), info.controllerFile());
+                    logger.debug("Found injected field {} of type {} with generic types {} in controller {}", name, type, propertyGenericTypes.get(name).genericTypes(), info.controllerFile());
                 } else if (type.contains(".")) {
                     final var simpleName = type.substring(type.lastIndexOf('.') + 1);
                     if (fillFieldInfo(simpleName, name, content, imports, propertyGenericTypes)) {
-                        logger.debug("Found injected field {} of type {} with generic types {} in controller {}", name, simpleName, propertyGenericTypes.get(name), info.controllerFile());
+                        logger.debug("Found injected field {} of type {} with generic types {} in controller {}", name, simpleName, propertyGenericTypes.get(name).genericTypes(), info.controllerFile());
                     }
                 } else {
                     logger.info("Field {}({}) not found in controller {}", name, type, info.controllerFile());

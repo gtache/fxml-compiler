@@ -7,6 +7,7 @@ import com.github.gtache.fxml.compiler.impl.GenericTypesImpl;
 import com.github.gtache.fxml.compiler.parsing.ParsedObject;
 import com.github.gtache.fxml.compiler.parsing.ParsedProperty;
 import com.github.gtache.fxml.compiler.parsing.impl.ParsedPropertyImpl;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
@@ -21,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,23 +69,57 @@ class TestReflectionHelper {
     @Test
     void testHasMethod() {
         assertFalse(ReflectionHelper.hasMethod(String.class, "bla"));
-        assertTrue(ReflectionHelper.hasMethod(String.class, "charAt"));
+        assertTrue(ReflectionHelper.hasMethod(String.class, "charAt", int.class));
+        assertTrue(ReflectionHelper.hasMethod(String.class, "charAt", (Class<?>) null));
         assertTrue(ReflectionHelper.hasMethod(StackPane.class, "getChildren"));
     }
 
     @Test
-    void testGetMethod() throws NoSuchMethodException {
-        assertEquals(String.class.getMethod("charAt", int.class), ReflectionHelper.getMethod(String.class, "charAt"));
+    void testHasMethodStatic() {
+        assertFalse(ReflectionHelper.hasMethod(String.class, "valueOf", char.class));
+    }
+
+    @Test
+    void testGetMethod() throws Exception {
+        assertEquals(String.class.getMethod("codePointAt", int.class), ReflectionHelper.getMethod(String.class, "codePointAt", int.class));
+        assertEquals(String.class.getMethod("codePointAt", int.class), ReflectionHelper.getMethod(String.class, "codePointAt", (Class<?>) null));
+    }
+
+    @Test
+    void testGetMethodAmbiguous() {
+        assertThrows(GenerationException.class, () -> ReflectionHelper.getStaticMethod(String.class, "valueOf", (Class<?>) null));
+    }
+
+    @Test
+    void testGetMethodInexactNotFound() {
+        assertThrows(GenerationException.class, () -> ReflectionHelper.getStaticMethod(String.class, "abc", (Class<?>) null));
+    }
+
+    @Test
+    void testGetMethodStatic() {
+        assertThrows(GenerationException.class, () -> ReflectionHelper.getMethod(String.class, "valueOf", int.class));
     }
 
     @Test
     void testHasStaticMethod() {
-        assertTrue(ReflectionHelper.hasStaticMethod(HBox.class, "setHgrow"));
+        assertTrue(ReflectionHelper.hasStaticMethod(HBox.class, "setHgrow", Node.class, Priority.class));
+        assertTrue(ReflectionHelper.hasStaticMethod(HBox.class, "setHgrow", null, null));
     }
 
     @Test
-    void testGetStaticMethod() throws NoSuchMethodException {
-        assertEquals(HBox.class.getMethod("setHgrow", Node.class, Priority.class), ReflectionHelper.getStaticMethod(HBox.class, "setHgrow"));
+    void testHasStaticMethodInstance() {
+        assertFalse(ReflectionHelper.hasStaticMethod(String.class, "codePointAt", int.class));
+    }
+
+    @Test
+    void testGetStaticMethod() throws Exception {
+        assertEquals(HBox.class.getMethod("setMargin", Node.class, Insets.class), ReflectionHelper.getStaticMethod(HBox.class, "setMargin", Node.class, Insets.class));
+        assertEquals(HBox.class.getMethod("setMargin", Node.class, Insets.class), ReflectionHelper.getStaticMethod(HBox.class, "setMargin", null, null));
+    }
+
+    @Test
+    void testGetStaticMethodNotStatic() {
+        assertThrows(GenerationException.class, () -> ReflectionHelper.getStaticMethod(String.class, "charAt", int.class));
     }
 
     @Test
@@ -183,6 +219,11 @@ class TestReflectionHelper {
     }
 
     @Test
+    void testGetClassNotFound() {
+        assertThrows(GenerationException.class, () -> ReflectionHelper.getClass("java.lang.ABC"));
+    }
+
+    @Test
     void testGetGenericTypesNotGeneric() throws GenerationException {
         when(parsedObject.className()).thenReturn("java.lang.String");
         assertEquals("", reflectionHelper.getGenericTypes(parsedObject));
@@ -226,7 +267,14 @@ class TestReflectionHelper {
 
     @Test
     void testGetReturnType() throws GenerationException {
-        assertEquals(String.class.getName(), ReflectionHelper.getReturnType("java.lang.String", "valueOf"));
+        assertEquals(String.class, ReflectionHelper.getReturnType("java.lang.String", "substring", int.class));
+    }
+
+    @Test
+    void testHasMethodAssignable() {
+        assertTrue(ReflectionHelper.hasMethod(List.class, "addAll", Collection.class));
+        assertTrue(ReflectionHelper.hasMethod(List.class, "addAll", List.class));
+        assertFalse(ReflectionHelper.hasMethod(List.class, "addAll", Object.class));
     }
 
     @Test

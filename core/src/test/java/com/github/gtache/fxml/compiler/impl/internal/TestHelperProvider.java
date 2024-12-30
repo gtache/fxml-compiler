@@ -66,9 +66,21 @@ class TestHelperProvider {
     }
 
     @Test
+    void testGetBindingFormatter() {
+        final var bindingFormatter = helperProvider.getBindingFormatter();
+        assertSame(bindingFormatter, helperProvider.getBindingFormatter());
+    }
+    
+    @Test
     void testControllerInjector() {
         final var injector = helperProvider.getControllerInjector();
         assertSame(injector, helperProvider.getControllerInjector());
+    }
+
+    @Test
+    void testGetExpressionFormatter() {
+        final var expressionFormatter = helperProvider.getExpressionFormatter();
+        assertSame(expressionFormatter, helperProvider.getExpressionFormatter());
     }
 
     @Test
@@ -153,6 +165,12 @@ class TestHelperProvider {
     void testGetValueFormatter() {
         final var valueFormatter = helperProvider.getValueFormatter();
         assertSame(valueFormatter, helperProvider.getValueFormatter());
+    }
+
+    @Test
+    void testGetValueClassGuesser() {
+        final var valueClassGuesser = helperProvider.getValueClassGuesser();
+        assertSame(valueClassGuesser, helperProvider.getValueClassGuesser());
     }
 
     @Test

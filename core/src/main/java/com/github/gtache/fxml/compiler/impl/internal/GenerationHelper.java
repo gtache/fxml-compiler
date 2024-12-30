@@ -13,7 +13,6 @@ import java.util.Map;
 final class GenerationHelper {
 
     static final String INDENT_8 = "        ";
-    static final String INDENT_12 = "            ";
     static final String FX_ID = "fx:id";
     static final String FX_VALUE = "fx:value";
     static final String VALUE = "value";
@@ -24,7 +23,7 @@ final class GenerationHelper {
     static final String RESOURCE_KEY_PREFIX = "%";
     static final String EXPRESSION_PREFIX = "$";
     static final String BINDING_EXPRESSION_PREFIX = "${";
-    static final String BI_DIRECTIONAL_BINDING_PREFIX = "#{";
+    static final String BIDIRECTIONAL_BINDING_PREFIX = "#{";
 
     private GenerationHelper() {
 
@@ -67,7 +66,27 @@ final class GenerationHelper {
      * @return The getter method name
      */
     static String getGetMethod(final String propertyName) {
-        return "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        return getMethod(propertyName, "get");
+    }
+
+    /**
+     * Returns the getter method name for the given property
+     *
+     * @param property The property
+     * @return The getter method name
+     */
+    static String getIsMethod(final ParsedProperty property) {
+        return getIsMethod(property.name());
+    }
+
+    /**
+     * Returns the getter method name for the given property name
+     *
+     * @param propertyName The property name
+     * @return The getter method name
+     */
+    static String getIsMethod(final String propertyName) {
+        return getMethod(propertyName, "is");
     }
 
     /**
@@ -87,7 +106,11 @@ final class GenerationHelper {
      * @return The setter method name
      */
     static String getSetMethod(final String propertyName) {
-        return "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        return getMethod(propertyName, "set");
+    }
+
+    private static String getMethod(final String propertyName, final String methodPrefix) {
+        return methodPrefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
     }
 
     /**
