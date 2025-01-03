@@ -19,7 +19,7 @@ Add the plugin to your project:
 <build>
     <plugins>
         <plugin>
-            <groupId>com.github.gtache</groupId>
+            <groupId>ch.gtache.fxml-compiler</groupId>
             <artifactId>fxml-compiler-maven-plugin</artifactId>
             <version>1.0.0</version>
             <executions>
@@ -41,7 +41,7 @@ Optionally add dependencies to the plugin (e.g. when using MediaView and control
 <build>
     <plugins>
         <plugin>
-            <groupId>com.github.gtache</groupId>
+            <groupId>ch.gtache.fxml-compiler</groupId>
             <artifactId>fxml-compiler-maven-plugin</artifactId>
             <version>1.0.0</version>
             <executions>
@@ -114,7 +114,7 @@ There are four ways to inject fields into a controller:
 - `SETTERS`: controller setters methods
     - `controller.setField(value)`
 - `FACTORY`: controller factory
-    - `controller = factory.create(fieldMap)`
+    - `controller = factory.apply(fieldMap)`
     - `factory` is a `Function<Map<String, Object>, Controller>` instance that is created at runtime and passed to the
       view.
     - `fieldMap` is a map of field name (String) to value (Object) that is computed during the view `load` method.

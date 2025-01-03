@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.layout.BorderPane?>
+<BorderPane xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ch.gtache.fxml.compiler.parsing.xml.LoadController">
+    <bottom>
+        <fx:define>
+            <FXCollections fx:id="define5" fx:factory="observableArrayList">
+                <children></children>
+            </FXCollections>
+        </fx:define>
+    </bottom>
+</BorderPane>

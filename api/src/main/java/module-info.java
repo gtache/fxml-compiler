@@ -1,8 +1,8 @@
 /**
  * API module for FXML compiler
  */
-module com.github.gtache.fxml.compiler.api {
-    exports com.github.gtache.fxml.compiler;
-    exports com.github.gtache.fxml.compiler.compatibility;
-    exports com.github.gtache.fxml.compiler.parsing;
+module ch.gtache.fxml.compiler.api {
+    exports ch.gtache.fxml.compiler;
+    exports ch.gtache.fxml.compiler.compatibility;
+    exports ch.gtache.fxml.compiler.parsing;
 }
