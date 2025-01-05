@@ -1,10 +1,10 @@
 # FXML Compiler
 
-## The project is not yet published to maven.
+## The project is not yet published to Maven Central.
 
 ## Introduction
 
-This projects aims at generating Java code from FXML files.
+This project aims at generating Java code from FXML files.
 
 ## Requirements
 
