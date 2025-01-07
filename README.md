@@ -10,7 +10,7 @@ This project aims at generating Java code from FXML files.
 
 - Java 21+ for the plugin
     - The generated code can be compatible with older java versions.
-- Maven 3.6.3+
+- Maven 3.9.9+ (Wrapper included)
 
 ## Installation
 
